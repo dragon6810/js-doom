@@ -2,8 +2,23 @@ import { player } from './main.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
 import { segs } from './world.js'
 
+class Visplane
+{
+    constructor(xstart, xstop)
+    {
+        this.xstart = xstart;
+        this.xstop = xstop;
+        this.bottoms = [];
+        this.tops = [];
+        this.bottoms.length = gamewidth;
+        this.tops.length = gamewidth;
+    }
+};
+
 const hfov = 90;
 const vfov = hfov * gameheight / gamewidth;
+
+var visplanes = [];
 
 // a in radians
 export function angletopixel(a)
@@ -56,7 +71,20 @@ function rayline(px, py, dx, dy, ax, ay, bx, by)
     const u = cross2(qpx, qpy, dx, dy) / rxs;
   
     return { x: px + t * dx, y: py + t * dy, t, u };
-  }
+}
+
+export function drawplane(plane)
+{
+    for(let x=plane.xstart; x<plane.xstop; x++)
+    {
+        for(let y=plane.tops[x]; y<plane.bottoms[x]; y++)
+        {
+            pixels[(y * gamewidth + x) * 4 + 0] = 0;
+            pixels[(y * gamewidth + x) * 4 + 1] = 255;
+            pixels[(y * gamewidth + x) * 4 + 2] = 0;
+        }
+    }
+}
 
 export function renderseg(seg)
 {
@@ -107,6 +135,9 @@ export function renderseg(seg)
     let y2top = -((seg.top - camz) * pixelheight / dist2) + gameheight / 2;
     let y2bottom = -((seg.bottom - camz) * pixelheight / dist2) + gameheight / 2;
 
+    let cieling = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
+    let floor = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
+
     for(let x=Math.floor(x1); x<=Math.floor(x2); x++)
     {
         let t = (x - x1) / (x2 - x1);
@@ -121,26 +152,30 @@ export function renderseg(seg)
         if(top >= bottom)
             continue;
 
+        cieling.bottoms[x] = top;
+        cieling.tops[x] = 0;
+        floor.tops[x] = bottom+1;
+        floor.bottoms[x] = gameheight;
+
         for(let y=top; y<=bottom; y++)
         {
+            pixels[(y * gamewidth + x) * 4 + 0] = 0;
+            pixels[(y * gamewidth + x) * 4 + 1] = 0;
             pixels[(y * gamewidth + x) * 4 + 2] = 255;
         }
     }
+
+    visplanes.push(cieling);
+    visplanes.push(floor);
 }
 
 export function render()
 {
-    for(let y=0; y<gameheight; y++)
-    {
-        for(let x=0; x<gamewidth; x++)
-        {
-            pixels[(y * gamewidth + x) * 4 + 0] = 255 * x / gamewidth;
-            pixels[(y * gamewidth + x) * 4 + 1] = 255 * y / gameheight;
-            pixels[(y * gamewidth + x) * 4 + 2] = 0;
-            pixels[(y * gamewidth + x) * 4 + 3] = 255;
-        }
-    }
+    visplanes.length = 0;
 
     for(let i=0; i<segs.length; i++)
         renderseg(segs[i]);
+
+    for(let i=0; i<visplanes.length; i++)
+        drawplane(visplanes[i]);
 }
