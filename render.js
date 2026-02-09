@@ -8,6 +8,11 @@ const vfov = hfov * gameheight / gamewidth;
 // a in radians
 export function angletopixel(a)
 {
+    if(a < -hfov / 360 * Math.PI)
+        a = -hfov / 360 * Math.PI;
+    if(a > hfov / 360 * Math.PI)
+        a = hfov / 360 * Math.PI;
+
     let halfwidth = Math.tan(hfov / 360 * Math.PI);
     let planeloc = Math.tan(a) / halfwidth / 2;
     let pixel = (-planeloc + 0.5) * gamewidth;
@@ -16,30 +21,107 @@ export function angletopixel(a)
     if(pixel >= gamewidth)
         pixel = gamewidth - 1;
 
-    return Math.floor(pixel);
+    return pixel;
 }
+
+// returns radians
+export function pixeltoangle(pixel)
+{
+    let halfwidth = Math.tan(hfov / 360 * Math.PI);
+    let planeloc = 0.5 - (pixel / gamewidth);
+    let a = Math.atan(2 * halfwidth * planeloc);
+    return a;
+}
+
+function cross2(ax, ay, bx, by)
+{
+    return ax * by - ay * bx;
+}
+
+function rayline(px, py, dx, dy, ax, ay, bx, by)
+{
+    const sx = bx - ax;
+    const sy = by - ay;
+  
+    const rxs = cross2(dx, dy, sx, sy);
+    if (Math.abs(rxs) < 1e-12)
+    {
+        return null;
+    }
+  
+    const qpx = ax - px;
+    const qpy = ay - py;
+  
+    const t = cross2(qpx, qpy, sx, sy) / rxs;
+    const u = cross2(qpx, qpy, dx, dy) / rxs;
+  
+    return { x: px + t * dx, y: py + t * dy, t, u };
+  }
 
 export function renderseg(seg)
 {
-    let a1 = Math.atan2(seg.y1 - player.y, seg.x1 - player.x) - player.rot;
-    let a2 = Math.atan2(seg.y2 - player.y, seg.x2 - player.x) - player.rot;
+    const camz = player.camh + player.z;
 
-    console.log("angles: {}, {}", a1, a2);
+    let rel1x = (seg.x1 - player.x) * Math.cos(-player.rot) - (seg.y1 - player.y) * Math.sin(-player.rot);
+    let rel1y = (seg.x1 - player.x) * Math.sin(-player.rot) + (seg.y1 - player.y) * Math.cos(-player.rot);
+    let rel2x = (seg.x2 - player.x) * Math.cos(-player.rot) - (seg.y2 - player.y) * Math.sin(-player.rot);
+    let rel2y = (seg.x2 - player.x) * Math.sin(-player.rot) + (seg.y2 - player.y) * Math.cos(-player.rot);
+
+    let a1 = Math.atan2(rel1y, rel1x);
+    let a2 = Math.atan2(rel2y, rel2x);
 
     if(a2 >= a1)
-        return;
-
-    if(a1 - a2 > Math.PI)
         return;
 
     let x1 = angletopixel(a1);
     let x2 = angletopixel(a2);
 
-    console.log("x values: {}, {}", x1, x2);
+    if(x1 > x2)
+        return;
 
-    for(let x=x1; x<=x2; x++)
+    a1 = pixeltoangle(x1) + player.rot;
+    a2 = pixeltoangle(x2) + player.rot;
+
+    let i1 = rayline
+    (
+        player.x, player.y,
+        Math.cos(a1), Math.sin(a1),
+        seg.x1, seg.y1, seg.x2, seg.y2
+    );
+    
+    let i2 = rayline
+    (
+        player.x, player.y,
+        Math.cos(a2), Math.sin(a2),
+        seg.x1, seg.y1, seg.x2, seg.y2
+    );
+
+    let dist1 = Math.cos(player.rot) * (i1.x - player.x) + Math.sin(player.rot) * (i1.y - player.y);
+    let dist2 = Math.cos(player.rot) * (i2.x - player.x) + Math.sin(player.rot) * (i2.y - player.y);
+
+    let viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
+    let pixelheight = gameheight / viewheight;
+
+    let y1top = -((seg.top - camz) * pixelheight / dist1) + gameheight / 2;
+    let y1bottom = -((seg.bottom - camz) * pixelheight / dist1) + gameheight / 2;
+    let y2top = -((seg.top - camz) * pixelheight / dist2) + gameheight / 2;
+    let y2bottom = -((seg.bottom - camz) * pixelheight / dist2) + gameheight / 2;
+
+    for(let x=Math.floor(x1); x<=Math.floor(x2); x++)
     {
-        for(let y=0; y<gameheight; y++)
+        let t = (x - x1) / (x2 - x1);
+        let top = Math.floor((y2top - y1top) * t + y1top);
+        let bottom = Math.floor((y2bottom - y1bottom) * t + y1bottom);
+
+        if(top < 0) top = 0;
+        if(top >= gameheight) top = gameheight - 1;
+        if(bottom < 0) bottom = 0;
+        if(bottom >= gameheight) bottom = gameheight - 1;
+
+        if(top >= bottom)
+            continue;
+
+        for(let y=top; y<=bottom; y++)
         {
             pixels[(y * gamewidth + x) * 4 + 2] = 255;
         }
@@ -58,5 +140,7 @@ export function render()
             pixels[(y * gamewidth + x) * 4 + 3] = 255;
         }
     }
-    renderseg(segs[0]);
+
+    for(let i=0; i<segs.length; i++)
+        renderseg(segs[i]);
 }
