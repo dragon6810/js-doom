@@ -1,5 +1,6 @@
 import { player } from './main.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
+import { palettes, patches } from './wad.js';
 import { segs } from './world.js'
 
 class Visplane
@@ -169,6 +170,34 @@ export function renderseg(seg)
     visplanes.push(floor);
 }
 
+function setpixel(x, y, palindex)
+{
+    if(palindex == 247)
+        return;
+    
+    const r = palettes[0].data[palindex * 3 + 0];
+    const g = palettes[0].data[palindex * 3 + 1];
+    const b = palettes[0].data[palindex * 3 + 2];
+
+    pixels[(y * gamewidth + x) * 4 + 0] = r;
+    pixels[(y * gamewidth + x) * 4 + 1] = g;
+    pixels[(y * gamewidth + x) * 4 + 2] = b;
+}
+
+function testgraphic()
+{
+    const patch = "DOOR9_2"
+    const graphic = patches[patch];
+
+    for(let y=0; y<graphic.h; y++)
+    {
+        for(let x=0; x<graphic.w; x++)
+        {
+            setpixel(x, y, graphic.data[y * graphic.w + x]);
+        }
+    }
+}
+
 export function render()
 {
     visplanes.length = 0;
@@ -178,4 +207,6 @@ export function render()
 
     for(let i=0; i<visplanes.length; i++)
         drawplane(visplanes[i]);
+
+    testgraphic();
 }
