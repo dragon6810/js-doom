@@ -1,6 +1,6 @@
 import { player } from './main.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
-import { palettes, patches } from './wad.js';
+import { palettes, patches, textures } from './wad.js';
 import { segs } from './world.js'
 
 class Visplane
@@ -186,14 +186,14 @@ function setpixel(x, y, palindex)
 
 function testgraphic()
 {
-    const patch = "DOOR9_2"
-    const graphic = patches[patch];
+    const texname = "GSTVINE2"
+    const tex = textures.get(texname);
 
-    for(let y=0; y<graphic.h; y++)
+    for(let y=0; y<tex.h; y++)
     {
-        for(let x=0; x<graphic.w; x++)
+        for(let x=0; x<tex.w; x++)
         {
-            setpixel(x, y, graphic.data[y * graphic.w + x]);
+            setpixel(x, y, tex.graphic.data[y * tex.w + x]);
         }
     }
 }

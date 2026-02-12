@@ -3,8 +3,7 @@ class Palette
     constructor()
     {
         // r, g, b
-        this.data = [];
-        this.data.length = 768;
+        this.data = new Uint8Array(768);
     }
 }
 
@@ -16,8 +15,7 @@ class Graphic
         this.h = h;
         this.offsx = offsx;
         this.offsy = offsy;
-        this.data = [];
-        this.data.length = w * h;
+        this.data = new Uint8Array(w * h).fill(247);
     }
 }
 
@@ -43,10 +41,10 @@ class Texture
     }
 }
 
-var patchtextures = [];
-
+export var textures = new Map();
 export var palettes = [];
-export var patches = []; // name-indexed
+export var patches = new Map(); // name-indexed
+export var patchnums = []; // number to name
 
 function processgraphic(data, loc)
 {
@@ -84,7 +82,7 @@ function processgraphic(data, loc)
 function processpatch(data, loc, size, name)
 {
     let graphic = processgraphic(data, loc);
-    patches[name] = graphic;
+    patches.set(name, graphic);
 }
 
 function processpalette(data, loc, size, name)
@@ -102,9 +100,42 @@ function processpalette(data, loc, size, name)
     }
 }
 
-function processtex(data, loc)
+function stitchtextures()
 {
+    textures.forEach((tex, name) =>
+    {
+        let graphic = new Graphic(tex.w, tex.h, 0, 0);
+        tex.patches.forEach((patch) =>
+        {
+            const pic = patches.get(patchnums[patch.num]);
+            if (!pic)
+            {
+                console.warn(`Texture "${name}" needs patch "${patchnums[patch.num]}" (${patch.num}), but it isn't loaded!`);
+                return;
+            }
 
+            for(let y=0; y<pic.h; y++)
+            {
+                const desty = y + patch.y;
+                if(desty < 0 || desty >= tex.h)
+                    continue;
+
+                for(let x=0; x<pic.w; x++)
+                {
+                    const destx = x + patch.x;
+                    if(destx < 0 || destx >= tex.w)
+                        continue;
+
+                    if(pic.data[y * pic.w + x] == 247)
+                        continue;
+
+                    graphic.data[desty * graphic.w + destx] = pic.data[y * pic.w + x];
+                }
+            }
+        });
+
+        tex.graphic = graphic;
+    });
 }
 
 function processtexlump(data, loc, size, name)
@@ -130,17 +161,38 @@ function processtexlump(data, loc, size, name)
         
         let tex = new Texture(width, height, ismasked);
 
-        const npatches = data.getInt16(texoffs + 20);
+        const npatches = data.getInt16(texoffs + 20, true);
         for(let p=0; p<npatches; p++)
         {
             const patchloc = texoffs + 22 + p * 10;
 
-            const x = data.getInt16(patchloc);
-            const y = data.getInt16(patchloc + 2);
-            const pnum = data.getInt16(patchloc + 4);
+            const x = data.getInt16(patchloc, true);
+            const y = data.getInt16(patchloc + 2, true);
+            const pnum = data.getInt16(patchloc + 4, true);
 
             tex.patches.push(new TexPatch(x, y, pnum));
         }
+
+        textures.set(name, tex);
+    }
+}
+
+function processpnames(data, loc, size, name)
+{
+    const npatches = data.getInt32(loc, true);
+    for(let i=0; i<npatches; i++)
+    {
+        const nameloc = loc + 4 + i * 8;
+        let name = "";
+        for (let i=0; i<8; i++)
+        {
+            const char = data.getUint8(nameloc + i);
+            if (char === 0) break;
+            name += String.fromCharCode(char);
+        }
+        name = name.trim().toUpperCase();
+
+        patchnums.push(name);
     }
 }
 
@@ -168,6 +220,8 @@ function processlumpheader(data, headerloc)
         processpatch(data, lumploc, size, name);
     else if(name == "TEXTURE1" || name == "TEXTURE2")
         processtexlump(data, lumploc, size, name);
+    else if(name == "PNAMES")
+        processpnames(data, lumploc, size, name);
     else if(name == "PLAYPAL")
         processpalette(data, lumploc, size, name);
 }
@@ -188,6 +242,8 @@ function processwad(data)
         const dir = tableoffs + i * 16;
         processlumpheader(data, dir);
     }
+
+    stitchtextures();
 }
 
 export async function loadwad(name)
