@@ -80,9 +80,7 @@ export function drawplane(plane)
     {
         for(let y=plane.tops[x]; y<plane.bottoms[x]; y++)
         {
-            pixels[(y * gamewidth + x) * 4 + 0] = 0;
-            pixels[(y * gamewidth + x) * 4 + 1] = 255;
-            pixels[(y * gamewidth + x) * 4 + 2] = 0;
+            setpixel(x, y, 0);
         }
     }
 }
@@ -125,6 +123,17 @@ export function renderseg(seg)
         seg.x1, seg.y1, seg.x2, seg.y2
     );
 
+    let segdirx = seg.x2 - seg.x1;
+    let segdiry = seg.y2 - seg.y1;
+    const seglen = Math.sqrt(segdirx * segdirx + segdiry * segdiry);
+    segdirx /= seglen;
+    segdiry /= seglen;
+
+    const s1 = (i1.x - seg.x1) * segdirx + (i1.y - seg.y1) * segdiry;
+    const s2 = (i2.x - seg.x1) * segdirx + (i2.y - seg.y1) * segdiry;
+    const ttop = 0;
+    const tbottom = seg.top - seg.bottom;
+
     let dist1 = Math.cos(player.rot) * (i1.x - player.x) + Math.sin(player.rot) * (i1.y - player.y);
     let dist2 = Math.cos(player.rot) * (i2.x - player.x) + Math.sin(player.rot) * (i2.y - player.y);
 
@@ -139,30 +148,50 @@ export function renderseg(seg)
     let cieling = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
     let floor = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
 
+    const tex = textures.get(seg.texname);
     for(let x=Math.floor(x1); x<=Math.floor(x2); x++)
     {
-        let t = (x - x1) / (x2 - x1);
-        let top = Math.floor((y2top - y1top) * t + y1top);
-        let bottom = Math.floor((y2bottom - y1bottom) * t + y1bottom);
+        let alpha = (x - x1) / (x2 - x1);
+        let top = (y2top - y1top) * alpha + y1top;
+        let bottom = (y2bottom - y1bottom) * alpha + y1bottom;
 
-        if(top < 0) top = 0;
-        if(top >= gameheight) top = gameheight - 1;
-        if(bottom < 0) bottom = 0;
-        if(bottom >= gameheight) bottom = gameheight - 1;
+        const u = (alpha * dist1) / ((1 - alpha) * dist2 + alpha * dist1);
+        const s = Math.floor(s1 + u * (s2 - s1));
 
-        if(top >= bottom)
+        let samples = s;
+        while(samples < 0)
+            samples += tex.w;
+        while(samples >= tex.w)
+            samples -= tex.w;
+
+        let pxtop = Math.floor(top);
+        let pxbottom = Math.floor(bottom);
+        if(pxtop < 0) pxtop = 0;
+        if(pxtop >= gameheight) pxtop = gameheight - 1;
+        if(pxbottom < 0) pxbottom = 0;
+        if(pxbottom >= gameheight) pxbottom = gameheight - 1;
+
+        if(pxtop >= pxbottom)
             continue;
 
-        cieling.bottoms[x] = top;
         cieling.tops[x] = 0;
-        floor.tops[x] = bottom+1;
+        cieling.bottoms[x] = pxtop;
+
+        floor.tops[x] = pxbottom+1;
         floor.bottoms[x] = gameheight;
 
-        for(let y=top; y<=bottom; y++)
+        for(let y=pxtop; y<=pxbottom; y++)
         {
-            pixels[(y * gamewidth + x) * 4 + 0] = 0;
-            pixels[(y * gamewidth + x) * 4 + 1] = 0;
-            pixels[(y * gamewidth + x) * 4 + 2] = 255;
+            const v = (y - top) / (bottom - top);
+            const t = Math.floor(ttop + v * (tbottom - ttop));
+
+            let samplet = t;
+            while(samplet < 0)
+                samplet += tex.h;
+            while(samplet >= tex.h)
+                samplet -= tex.h;
+
+            setpixel(x, y, tex.graphic.data[samplet * tex.w + samples]);
         }
     }
 
@@ -208,5 +237,5 @@ export function render()
     for(let i=0; i<visplanes.length; i++)
         drawplane(visplanes[i]);
 
-    testgraphic();
+    // testgraphic();
 }
