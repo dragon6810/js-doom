@@ -33,9 +33,13 @@ class TexPatch
 
 class Texture
 {
-    constructor()
+    constructor(w, h, ismasked)
     {
+        this.w = w;
+        this.h = h;
+        this.ismasked = ismasked;
         this.patches = [];
+        this.graphic = null;
     }
 }
 
@@ -109,7 +113,34 @@ function processtexlump(data, loc, size, name)
 
     for(let i=0; i<ntextures; i++)
     {
+        const texoffs = loc + data.getInt32(loc + 4 + i * 4, true);
+
+        let name = "";
+        for (let i=0; i<8; i++)
+        {
+            const char = data.getUint8(texoffs + i);
+            if (char === 0) break;
+            name += String.fromCharCode(char);
+        }
+        name = name.trim();
+
+        const ismasked = data.getInt32(texoffs + 8, true) != 0 ? true : false;
+        const width = data.getInt16(texoffs + 12, true);
+        const height = data.getInt16(texoffs + 14, true);
         
+        let tex = new Texture(width, height, ismasked);
+
+        const npatches = data.getInt16(texoffs + 20);
+        for(let p=0; p<npatches; p++)
+        {
+            const patchloc = texoffs + 22 + p * 10;
+
+            const x = data.getInt16(patchloc);
+            const y = data.getInt16(patchloc + 2);
+            const pnum = data.getInt16(patchloc + 4);
+
+            tex.patches.push(new TexPatch(x, y, pnum));
+        }
     }
 }
 
