@@ -41,6 +41,11 @@ class Texture
     }
 }
 
+class World
+{
+
+}
+
 export var textures = new Map();
 export var palettes = [];
 export var patches = new Map(); // name-indexed
@@ -197,6 +202,45 @@ function processpnames(data, loc, size, name)
 }
 
 var inpatches = false;
+var maplumpcounter = 0;
+var curmapname = null;
+
+var curmap = null;
+
+function processmaplump(data, headerloc)
+{
+    switch(maplumpcounter)
+    {
+    case 1:
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    case 4:
+        break;
+    case 5:
+        break;
+    case 6:
+        break;
+    case 7:
+        break;
+    case 8:
+        break;
+    case 9:
+        break;
+    case 10:
+        break;
+    default:
+    }
+
+    maplumpcounter++;
+    if(maplumpcounter > 10)
+    {
+        maplumpcounter = 0;
+        curmapname = null;
+    }
+}
 
 function processlumpheader(data, headerloc)
 {
@@ -212,7 +256,14 @@ function processlumpheader(data, headerloc)
     }
     name = name.trim();
 
-    if(name == "P_START")
+    if(maplumpcounter != 0)
+        processmaplump(data, headerloc);
+    else if(/^E\dM\d$/.test(name))
+    {
+        curmap = new Map();
+        curmapname = name;
+    }
+    else if(name == "P_START")
         inpatches = true;
     else if(name == "P_END")
         inpatches = false;

@@ -140,20 +140,25 @@ export function renderseg(seg)
     let viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
     let pixelheight = gameheight / viewheight;
 
-    let y1top = -((seg.top - camz) * pixelheight / dist1) + gameheight / 2;
-    let y1bottom = -((seg.bottom - camz) * pixelheight / dist1) + gameheight / 2;
-    let y2top = -((seg.top - camz) * pixelheight / dist2) + gameheight / 2;
-    let y2bottom = -((seg.bottom - camz) * pixelheight / dist2) + gameheight / 2;
+    const height1 = (seg.top - seg.bottom) * pixelheight / dist1;
+    const height2 = (seg.top - seg.bottom) * pixelheight / dist2;
 
+    const y1top = -((seg.top - camz) * pixelheight / dist1) + gameheight / 2;
+    const y1bottom = y1top + height1;
+    const y2top = -((seg.top - camz) * pixelheight / dist2) + gameheight / 2;
+    const y2bottom = y2top + height2;
+    
     let cieling = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
     let floor = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
-
+    
     const tex = textures.get(seg.texname);
     for(let x=Math.floor(x1); x<=Math.floor(x2); x++)
     {
         let alpha = (x - x1) / (x2 - x1);
         let top = (y2top - y1top) * alpha + y1top;
         let bottom = (y2bottom - y1bottom) * alpha + y1bottom;
+        
+        const tstep = (seg.top - seg.bottom) / (bottom - top);
 
         const u = (alpha * dist1) / ((1 - alpha) * dist2 + alpha * dist1);
         const s = Math.floor(s1 + u * (s2 - s1));
@@ -180,18 +185,17 @@ export function renderseg(seg)
         floor.tops[x] = pxbottom+1;
         floor.bottoms[x] = gameheight;
 
-        for(let y=pxtop; y<=pxbottom; y++)
+        let t = ttop + tstep * (pxtop - top);
+        for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
         {
             const v = (y - top) / (bottom - top);
-            const t = Math.floor(ttop + v * (tbottom - ttop));
 
-            let samplet = t;
-            while(samplet < 0)
-                samplet += tex.h;
-            while(samplet >= tex.h)
-                samplet -= tex.h;
+            let tsample = Math.floor(t);
+            while(tsample < 0)
+                tsample += tex.h;
+            tsample %= tex.h;
 
-            setpixel(x, y, tex.graphic.data[samplet * tex.w + samples]);
+            setpixel(x, y, tex.graphic.data[tsample * tex.w + samples]);
         }
     }
 
