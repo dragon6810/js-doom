@@ -1,5 +1,5 @@
 import { curmap } from './main.js';
-import { drawfullseg } from './renderseg.js';
+import { drawfullseg, rendersegsclear, wallspans } from './renderseg.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
 import { palettes, patches, textures } from './wad.js';
 
@@ -27,14 +27,7 @@ function nodeside(node, x, y)
     const dx = x - node.x;
     const dy = y - node.y;
 
-    if(node.dx * node.dy * dx * dy < 0)
-    {
-        if(node.dy * dx < 0)
-            return 1;
-        return 0;
-    }
-
-    if(node.dy * dx >= node.dx * dy)
+    if((node.dy * dx) - (node.dx * dy) > 0)
         return 0;
     return 1;
 }
@@ -47,7 +40,7 @@ function drawssector(ssector)
 
 function rendernode(nodenum)
 {
-    if(nodenum < 0)
+    if(nodenum & 0x8000)
     {
         if(nodenum == -1)
             drawssector(curmap.ssectors[0]);
@@ -61,11 +54,13 @@ function rendernode(nodenum)
     const side = nodeside(node, viewx, viewy);
 
     rendernode(node.children[side]);
-    rendernode(node.children[side ^ 1]);
+    rendernode(node.children[side^1]);
 }
 
 export function render()
 {
+    rendersegsclear();
+
     for(let i=0; i<gamewidth * gameheight; i++)
     {
         pixels[i * 4] = 0;
@@ -73,6 +68,8 @@ export function render()
         pixels[i * 4 + 2] = 0;
     }
     rendernode(curmap.nodes.length - 1);
+
+    console.log(wallspans);
 
     // testgraphic();
 }
