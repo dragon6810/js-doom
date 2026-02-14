@@ -194,7 +194,7 @@ function cliprange(x1, x2, seg)
     let curx = x1;
     for(i=0; i<wallspans.length && curx<x2; i++)
     {
-        let curspan = wallspans[i];
+        const curspan = wallspans[i];
         
         // completely to the right of curspan
         if(curx > curspan.x2)
@@ -221,14 +221,14 @@ function cliprange(x1, x2, seg)
         const span = new Wallspan(curx, x2);
         drawspans.push(span);
     }
-
+    
     if(drawspans.length > 0)
     {
-        wallspans.push(...drawspans);
+        wallspans.push(...structuredClone(drawspans));
         wallspans.sort((a, b) => a.x1 - b.x1);
         mergespans();
     }
-
+        
     for(i=0; i<drawspans.length; i++)
     {
         const sidedef = getsegsidedef(seg);

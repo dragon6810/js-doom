@@ -34,8 +34,12 @@ function nodeside(node, x, y)
 
 function drawssector(ssector)
 {
+    //if(ssector.firstseg != 310)
+    //    return;
     for(let i=ssector.firstseg; i<ssector.firstseg+ssector.nseg; i++)
+    {
         drawfullseg(curmap.segs[i]);
+    }
 }
 
 function rendernode(nodenum)
@@ -69,7 +73,7 @@ export function render()
     }
     rendernode(curmap.nodes.length - 1);
 
-    console.log(wallspans);
+    // console.log(wallspans);
 
     // testgraphic();
 }
