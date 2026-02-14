@@ -1,245 +1,78 @@
-import { player } from './main.js';
+import { curmap } from './main.js';
+import { drawfullseg } from './renderseg.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
 import { palettes, patches, textures } from './wad.js';
-import { segs } from './world.js'
 
-class Visplane
+export const hfov = 90;
+export const vfov = hfov * gameheight / gamewidth;
+
+function rendersubsector(num)
 {
-    constructor(xstart, xstop)
+
+}
+
+export var viewx = 0;
+export var viewy = 0;
+export var viewz = 0;
+
+export function setviewpos(x, y, z)
+{
+    viewx = x;
+    viewy = y;
+    viewz = z;
+}
+
+function nodeside(node, x, y)
+{
+    const dx = x - node.x;
+    const dy = y - node.y;
+
+    if(node.dx * node.dy * dx * dy < 0)
     {
-        this.xstart = xstart;
-        this.xstop = xstop;
-        this.bottoms = [];
-        this.tops = [];
-        this.bottoms.length = gamewidth;
-        this.tops.length = gamewidth;
+        if(node.dy * dx < 0)
+            return 1;
+        return 0;
     }
-};
 
-const hfov = 90;
-const vfov = hfov * gameheight / gamewidth;
-
-var visplanes = [];
-
-// a in radians
-export function angletopixel(a)
-{
-    if(a < -hfov / 360 * Math.PI)
-        a = -hfov / 360 * Math.PI;
-    if(a > hfov / 360 * Math.PI)
-        a = hfov / 360 * Math.PI;
-
-    let halfwidth = Math.tan(hfov / 360 * Math.PI);
-    let planeloc = Math.tan(a) / halfwidth / 2;
-    let pixel = (-planeloc + 0.5) * gamewidth;
-    if(pixel < 0)
-        pixel = 0;
-    if(pixel >= gamewidth)
-        pixel = gamewidth - 1;
-
-    return pixel;
+    if(node.dy * dx >= node.dx * dy)
+        return 0;
+    return 1;
 }
 
-// returns radians
-export function pixeltoangle(pixel)
+function drawssector(ssector)
 {
-    let halfwidth = Math.tan(hfov / 360 * Math.PI);
-    let planeloc = 0.5 - (pixel / gamewidth);
-    let a = Math.atan(2 * halfwidth * planeloc);
-    return a;
+    for(let i=ssector.firstseg; i<ssector.firstseg+ssector.nseg; i++)
+        drawfullseg(curmap.segs[i]);
 }
 
-function cross2(ax, ay, bx, by)
+function rendernode(nodenum)
 {
-    return ax * by - ay * bx;
-}
-
-function rayline(px, py, dx, dy, ax, ay, bx, by)
-{
-    const sx = bx - ax;
-    const sy = by - ay;
-  
-    const rxs = cross2(dx, dy, sx, sy);
-    if (Math.abs(rxs) < 1e-12)
+    if(nodenum < 0)
     {
-        return null;
-    }
-  
-    const qpx = ax - px;
-    const qpy = ay - py;
-  
-    const t = cross2(qpx, qpy, sx, sy) / rxs;
-    const u = cross2(qpx, qpy, dx, dy) / rxs;
-  
-    return { x: px + t * dx, y: py + t * dy, t, u };
-}
-
-export function drawplane(plane)
-{
-    for(let x=plane.xstart; x<plane.xstop; x++)
-    {
-        for(let y=plane.tops[x]; y<plane.bottoms[x]; y++)
-        {
-            setpixel(x, y, 0);
-        }
-    }
-}
-
-export function renderseg(seg)
-{
-    const camz = player.camh + player.z;
-
-    let rel1x = (seg.x1 - player.x) * Math.cos(-player.rot) - (seg.y1 - player.y) * Math.sin(-player.rot);
-    let rel1y = (seg.x1 - player.x) * Math.sin(-player.rot) + (seg.y1 - player.y) * Math.cos(-player.rot);
-    let rel2x = (seg.x2 - player.x) * Math.cos(-player.rot) - (seg.y2 - player.y) * Math.sin(-player.rot);
-    let rel2y = (seg.x2 - player.x) * Math.sin(-player.rot) + (seg.y2 - player.y) * Math.cos(-player.rot);
-
-    let a1 = Math.atan2(rel1y, rel1x);
-    let a2 = Math.atan2(rel2y, rel2x);
-
-    if(a2 >= a1)
-        return;
-
-    let x1 = angletopixel(a1);
-    let x2 = angletopixel(a2);
-
-    if(x1 > x2)
-        return;
-
-    a1 = pixeltoangle(x1) + player.rot;
-    a2 = pixeltoangle(x2) + player.rot;
-
-    let i1 = rayline
-    (
-        player.x, player.y,
-        Math.cos(a1), Math.sin(a1),
-        seg.x1, seg.y1, seg.x2, seg.y2
-    );
-    
-    let i2 = rayline
-    (
-        player.x, player.y,
-        Math.cos(a2), Math.sin(a2),
-        seg.x1, seg.y1, seg.x2, seg.y2
-    );
-
-    let segdirx = seg.x2 - seg.x1;
-    let segdiry = seg.y2 - seg.y1;
-    const seglen = Math.sqrt(segdirx * segdirx + segdiry * segdiry);
-    segdirx /= seglen;
-    segdiry /= seglen;
-
-    const s1 = (i1.x - seg.x1) * segdirx + (i1.y - seg.y1) * segdiry;
-    const s2 = (i2.x - seg.x1) * segdirx + (i2.y - seg.y1) * segdiry;
-    const ttop = 0;
-    const tbottom = seg.top - seg.bottom;
-
-    let dist1 = Math.cos(player.rot) * (i1.x - player.x) + Math.sin(player.rot) * (i1.y - player.y);
-    let dist2 = Math.cos(player.rot) * (i2.x - player.x) + Math.sin(player.rot) * (i2.y - player.y);
-
-    let viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
-    let pixelheight = gameheight / viewheight;
-
-    const height1 = (seg.top - seg.bottom) * pixelheight / dist1;
-    const height2 = (seg.top - seg.bottom) * pixelheight / dist2;
-
-    const y1top = -((seg.top - camz) * pixelheight / dist1) + gameheight / 2;
-    const y1bottom = y1top + height1;
-    const y2top = -((seg.top - camz) * pixelheight / dist2) + gameheight / 2;
-    const y2bottom = y2top + height2;
-    
-    let cieling = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
-    let floor = new Visplane(Math.floor(x1), Math.floor(x2 + 1));
-    
-    const tex = textures.get(seg.texname);
-    for(let x=Math.floor(x1); x<=Math.floor(x2); x++)
-    {
-        let alpha = (x - x1) / (x2 - x1);
-        let top = (y2top - y1top) * alpha + y1top;
-        let bottom = (y2bottom - y1bottom) * alpha + y1bottom;
+        if(nodenum == -1)
+            drawssector(curmap.ssectors[0]);
+        else
+            drawssector(curmap.ssectors[nodenum & 0x7FFF]);
         
-        const tstep = (seg.top - seg.bottom) / (bottom - top);
-
-        const u = (alpha * dist1) / ((1 - alpha) * dist2 + alpha * dist1);
-        const s = Math.floor(s1 + u * (s2 - s1));
-
-        let samples = s;
-        while(samples < 0)
-            samples += tex.w;
-        while(samples >= tex.w)
-            samples -= tex.w;
-
-        let pxtop = Math.floor(top);
-        let pxbottom = Math.floor(bottom);
-        if(pxtop < 0) pxtop = 0;
-        if(pxtop >= gameheight) pxtop = gameheight - 1;
-        if(pxbottom < 0) pxbottom = 0;
-        if(pxbottom >= gameheight) pxbottom = gameheight - 1;
-
-        if(pxtop >= pxbottom)
-            continue;
-
-        cieling.tops[x] = 0;
-        cieling.bottoms[x] = pxtop;
-
-        floor.tops[x] = pxbottom+1;
-        floor.bottoms[x] = gameheight;
-
-        let t = ttop + tstep * (pxtop - top);
-        for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
-        {
-            const v = (y - top) / (bottom - top);
-
-            let tsample = Math.floor(t);
-            while(tsample < 0)
-                tsample += tex.h;
-            tsample %= tex.h;
-
-            setpixel(x, y, tex.graphic.data[tsample * tex.w + samples]);
-        }
-    }
-
-    visplanes.push(cieling);
-    visplanes.push(floor);
-}
-
-function setpixel(x, y, palindex)
-{
-    if(palindex == 247)
         return;
-    
-    const r = palettes[0].data[palindex * 3 + 0];
-    const g = palettes[0].data[palindex * 3 + 1];
-    const b = palettes[0].data[palindex * 3 + 2];
-
-    pixels[(y * gamewidth + x) * 4 + 0] = r;
-    pixels[(y * gamewidth + x) * 4 + 1] = g;
-    pixels[(y * gamewidth + x) * 4 + 2] = b;
-}
-
-function testgraphic()
-{
-    const texname = "GSTVINE2"
-    const tex = textures.get(texname);
-
-    for(let y=0; y<tex.h; y++)
-    {
-        for(let x=0; x<tex.w; x++)
-        {
-            setpixel(x, y, tex.graphic.data[y * tex.w + x]);
-        }
     }
+
+    const node = curmap.nodes[nodenum];
+    const side = nodeside(node, viewx, viewy);
+
+    rendernode(node.children[side]);
+    rendernode(node.children[side ^ 1]);
 }
 
 export function render()
 {
-    visplanes.length = 0;
-
-    for(let i=0; i<segs.length; i++)
-        renderseg(segs[i]);
-
-    for(let i=0; i<visplanes.length; i++)
-        drawplane(visplanes[i]);
+    for(let i=0; i<gamewidth * gameheight; i++)
+    {
+        pixels[i * 4] = 0;
+        pixels[i * 4 + 1] = 0;
+        pixels[i * 4 + 2] = 0;
+    }
+    rendernode(curmap.nodes.length - 1);
 
     // testgraphic();
 }

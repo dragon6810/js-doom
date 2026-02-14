@@ -80,6 +80,8 @@ class Seg
     {
         this.v1 = null;
         this.v2 = null;
+        this.line = null;
+        this.isback = null;
     }
 }
 
@@ -327,7 +329,7 @@ function parsestring8(data, loc)
     let str = "";
     for (let i=0; i<8; i++)
     {
-        const char = data.getUint8(loc + 8 + i);
+        const char = data.getUint8(loc + i);
         if (char === 0) break;
         str += String.fromCharCode(char);
     }
@@ -386,7 +388,7 @@ function processsegs(data, name, loc, size)
         throw new Error('map ' + curmap.name + ' lacks or has out of order SEGS lump');
 
     const nsegs = size / 12;
-    curmap.segs.length = nverts;
+    curmap.segs.length = nsegs;
 
     for(let i=0; i<nsegs; i++)
     {
@@ -396,6 +398,8 @@ function processsegs(data, name, loc, size)
 
         seg.v1 = data.getInt16(segloc, true);
         seg.v2 = data.getInt16(segloc + 2, true);
+        seg.line = data.getInt16(segloc + 6, true);
+        seg.isback = data.getInt16(segloc + 8, true) == 0 ? false : true;
 
         curmap.segs[i] = seg;
     }
@@ -415,8 +419,8 @@ function processssectors(data, name, loc, size)
 
         let sector = new SSector();
 
-        sector.nseg = data.getInt16(segloc, true);
-        sector.firstseg = data.getInt16(segloc + 2, true);
+        sector.nseg = data.getInt16(sectorloc, true);
+        sector.firstseg = data.getInt16(sectorloc + 2, true);
 
         curmap.ssectors[i] = sector;
     }
@@ -436,22 +440,22 @@ function processnodes(data, name, loc, size)
 
         let node = new Node();
 
-        node.x = data.getInt16(segloc, true);
-        node.y = data.getInt16(segloc + 2, true);
-        node.dx = data.getInt16(segloc + 4, true);
-        node.dy = data.getInt16(segloc + 6, true);
+        node.x = data.getInt16(nodeloc, true);
+        node.y = data.getInt16(nodeloc + 2, true);
+        node.dx = data.getInt16(nodeloc + 4, true);
+        node.dy = data.getInt16(nodeloc + 6, true);
 
-        node.ymaxs[0] = data.getInt16(segloc + 8, true);
-        node.ymins[0] = data.getInt16(segloc + 10, true);
-        node.xmaxs[0] = data.getInt16(segloc + 12, true);
-        node.xmins[0] = data.getInt16(segloc + 14, true);
-        node.ymaxs[1] = data.getInt16(segloc + 16, true);
-        node.ymins[1] = data.getInt16(segloc + 18, true);
-        node.xmaxs[1] = data.getInt16(segloc + 20, true);
-        node.xmins[1] = data.getInt16(segloc + 22, true);
+        node.ymaxs[0] = data.getInt16(nodeloc + 8, true);
+        node.ymins[0] = data.getInt16(nodeloc + 10, true);
+        node.xmins[0] = data.getInt16(nodeloc + 12, true);
+        node.xmaxs[0] = data.getInt16(nodeloc + 14, true);
+        node.ymaxs[1] = data.getInt16(nodeloc + 16, true);
+        node.ymins[1] = data.getInt16(nodeloc + 18, true);
+        node.xmins[1] = data.getInt16(nodeloc + 20, true);
+        node.xmaxs[1] = data.getInt16(nodeloc + 22, true);
         
-        node.children[0] = data.getInt16(segloc + 24, true);
-        node.children[1] = data.getInt16(segloc + 26, true);
+        node.children[0] = data.getInt16(nodeloc + 24, true);
+        node.children[1] = data.getInt16(nodeloc + 26, true);
 
         curmap.nodes[i] = node;
     }
@@ -465,7 +469,7 @@ function processsectors(data, name, loc, size)
     const nsectors = size / 26;
     curmap.sectors.length = nsectors;
 
-    for(let i=0; i<nssectors; i++)
+    for(let i=0; i<nsectors; i++)
     {
         const sectorloc = loc + i * 26;
 
@@ -520,7 +524,6 @@ function processmaplump(data, name, loc, size)
     {
         maps.set(curmap.name, curmap);
         maplumpcounter = 0;
-        curmapname = null;
     }
 }
 
@@ -539,11 +542,12 @@ function processlumpheader(data, headerloc)
     name = name.trim();
 
     if(maplumpcounter != 0)
-        processmaplump(data, name, loc, size);
+        processmaplump(data, name, lumploc, size);
     else if(/^E\dM\d$/.test(name))
     {
         curmap = new World();
         curmap.name = name;
+        maplumpcounter = 1;
     }
     else if(name == "P_START")
         inpatches = true;
