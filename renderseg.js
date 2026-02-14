@@ -13,6 +13,8 @@ export class Wallspan
 }
 
 export var wallspans = [];
+export var topclips = [];
+export var bottomclips = [];
 
 // a in radians
 export function angletopixel(a)
@@ -63,11 +65,13 @@ function rayline(px, py, dx, dy, ax, ay, bx, by)
     return { x: px + t * dx, y: py + t * dy, t, u };
 }
 
-function getsegsidedef(seg)
+function getsegsidedef(seg, back)
 {
+    const flip = seg.isback ^ back;
+
     const linedef = curmap.linedefs[seg.line];
-    const sidedef = curmap.sidedefs[seg.isback ? linedef.backside : linedef.frontside];
-    return sidedef;
+    const index = flip ? linedef.backside : linedef.frontside;
+    return index == -1 ? null : curmap.sidedefs[index];
 }
 
 function mergespans()
@@ -88,10 +92,43 @@ function mergespans()
     }
 }
 
-function drawline(x1, x2, bottom, top, linedef, sidedef)
+function clamp(x, min, max)
 {
+    if(x < min)
+        x = min;
+    if(x > max)
+        x = max;
+    return x;
+}
+
+function sampletex(tex, x, y)
+{
+    x = Math.floor(x);
+    y = Math.floor(y);
+
+    x = (x % tex.w + tex.w) % tex.w;
+    y = (y % tex.h + tex.h) % tex.h;
+    return tex.graphic.data[y * tex.w + x];
+}
+
+function drawfragment(x1, x2, linedef, frontside, backside)
+{
+    const viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
+    const pixelheight = gameheight / viewheight;
+
     const v1 = curmap.vertices[linedef.v1];
     const v2 = curmap.vertices[linedef.v2];
+
+    const frontsector = frontside ? curmap.sectors[frontside.sector] : null;
+    const backsector = backside ? curmap.sectors[backside.sector] : null;
+
+    const midtop = (backsector ? Math.min(frontsector.ceil, backsector.ceil) : frontsector.ceil) - viewz;
+    const midbottom = (backsector ? Math.max(frontsector.floor, backsector.floor) : frontsector.floor) - viewz;
+    const maxtop = frontsector.ceil - viewz;
+    const maxbottom = frontsector.floor - viewz;
+
+    const drawceilstep = backsector != null && backsector.ceil < frontsector.ceil;
+    const drawfloorstep = backsector != null && backsector.floor > frontsector.floor;
 
     const a1 = pixeltoangle(x1) + player.rot;
     const a2 = pixeltoangle(x2) + player.rot;
@@ -120,74 +157,109 @@ function drawline(x1, x2, bottom, top, linedef, sidedef)
     const s2 = (i2.x - v1.x) * segdirx + (i2.y - v1.y) * segdiry;
     const ttop = 0;
 
-    let dist1 = Math.cos(player.rot) * (i1.x - viewx) + Math.sin(player.rot) * (i1.y - viewy);
-    let dist2 = Math.cos(player.rot) * (i2.x - viewx) + Math.sin(player.rot) * (i2.y - viewy);
+    const dist1 = Math.cos(player.rot) * (i1.x - viewx) + Math.sin(player.rot) * (i1.y - viewy);
+    const dist2 = Math.cos(player.rot) * (i2.x - viewx) + Math.sin(player.rot) * (i2.y - viewy);
+    const scale1 = 1 / dist1;
+    const scale2 = 1 / dist2;
 
-    const viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
-    const pixelheight = gameheight / viewheight;
+    const midheight1 = (midtop - midbottom) * pixelheight * scale1;
+    const midheight2 = (midtop - midbottom) * pixelheight * scale2;
+    const ceilheight1 = backsector == null ? null : (frontsector.ceil - backsector.ceil) * pixelheight * scale1;
+    const ceilheight2 = backsector == null ? null : (frontsector.ceil - backsector.ceil) * pixelheight * scale2;
+    const floorheight1 = backsector == null ? null : (backsector.floor - frontsector.floor) * pixelheight * scale1;
+    const floorheight2 = backsector == null ? null : (backsector.floor - frontsector.floor) * pixelheight * scale2;
 
-    const height1 = (top - bottom) * pixelheight / dist1;
-    const height2 = (top - bottom) * pixelheight / dist2;
-
-    const y1top = -(top * pixelheight / dist1) + gameheight / 2;
-    const y1bottom = y1top + height1;
-    const y2top = -(top * pixelheight / dist2) + gameheight / 2;
-    const y2bottom = y2top + height2;
+    const y1top = -(midtop * pixelheight / dist1) + gameheight / 2;
+    const y1bottom = y1top + midheight1;
+    const y2top = -(midtop * pixelheight / dist2) + gameheight / 2;
+    const y2bottom = y2top + midheight2;
     
-    if(sidedef.middle == '-')
-        return;
-    const tex = textures.get(sidedef.middle);
+    const toptex = textures.get(frontside.upper);
+    const midtex = textures.get(frontside.middle);
+    const bottomtex = textures.get(frontside.lower);
 
     for(let x=x1; x<=x2; x++)
     {
-        let alpha = (x - x1) / (x2 - x1);
-        let ytop = (y2top - y1top) * alpha + y1top;
-        let ybottom = (y2bottom - y1bottom) * alpha + y1bottom;
+        const topclip = topclips[x];
+        const bottomclip = bottomclips[x]; 
+
+        const alpha = (x - x1) / (x2 - x1);
+        const baseytop = (y2top - y1top) * alpha + y1top;
+        const baseybottom = (y2bottom - y1bottom) * alpha + y1bottom;
         
-        const tstep = (top - bottom) / (ybottom - ytop);
+        const curscale = alpha * scale2 + (1 - alpha) * scale1;
 
-        const u = (alpha * dist1) / ((1 - alpha) * dist2 + alpha * dist1);
-        const s = Math.floor(s1 + u * (s2 - s1));
+        const tstep = 1 / (pixelheight * curscale);
+        const u = (alpha * scale2) / ((1 - alpha) * scale1 + alpha * scale2);
 
-        let samples = s;
-        while(samples < 0)
-            samples += tex.w;
-        samples %= tex.w;
+        const s = Math.floor(s1 + u * (s2 - s1)) - frontside.xoffs;
 
-        let pxtop = Math.floor(ytop);
-        let pxbottom = Math.floor(ybottom);
-        if(pxtop < 0) pxtop = 0;
-        if(pxtop >= gameheight) pxtop = gameheight - 1;
-        if(pxbottom < 0) pxbottom = 0;
-        if(pxbottom >= gameheight) pxbottom = gameheight - 1;
+        let fulltop = gameheight;
+        let fullbottom = -1;
 
-        if(pxtop >= pxbottom)
-            continue;
-
-        let t = ttop + tstep * (pxtop - ytop);
-        for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
+        // ceiling step
+        if(drawceilstep)
         {
-            let tsample = Math.floor(t);
-            while(tsample < 0)
-                tsample += tex.h;
-            tsample %= tex.h;
+            const stepheight = alpha * (ceilheight2 - ceilheight1) + ceilheight1;
+            const ytop = baseytop - stepheight;
+            const ybottom = baseytop;
+            const pxtop = Math.floor(clamp(ytop, topclip, bottomclip - 1));
+            const pxbottom = Math.floor(clamp(ybottom, topclip, bottomclip - 1));
 
-            // console.log(t);
-            setpixel(x, y, tex.graphic.data[tsample * tex.w + samples]);
-            //setpixel(x, y, 224);
+            if(toptex != null && pxtop < pxbottom)
+            {
+                let t = tstep * (pxtop - ytop) - frontside.yoffs;
+                for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
+                    setpixel(x, y, sampletex(toptex, s, t));
+            }
+
+            fulltop = Math.min(fulltop, pxtop);
+            fullbottom = Math.max(fullbottom, pxbottom);
+        }
+
+        // middle
+        {
+            const pxtop = Math.floor(clamp(baseytop, topclip, bottomclip - 1));
+            const pxbottom = Math.floor(clamp(baseybottom, topclip, bottomclip - 1));
+
+            if(midtex != null && pxtop < pxbottom)
+            {
+                let t = tstep * (pxtop - baseytop) - frontside.yoffs;
+                for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
+                    setpixel(x, y, sampletex(midtex, s, t));
+            }
+
+            fulltop = Math.min(fulltop, pxtop);
+            fullbottom = Math.max(fullbottom, pxbottom);
+
+            bottomclips[x] = pxbottom;
+            topclips[x] = pxtop + 1;
+        }
+
+        // floor step
+        if(drawfloorstep)
+        {
+            const stepheight = alpha * (floorheight2 - floorheight1) + floorheight1;
+            const ytop = baseybottom;
+            const ybottom = baseybottom + stepheight;
+            const pxtop = Math.floor(clamp(ytop, topclip, bottomclip - 1));
+            const pxbottom = Math.floor(clamp(ybottom, topclip, bottomclip - 1));
+
+            if(bottomtex != null && pxtop < pxbottom)
+            {
+                let t = tstep * (pxtop - ytop) - frontside.yoffs;
+                for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
+                    setpixel(x, y, sampletex(bottomtex, s, t));
+            }
+
+            fulltop = Math.min(fulltop, pxtop);
+            fullbottom = Math.max(fullbottom, pxbottom);
         }
     }
 }
 
-function cliprange(x1, x2, seg)
+function cliprange(x1, x2, linedef, frontside, backside, issolid)
 {
-    /*
-    const sidedef = getsegsidedef(seg);
-        const sector = curmap.sectors[sidedef.sector];
-        const line = curmap.linedefs[seg.line];
-
-    drawline(x1, x2, sector.floor - viewz, sector.ceil - viewz, line, getsegsidedef(seg));
-    return;*/
     let drawspans = [];
 
     let i = 0;
@@ -222,7 +294,7 @@ function cliprange(x1, x2, seg)
         drawspans.push(span);
     }
     
-    if(drawspans.length > 0)
+    if(issolid && drawspans.length > 0)
     {
         wallspans.push(...structuredClone(drawspans));
         wallspans.sort((a, b) => a.x1 - b.x1);
@@ -230,13 +302,7 @@ function cliprange(x1, x2, seg)
     }
         
     for(i=0; i<drawspans.length; i++)
-    {
-        const sidedef = getsegsidedef(seg);
-        const sector = curmap.sectors[sidedef.sector];
-        const line = curmap.linedefs[seg.line];
-
-        drawline(drawspans[i].x1, drawspans[i].x2, sector.floor - viewz, sector.ceil - viewz, line, getsegsidedef(seg));
-    }
+        drawfragment(drawspans[i].x1, drawspans[i].x2, linedef, frontside, backside);
 }
 
 function normalizeangle(a)
@@ -272,11 +338,30 @@ export function renderseg(seg)
     if(x1 >= x2)
         return;
 
-    const sidedef = getsegsidedef(seg);
-    if(sidedef.middle == '-')
-        return;
+    const frontside = getsegsidedef(seg, false);
+    const backside = getsegsidedef(seg, true);
+    const frontsector = frontside ? curmap.sectors[frontside.sector] : null;
+    const backsector = backside ? curmap.sectors[backside.sector] : null;
+    const line = curmap.linedefs[seg.line];
 
-    cliprange(x1, x2, seg);
+    let issolid = false;
+
+    if(backsector == null)
+        issolid = true;
+    else if(frontside.middle != '-')
+        issolid = true;
+    else if(backsector.ceil <= backsector.floor)
+        issolid = true;
+    else
+    {
+        if(frontsector.floor == backsector.floor
+        && frontsector.ceil == backsector.ceil
+        && frontsector.floortex == backsector.floortex
+        && frontsector.ceiltex  == backsector.ceiltex)
+            return;
+    }
+
+    cliprange(x1, x2, line, frontside, backside, issolid);
 }
 
 function setpixel(x, y, palindex)
@@ -301,4 +386,8 @@ export function drawfullseg(seg)
 export function rendersegsclear()
 {
     wallspans.length = 0;
+    topclips.length = gamewidth;
+    topclips.fill(0);
+    bottomclips.length = gamewidth;
+    bottomclips.fill(gameheight);
 }
