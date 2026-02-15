@@ -15,12 +15,14 @@ function rendersubsector(num)
 export var viewx = 0;
 export var viewy = 0;
 export var viewz = 0;
+export var viewangle = 0;
 
-export function setviewpos(x, y, z)
+export function setviewpos(x, y, z, angle)
 {
     viewx = x;
     viewy = y;
     viewz = z;
+    viewangle = angle;
 }
 
 function drawssector(ssector)

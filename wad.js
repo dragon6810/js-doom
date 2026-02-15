@@ -82,6 +82,7 @@ class Seg
     {
         this.v1 = null;
         this.v2 = null;
+        this.angle = null;
         this.line = null;
         this.isback = null;
 
@@ -421,6 +422,7 @@ function processsegs(data, name, loc, size)
 
         seg.v1 = data.getInt16(segloc, true);
         seg.v2 = data.getInt16(segloc + 2, true);
+        seg.angle = data.getUint16(segloc + 4, true) * Math.PI * 2 / 0xFFFF;
         seg.line = data.getInt16(segloc + 6, true);
         seg.isback = data.getInt16(segloc + 8, true) == 0 ? false : true;
 

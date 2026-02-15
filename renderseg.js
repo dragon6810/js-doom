@@ -1,7 +1,7 @@
 import { pixels, gamewidth, gameheight } from './screen.js'
 import { palettes, textures } from './wad.js';
 import { player, curmap } from './main.js';
-import { hfov, vfov, viewx, viewy, viewz } from './render.js';
+import { hfov, vfov, viewangle, viewx, viewy, viewz } from './render.js';
 import { addvisplane, Visplane } from './renderplane.js';
 
 export class Wallspan
@@ -112,13 +112,22 @@ function sampletex(tex, x, y)
     return tex.graphic.data[y * tex.w + x];
 }
 
-function drawfragment(x1, x2, linedef, frontside, backside)
+function getscale(dist, a, normal)
+{
+    return Math.cos(a - normal) / (dist * Math.cos(a - viewangle));
+}
+
+var unclippeda1 = 0;
+
+function drawfragment(x1, x2, seg, linedef, frontside, backside)
 {
     const viewheight = 2 * Math.tan(vfov / 360 * Math.PI);
     const pixelheight = gameheight / viewheight;
 
-    const v1 = curmap.vertices[linedef.v1];
-    const v2 = curmap.vertices[linedef.v2];
+    const v1 = curmap.vertices[seg.v1];
+    const v2 = curmap.vertices[seg.v2];
+    // this actually points around the back of the seg, but its useful for calculations.
+    const normal = seg.angle + Math.PI / 2;
 
     const frontsector = frontside ? curmap.sectors[frontside.sector] : null;
     const backsector = backside ? curmap.sectors[backside.sector] : null;
@@ -133,6 +142,13 @@ function drawfragment(x1, x2, linedef, frontside, backside)
 
     const a1 = pixeltoangle(x1) + player.rot;
     const a2 = pixeltoangle(x2) + player.rot;
+
+    const straightdist = Math.sqrt(Math.pow(v1.x - viewx, 2) + Math.pow(v1.y - viewy, 2))
+    // perpendicular distance from line to player
+    const dist = Math.cos(unclippeda1 - normal) * straightdist;
+    const scale1 = getscale(dist, a1, normal);
+    const scale2 = getscale(dist, a2, normal);
+    const scalestep = x1 == x2 ? 0 : (scale2 - scale1) / (x2 - x1);
 
     let i1 = rayline
     (
@@ -157,11 +173,6 @@ function drawfragment(x1, x2, linedef, frontside, backside)
     const s1 = (i1.x - v1.x) * segdirx + (i1.y - v1.y) * segdiry;
     const s2 = (i2.x - v1.x) * segdirx + (i2.y - v1.y) * segdiry;
 
-    const dist1 = Math.cos(player.rot) * (i1.x - viewx) + Math.sin(player.rot) * (i1.y - viewy);
-    const dist2 = Math.cos(player.rot) * (i2.x - viewx) + Math.sin(player.rot) * (i2.y - viewy);
-    const scale1 = 1 / dist1;
-    const scale2 = 1 / dist2;
-
     const midheight1 = (midtop - midbottom) * pixelheight * scale1;
     const midheight2 = (midtop - midbottom) * pixelheight * scale2;
     const ceilheight1 = backsector == null ? null : (frontsector.ceil - backsector.ceil) * pixelheight * scale1;
@@ -169,9 +180,9 @@ function drawfragment(x1, x2, linedef, frontside, backside)
     const floorheight1 = backsector == null ? null : (backsector.floor - frontsector.floor) * pixelheight * scale1;
     const floorheight2 = backsector == null ? null : (backsector.floor - frontsector.floor) * pixelheight * scale2;
 
-    const y1top = -(midtop * pixelheight / dist1) + gameheight / 2;
+    const y1top = -(midtop * pixelheight * scale1) + gameheight / 2;
     const y1bottom = y1top + midheight1;
-    const y2top = -(midtop * pixelheight / dist2) + gameheight / 2;
+    const y2top = -(midtop * pixelheight * scale2) + gameheight / 2;
     const y2bottom = y2top + midheight2;
     
     const toptex = textures.get(frontside.upper);
@@ -184,7 +195,8 @@ function drawfragment(x1, x2, linedef, frontside, backside)
     const ceilplane = makeceiling ? new Visplane(x1, x2, frontsector.ceil - viewz, frontsector.ceiltex) : null;
     const floorplane = makefloor ? new Visplane(x1, x2, frontsector.floor - viewz, frontsector.floortex) : null;
 
-    for(let x=x1; x<=x2; x++)
+    let scale = scale1;
+    for(let x=x1; x<=x2; x++, scale+=scalestep)
     {
         const topclip = topclips[x];
         const bottomclip = bottomclips[x]; 
@@ -192,10 +204,8 @@ function drawfragment(x1, x2, linedef, frontside, backside)
         const alpha = (x - x1) / (x2 - x1);
         const baseytop = (y2top - y1top) * alpha + y1top;
         const baseybottom = (y2bottom - y1bottom) * alpha + y1bottom;
-        
-        const curscale = alpha * scale2 + (1 - alpha) * scale1;
 
-        const tstep = 1 / (pixelheight * curscale);
+        const tstep = 1 / (pixelheight * scale);
         const u = (alpha * scale2) / ((1 - alpha) * scale1 + alpha * scale2);
 
         const s = Math.floor(s1 + u * (s2 - s1)) + frontside.xoffs;
@@ -294,7 +304,7 @@ function drawfragment(x1, x2, linedef, frontside, backside)
         addvisplane(floorplane);
 }
 
-function cliprange(x1, x2, linedef, frontside, backside, issolid)
+function cliprange(x1, x2, seg, linedef, frontside, backside, issolid)
 {
     let drawspans = [];
 
@@ -338,7 +348,7 @@ function cliprange(x1, x2, linedef, frontside, backside, issolid)
     }
         
     for(i=0; i<drawspans.length; i++)
-        drawfragment(drawspans[i].x1, drawspans[i].x2, linedef, frontside, backside);
+        drawfragment(drawspans[i].x1, drawspans[i].x2, seg, linedef, frontside, backside);
 }
 
 function normalizeangle(a)
@@ -397,7 +407,9 @@ export function renderseg(seg)
             return;
     }
 
-    cliprange(x1, x2, line, frontside, backside, issolid);
+    unclippeda1 = a1 + viewangle;
+
+    cliprange(x1, x2, seg, line, frontside, backside, issolid);
 }
 
 export function setpixel(x, y, palindex)
