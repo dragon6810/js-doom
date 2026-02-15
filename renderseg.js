@@ -45,27 +45,6 @@ export function pixeltoangle(pixel)
     return a;
 }
 
-function cross2(ax, ay, bx, by)
-{
-    return ax * by - ay * bx;
-}
-
-function rayline(px, py, dx, dy, ax, ay, bx, by)
-{
-    const sx = bx - ax;
-    const sy = by - ay;
-  
-    const rxs = cross2(dx, dy, sx, sy);
-
-    const qpx = ax - px;
-    const qpy = ay - py;
-  
-    const t = cross2(qpx, qpy, sx, sy) / rxs;
-    const u = cross2(qpx, qpy, dx, dy) / rxs;
-  
-    return { x: px + t * dx, y: py + t * dy, t, u };
-}
-
 function getsegsidedef(seg, back)
 {
     const flip = seg.isback ^ back;
@@ -150,28 +129,7 @@ function drawfragment(x1, x2, seg, linedef, frontside, backside)
     const scale2 = getscale(dist, a2, normal);
     const scalestep = x1 == x2 ? 0 : (scale2 - scale1) / (x2 - x1);
 
-    let i1 = rayline
-    (
-        viewx, viewy,
-        Math.cos(a1), Math.sin(a1),
-        v1.x, v1.y, v2.x, v2.y
-    );
-    
-    let i2 = rayline
-    (
-        viewx, viewy,
-        Math.cos(a2), Math.sin(a2),
-        v1.x, v1.y, v2.x, v2.y
-    );
-
-    let segdirx = v2.x - v1.x;
-    let segdiry = v2.y - v1.y;
-    const seglen = Math.sqrt(segdirx * segdirx + segdiry * segdiry);
-    segdirx /= seglen;
-    segdiry /= seglen;
-
-    const s1 = (i1.x - v1.x) * segdirx + (i1.y - v1.y) * segdiry;
-    const s2 = (i2.x - v1.x) * segdirx + (i2.y - v1.y) * segdiry;
+    const sbase = seg.offset + frontside.xoffs;
 
     const midheight1 = (midtop - midbottom) * pixelheight * scale1;
     const midheight2 = (midtop - midbottom) * pixelheight * scale2;
@@ -189,8 +147,12 @@ function drawfragment(x1, x2, seg, linedef, frontside, backside)
     const midtex = textures.get(frontside.middle);
     const bottomtex = textures.get(frontside.lower);
 
-    const makeceiling = true;
-    const makefloor = true;
+    let makeceiling = true;
+    let makefloor = true;
+    if(viewz >= frontsector.ceil)
+        makeceiling = false;
+    if(viewz <= frontsector.floor)
+        makefloor = false;
 
     const ceilplane = makeceiling ? new Visplane(x1, x2, frontsector.ceil - viewz, frontsector.ceiltex) : null;
     const floorplane = makefloor ? new Visplane(x1, x2, frontsector.floor - viewz, frontsector.floortex) : null;
@@ -201,14 +163,16 @@ function drawfragment(x1, x2, seg, linedef, frontside, backside)
         const topclip = topclips[x];
         const bottomclip = bottomclips[x]; 
 
+        const worldangle = pixeltoangle(x) + viewangle;
+        const b = worldangle - normal;
+        const a = unclippeda1 - worldangle;
+        const s = sbase + dist * (Math.tan(a + b) - Math.tan(b));
+
         const alpha = (x - x1) / (x2 - x1);
         const baseytop = (y2top - y1top) * alpha + y1top;
         const baseybottom = (y2bottom - y1bottom) * alpha + y1bottom;
 
         const tstep = 1 / (pixelheight * scale);
-        const u = (alpha * scale2) / ((1 - alpha) * scale1 + alpha * scale2);
-
-        const s = Math.floor(s1 + u * (s2 - s1)) + frontside.xoffs;
 
         let fulltop = gameheight;
         let fullbottom = -1;
@@ -256,10 +220,8 @@ function drawfragment(x1, x2, seg, linedef, frontside, backside)
             fulltop = Math.min(fulltop, pxtop);
             fullbottom = Math.max(fullbottom, pxbottom);
 
-            if(makefloor)
-                bottomclips[x] = pxbottom + 1;
-            if(makeceiling)
-                topclips[x] = pxtop;
+            bottomclips[x] = pxbottom + 1;
+            topclips[x] = pxtop;
         }
 
         // floor step
@@ -362,20 +324,32 @@ function normalizeangle(a)
 
 export function renderseg(seg)
 {
+    const halffov = hfov / 360 * Math.PI;
+
     const v1 = curmap.vertices[seg.v1];
     const v2 = curmap.vertices[seg.v2];
 
     let a1 = normalizeangle(Math.atan2(v1.y - viewy, v1.x - viewx) - player.rot);
     let a2 = normalizeangle(Math.atan2(v2.y - viewy, v2.x - viewx) - player.rot);
 
-    while (a2 > a1)
-        a2 -= 2 * Math.PI;
+    if(a1 - a2 < -Math.PI)
+        a1 += Math.PI * 2;
     if(a1 - a2 > Math.PI)
+        a1 -= Math.PI * 2;
+
+    if(a2 > a1)
         return;
 
-    if(a1 > hfov / 360 * Math.PI && a2 > hfov / 360 * Math.PI)
+    const theta = Math.min(Math.abs(a1 - a2), Math.PI * 2 - Math.abs(a1 - a2));
+
+    if(a1 > halffov && a2 < -Math.PI / 2)
         return;
-    if(a1 < -hfov / 360 * Math.PI && a2 < -hfov / 360 * Math.PI)
+    if(a2 < -halffov && a1 > Math.PI / 2)
+        return;
+
+    if(a1 > halffov && a2 > halffov)
+        return;
+    if(a1 < -halffov && a2 < -halffov)
         return;
 
     let x1 = angletopixel(a1);
