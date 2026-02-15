@@ -12,13 +12,12 @@ export class Visplane
         this.maxx = maxx;
         this.height = height;
         this.tex = tex;
+        
+        this.miny = gameheight;
+        this.maxy = -1;
 
-        this.tops = [];
-        this.tops.length = gamewidth;
-        this.tops.fill(-1);
-        this.bottoms = [];
-        this.bottoms.length = gamewidth;
-        this.bottoms.fill(-1);
+        this.tops = new Int16Array(gamewidth).fill(-1);
+        this.bottoms = new Int16Array(gamewidth).fill(-1);
     }
 };
 
@@ -46,7 +45,7 @@ function drawplane(visplane)
     const half = hfov / 360 * Math.PI;
     const viewwidth = 2 * Math.tan(half);              // plane width at z=1
     const dplanex = viewwidth / gamewidth;             // plane-x units per pixel
-    const planeX0 = -Math.tan(half);                   // left edge plane-x
+    const planeX0 = -viewwidth / 2;                    // left edge plane-x
 
     const flat = flats.get(visplane.tex);
     if (flat == null) return;
@@ -56,13 +55,11 @@ function drawplane(visplane)
     const rightx = Math.sin(player.rot);               // right at rot=0 => (0,-1)
     const righty = -Math.cos(player.rot);
 
-    for (let y = 0; y < gameheight; y++)
+    for (let y=visplane.miny; y<=visplane.maxy; y++)
     {
         const tanv = yslope(y);
-        if (Math.abs(tanv) < 1e-6) continue;           // horizon
 
         const dist = visplane.height / tanv;
-        if (dist <= 0) continue;                       // this scanline doesn't see this plane
 
         const stepmag = dist * dplanex;
         const xstep = rightx * stepmag;
@@ -74,7 +71,7 @@ function drawplane(visplane)
         let s = viewx + dist * (fwdx + rightx * planeX);
         let t = viewy + dist * (fwdy + righty * planeX);
 
-        for (let x = visplane.minx; x <= visplane.maxx; x++, s += xstep, t += ystep)
+        for (let x=visplane.minx; x<=visplane.maxx; x++, s+=xstep, t+=ystep)
         {
             if (y < visplane.tops[x]) continue;
             if (y > visplane.bottoms[x]) continue;
@@ -91,6 +88,17 @@ export function renderplanes()
 
 export function addvisplane(visplane)
 {
+    visplane.miny = gameheight;
+    visplane.maxy = -1;
+
+    for(let x=visplane.minx; x<=visplane.maxx; x++)
+    {
+        if(visplane.tops[x] < visplane.miny)
+            visplane.miny = visplane.tops[x];
+        if(visplane.bottoms[x] > visplane.maxy)
+            visplane.maxy = visplane.bottoms[x];
+    }
+
     // TODO: merging?
     visplanes.push(visplane);
 }

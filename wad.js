@@ -2,8 +2,9 @@ class Palette
 {
     constructor()
     {
-        // r, g, b
-        this.data = new Uint8Array(768);
+        // a (255), b, g, r
+        this.data = new Uint32Array(256);
+        this.data.fill(0xFF000000);
     }
 }
 
@@ -213,7 +214,10 @@ function processpalette(data, loc, size, name)
     {
         let palette = new Palette();
         for(let i=0; i<768; i++)
-            palette.data[i] = data.getUint8(loc + p * 768 + i);
+            palette.data[i / 3] |= 
+                  (data.getUint8(loc + p * 768 + i + 0) <<  0)
+                | (data.getUint8(loc + p * 768 + i + 1) <<  8)
+                | (data.getUint8(loc + p * 768 + i + 2) << 16);
         palettes.push(palette);
     }
 }
