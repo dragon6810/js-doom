@@ -1,5 +1,7 @@
+import { player } from "./main.js";
+import { hfov, vfov, viewx, viewy } from "./render.js";
 import { setpixel } from "./renderseg.js";
-import { gamewidth } from "./screen.js";
+import { gameheight, gamewidth } from "./screen.js";
 import { flats } from "./wad.js";
 
 export class Visplane
@@ -32,18 +34,51 @@ function sampleflat(flat, x, y)
     return flat.data[y * flat.w + x];
 }
 
+function yslope(y)
+{
+    y = 2 * (-y / gameheight + 0.5);
+    y *= Math.tan(vfov / 360 * Math.PI);
+    return y;
+}
+
 function drawplane(visplane)
 {
+    const half = hfov / 360 * Math.PI;
+    const viewwidth = 2 * Math.tan(half);              // plane width at z=1
+    const dplanex = viewwidth / gamewidth;             // plane-x units per pixel
+    const planeX0 = -Math.tan(half);                   // left edge plane-x
+
     const flat = flats.get(visplane.tex);
+    if (flat == null) return;
 
-    if(flat == null)
-        return;
+    const fwdx = Math.cos(player.rot);
+    const fwdy = Math.sin(player.rot);
+    const rightx = Math.sin(player.rot);               // right at rot=0 => (0,-1)
+    const righty = -Math.cos(player.rot);
 
-    for(let x=visplane.minx; x<=visplane.maxx; x++)
+    for (let y = 0; y < gameheight; y++)
     {
-        for(let y=visplane.tops[x]; y<=visplane.bottoms[x]; y++)
+        const tanv = yslope(y);
+        if (Math.abs(tanv) < 1e-6) continue;           // horizon
+
+        const dist = visplane.height / tanv;
+        if (dist <= 0) continue;                       // this scanline doesn't see this plane
+
+        const stepmag = dist * dplanex;
+        const xstep = rightx * stepmag;
+        const ystep = righty * stepmag;
+
+        // base at x = visplane.minx
+        const planeX = planeX0 + visplane.minx * dplanex;
+
+        let s = viewx + dist * (fwdx + rightx * planeX);
+        let t = viewy + dist * (fwdy + righty * planeX);
+
+        for (let x = visplane.minx; x <= visplane.maxx; x++, s += xstep, t += ystep)
         {
-            setpixel(x, y, sampleflat(flat, x, y));
+            if (y < visplane.tops[x]) continue;
+            if (y > visplane.bottoms[x]) continue;
+            setpixel(x, y, sampleflat(flat, s, t));
         }
     }
 }

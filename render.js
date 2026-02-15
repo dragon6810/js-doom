@@ -2,7 +2,7 @@ import { curmap } from './main.js';
 import { clearplanes, renderplanes } from './renderplane.js';
 import { drawfullseg, rendersegsclear, wallspans } from './renderseg.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
-import { palettes, patches, textures } from './wad.js';
+import { nodeside, palettes, patches, textures } from './wad.js';
 
 export const hfov = 90;
 export const vfov = hfov * gameheight / gamewidth;
@@ -21,16 +21,6 @@ export function setviewpos(x, y, z)
     viewx = x;
     viewy = y;
     viewz = z;
-}
-
-function nodeside(node, x, y)
-{
-    const dx = x - node.x;
-    const dy = y - node.y;
-
-    if((node.dy * dx) - (node.dx * dy) > 0)
-        return 0;
-    return 1;
 }
 
 function drawssector(ssector)
@@ -65,7 +55,7 @@ export function render()
     rendersegsclear();
     clearplanes();
 
-    for(let i=0; i<gamewidth * gameheight; i++)
+    for(let i=0; i<gamewidth * gameheight * 0; i++)
     {
         pixels[i * 4] = 0;
         pixels[i * 4 + 1] = 0;

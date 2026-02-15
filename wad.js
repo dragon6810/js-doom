@@ -84,6 +84,8 @@ class Seg
         this.v2 = null;
         this.line = null;
         this.isback = null;
+
+        this.ssector = null;
     }
 }
 
@@ -93,6 +95,8 @@ class SSector
     {
         this.nseg = null;
         this.firstseg = null;
+        
+        this.sector = null;
     }
 }
 
@@ -503,6 +507,24 @@ function processsectors(data, name, loc, size)
     }
 }
 
+function finishmap()
+{
+    for(let ss=0; ss<curmap.ssectors.length; ss++)
+    {
+        let subsector = curmap.ssectors[ss];
+        for(let s=subsector.firstseg; s<subsector.firstseg+subsector.nseg; s++)
+        {
+            let seg = curmap.segs[s];
+            seg.subsector = ss;
+            
+            const linedef = curmap.linedefs[seg.line];
+            const sidedef = curmap.sidedefs[seg.isback ? linedef.backside : linedef.frontside];
+            subsector.sector = sidedef.sector;
+            // console.log(ss + ' -> ' + curmap.ssectors[ss].sector);
+        }
+    }
+}
+
 function processmaplump(data, name, loc, size)
 {
     switch(maplumpcounter)
@@ -541,6 +563,7 @@ function processmaplump(data, name, loc, size)
     maplumpcounter++;
     if(maplumpcounter > 10)
     {
+        finishmap();
         maps.set(curmap.name, curmap);
         maplumpcounter = 0;
     }
@@ -606,6 +629,32 @@ function processwad(data)
     }
 
     stitchtextures();
+}
+
+export function nodeside(node, x, y)
+{
+    const dx = x - node.x;
+    const dy = y - node.y;
+
+
+    if((node.dy * dx) - (node.dx * dy) > 0)
+        return 0;
+    return 1;
+}
+
+// returns index pf sector
+export function getpointsector(map, x, y)
+{
+    let nodenum = map.nodes.length - 1;
+    while(nodenum >= 0)
+    {
+        const node = map.nodes[nodenum];
+        const side = nodeside(node, x, y);
+    
+        nodenum = node.children[side];
+    }
+
+    return map.ssectors[nodenum & 0x7FFF].sector;
 }
 
 export async function loadwad(name)
