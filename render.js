@@ -1,4 +1,5 @@
 import { curmap } from './main.js';
+import { clearplanes, renderplanes } from './renderplane.js';
 import { drawfullseg, rendersegsclear, wallspans } from './renderseg.js';
 import { pixels, gamewidth, gameheight } from './screen.js'
 import { palettes, patches, textures } from './wad.js';
@@ -34,8 +35,6 @@ function nodeside(node, x, y)
 
 function drawssector(ssector)
 {
-    //if(ssector.firstseg != 310)
-    //    return;
     for(let i=ssector.firstseg; i<ssector.firstseg+ssector.nseg; i++)
     {
         drawfullseg(curmap.segs[i]);
@@ -64,6 +63,7 @@ function rendernode(nodenum)
 export function render()
 {
     rendersegsclear();
+    clearplanes();
 
     for(let i=0; i<gamewidth * gameheight; i++)
     {
@@ -71,7 +71,9 @@ export function render()
         pixels[i * 4 + 1] = 0;
         pixels[i * 4 + 2] = 0;
     }
+
     rendernode(curmap.nodes.length - 1);
+    renderplanes();
 
     // console.log(wallspans);
 

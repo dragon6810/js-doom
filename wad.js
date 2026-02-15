@@ -49,6 +49,8 @@ class Linedef
         this.v2 = null;
         this.frontside = null;
         this.backside = null;
+        this.upperunpegged = false;
+        this.lowerunpegged = false;
     }
 }
 
@@ -142,6 +144,7 @@ class World
 // World
 export var maps = new Map();
 export var textures = new Map();
+export var flats = new Map();
 export var palettes = [];
 export var patches = new Map(); // name-indexed
 export var patchnums = []; // number to name
@@ -183,6 +186,15 @@ function processpatch(data, loc, size, name)
 {
     let graphic = processgraphic(data, loc);
     patches.set(name, graphic);
+}
+
+function processflat(data, loc, size, name)
+{
+    let graphic = new Graphic(64, 64, 0, 0);
+    for(let i=0; i<graphic.w*graphic.w; i++)
+        graphic.data[i] = data.getUint8(loc + i);
+
+    flats.set(name, graphic);
 }
 
 function processpalette(data, loc, size, name)
@@ -297,6 +309,7 @@ function processpnames(data, loc, size, name)
 }
 
 var inpatches = false;
+var inflats = false;
 var maplumpcounter = 0;
 
 var curmap = null;
@@ -319,6 +332,12 @@ function processlinedefs(data, name, loc, size)
         line.v2 = data.getInt16(lineloc + 2, true);
         line.frontside = data.getInt16(lineloc + 10, true);
         line.backside = data.getInt16(lineloc + 12, true);
+
+        const flags = data.getInt16(lineloc + 4, true);
+        if(flags & 0x0008)
+            line.upperunpegged = true;
+        if(flags & 0x0010)
+            line.lowerunpegged = true;
 
         curmap.linedefs[i] = line;
     }
@@ -555,6 +574,12 @@ function processlumpheader(data, headerloc)
         inpatches = false;
     else if(inpatches && name != "P1_START" && name != "P1_END" && name != "P2_START" && name != "P2_END")
         processpatch(data, lumploc, size, name);
+    else if(name == "F_START")
+        inflats = true;
+    else if(name == "F_END")
+        inflats = false;
+    else if(inflats && name != "F1_START" && name != "F1_END" && name != "F2_START" && name != "F2_END")
+        processflat(data, lumploc, size, name);
     else if(name == "TEXTURE1" || name == "TEXTURE2")
         processtexlump(data, lumploc, size, name);
     else if(name == "PNAMES")

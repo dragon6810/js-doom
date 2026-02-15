@@ -2,6 +2,7 @@ import { pixels, gamewidth, gameheight } from './screen.js'
 import { palettes, textures } from './wad.js';
 import { player, curmap } from './main.js';
 import { hfov, vfov, viewx, viewy, viewz } from './render.js';
+import { addvisplane, Visplane } from './renderplane.js';
 
 export class Wallspan
 {
@@ -155,7 +156,6 @@ function drawfragment(x1, x2, linedef, frontside, backside)
 
     const s1 = (i1.x - v1.x) * segdirx + (i1.y - v1.y) * segdiry;
     const s2 = (i2.x - v1.x) * segdirx + (i2.y - v1.y) * segdiry;
-    const ttop = 0;
 
     const dist1 = Math.cos(player.rot) * (i1.x - viewx) + Math.sin(player.rot) * (i1.y - viewy);
     const dist2 = Math.cos(player.rot) * (i2.x - viewx) + Math.sin(player.rot) * (i2.y - viewy);
@@ -178,6 +178,12 @@ function drawfragment(x1, x2, linedef, frontside, backside)
     const midtex = textures.get(frontside.middle);
     const bottomtex = textures.get(frontside.lower);
 
+    const makeceiling = true;
+    const makefloor = true;
+
+    const ceilplane = makeceiling ? new Visplane(x1, x2, frontsector.ceil - viewz, frontsector.ceiltex) : null;
+    const floorplane = makefloor ? new Visplane(x1, x2, frontsector.floor - viewz, frontsector.floortex) : null;
+
     for(let x=x1; x<=x2; x++)
     {
         const topclip = topclips[x];
@@ -192,7 +198,7 @@ function drawfragment(x1, x2, linedef, frontside, backside)
         const tstep = 1 / (pixelheight * curscale);
         const u = (alpha * scale2) / ((1 - alpha) * scale1 + alpha * scale2);
 
-        const s = Math.floor(s1 + u * (s2 - s1)) - frontside.xoffs;
+        const s = Math.floor(s1 + u * (s2 - s1)) + frontside.xoffs;
 
         let fulltop = gameheight;
         let fullbottom = -1;
@@ -206,9 +212,13 @@ function drawfragment(x1, x2, linedef, frontside, backside)
             const pxtop = Math.floor(clamp(ytop, topclip, bottomclip - 1));
             const pxbottom = Math.floor(clamp(ybottom, topclip, bottomclip - 1));
 
+            let ttop = -(maxtop - midtop);
+            if(linedef.upperunpegged)
+                ttop = 0;
+
             if(toptex != null && pxtop < pxbottom)
             {
-                let t = tstep * (pxtop - ytop) - frontside.yoffs;
+                let t = tstep * (pxtop - ytop) + frontside.yoffs + ttop;
                 for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
                     setpixel(x, y, sampletex(toptex, s, t));
             }
@@ -222,9 +232,13 @@ function drawfragment(x1, x2, linedef, frontside, backside)
             const pxtop = Math.floor(clamp(baseytop, topclip, bottomclip - 1));
             const pxbottom = Math.floor(clamp(baseybottom, topclip, bottomclip - 1));
 
+            let ttop = 0;
+            if(linedef.lowerunpegged)
+                ttop = -(midtop - midbottom);
+
             if(midtex != null && pxtop < pxbottom)
             {
-                let t = tstep * (pxtop - baseytop) - frontside.yoffs;
+                let t = tstep * (pxtop - baseytop) + frontside.yoffs + ttop;
                 for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
                     setpixel(x, y, sampletex(midtex, s, t));
             }
@@ -232,8 +246,10 @@ function drawfragment(x1, x2, linedef, frontside, backside)
             fulltop = Math.min(fulltop, pxtop);
             fullbottom = Math.max(fullbottom, pxbottom);
 
-            bottomclips[x] = pxbottom;
-            topclips[x] = pxtop + 1;
+            if(makefloor)
+                bottomclips[x] = pxbottom + 1;
+            if(makeceiling)
+                topclips[x] = pxtop;
         }
 
         // floor step
@@ -245,9 +261,13 @@ function drawfragment(x1, x2, linedef, frontside, backside)
             const pxtop = Math.floor(clamp(ytop, topclip, bottomclip - 1));
             const pxbottom = Math.floor(clamp(ybottom, topclip, bottomclip - 1));
 
+            let ttop = -(midbottom - maxbottom);
+            if(linedef.lowerunpegged)
+                ttop = -(maxtop - midbottom);
+
             if(bottomtex != null && pxtop < pxbottom)
             {
-                let t = tstep * (pxtop - ytop) - frontside.yoffs;
+                let t = tstep * (pxtop - ytop) + frontside.yoffs + ttop;
                 for(let y=pxtop; y<=pxbottom; y++, t+=tstep)
                     setpixel(x, y, sampletex(bottomtex, s, t));
             }
@@ -255,7 +275,23 @@ function drawfragment(x1, x2, linedef, frontside, backside)
             fulltop = Math.min(fulltop, pxtop);
             fullbottom = Math.max(fullbottom, pxbottom);
         }
+
+        if(makeceiling)
+        {
+            ceilplane.tops[x] = topclip + 1;
+            ceilplane.bottoms[x] = fulltop;
+        }
+        if(makefloor)
+        {
+            floorplane.tops[x] = fullbottom;
+            floorplane.bottoms[x] = bottomclip;
+        }
     }
+
+    if(makeceiling)
+        addvisplane(ceilplane);
+    if(makefloor)
+        addvisplane(floorplane);
 }
 
 function cliprange(x1, x2, linedef, frontside, backside, issolid)
@@ -264,7 +300,7 @@ function cliprange(x1, x2, linedef, frontside, backside, issolid)
 
     let i = 0;
     let curx = x1;
-    for(i=0; i<wallspans.length && curx<x2; i++)
+    for(i=0; i<wallspans.length && curx<=x2; i++)
     {
         const curspan = wallspans[i];
         
@@ -288,7 +324,7 @@ function cliprange(x1, x2, linedef, frontside, backside, issolid)
         curx = curspan.x2 + 1;
     }
 
-    if(curx<x2)
+    if(curx<=x2)
     {
         const span = new Wallspan(curx, x2);
         drawspans.push(span);
@@ -335,7 +371,7 @@ export function renderseg(seg)
     let x1 = angletopixel(a1);
     let x2 = angletopixel(a2);
 
-    if(x1 >= x2)
+    if(x1 > x2)
         return;
 
     const frontside = getsegsidedef(seg, false);
@@ -364,7 +400,7 @@ export function renderseg(seg)
     cliprange(x1, x2, line, frontside, backside, issolid);
 }
 
-function setpixel(x, y, palindex)
+export function setpixel(x, y, palindex)
 {
     if(palindex == 247)
         return;
