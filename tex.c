@@ -166,3 +166,14 @@ void tex_stitch(texture_t* tex)
         }
     }
 }
+
+texture_t* tex_find(const char* name)
+{
+    int i;
+
+    for(i=ntextures-1; i>=0; i--)
+        if(!strcasecmp(name, textures[i].name))
+            return &textures[i];
+
+    return NULL;
+}

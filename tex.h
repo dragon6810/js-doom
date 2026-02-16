@@ -23,5 +23,6 @@ extern texture_t *textures;
 
 void tex_dowad(void);
 void tex_stitch(texture_t* tex);
+texture_t* tex_find(const char* name);
 
 #endif
