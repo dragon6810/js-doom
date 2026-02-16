@@ -5,10 +5,12 @@
 
 #include "level.h"
 #include "player.h"
+#include "render.h"
+#include "screen.h"
 #include "wad.h"
 
-const int gamewidth = 1280;
-const int gameheight = 800;
+int screenwidth;
+int screenheight;
 
 SDL_Renderer *renderer;
 SDL_Texture *screenTexture;
@@ -57,10 +59,12 @@ void loop(void)
     gatherinput();
     player_docmd(&player, &inputcmd);
 
-    for(i=0; i<gamewidth*gameheight; i++)
+    for(i=0; i<screenwidth*screenheight; i++)
         pixels[i] = 0xFF000000;
 
-    SDL_UpdateTexture(screenTexture, NULL, pixels, gamewidth * sizeof(uint32_t));
+    render();
+
+    SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
 
     SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
 
@@ -68,6 +72,23 @@ void loop(void)
 
     lastframetime = curtime;
     fpsframes++;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void screen_init(int width, int height)
+{
+    screenwidth = width;
+    screenheight = height;
+
+    SDL_Window *window;
+    SDL_CreateWindowAndRenderer(screenwidth, screenheight, 0, &window, &renderer);
+
+    screenTexture = SDL_CreateTexture(renderer,
+                                      SDL_PIXELFORMAT_ARGB8888,
+                                      SDL_TEXTUREACCESS_STREAMING,
+                                      screenwidth, screenheight);
+
+    pixels = (uint32_t*) malloc(screenwidth * screenheight * sizeof(uint32_t));
 }
 
 int main()
@@ -78,25 +99,15 @@ int main()
     wad_setpalette(0);
 
     level_load(1, 1);
-
-    SDL_Window *window;
-    SDL_CreateWindowAndRenderer(gamewidth, gameheight, 0, &window, &renderer);
-
-    screenTexture = SDL_CreateTexture(renderer,
-                                      SDL_PIXELFORMAT_ARGB8888,
-                                      SDL_TEXTUREACCESS_STREAMING,
-                                      gamewidth, gameheight);
-
-    pixels = (uint32_t*) malloc(gamewidth * gameheight * sizeof(uint32_t));
     
     keystates = SDL_GetKeyboardState(NULL);
 
     emscripten_set_main_loop(loop, 0, 1);
 
+    // The following code is now effectively dead, but we keep it for potential future cleanup.
     free(pixels);
     SDL_DestroyTexture(screenTexture);
     SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;

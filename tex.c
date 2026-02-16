@@ -157,7 +157,8 @@ void tex_stitch(texture_t* tex)
                 for(y=0; y<post->len; y++)
                 {
                     dsty = texpatch->y + post->ystart + y;
-                    tex->stitch[dstx * tex->h + dsty] = post->payload[y];
+                    if (dstx >= 0 && dstx < tex->w && dsty >= 0 && dsty < tex->h)
+                        tex->stitch[dstx * tex->h + dsty] = post->payload[y];
                 }
 
                 post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);

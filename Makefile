@@ -11,11 +11,11 @@ EMCC = emcc
 EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js --preload-file doom.wad
 
 # Source files
-SOURCES = main.c wad.c player.c level.c tex.c
+SOURCES = main.c wad.c player.c level.c tex.c render.c
 
 all: $(WASM_TARGET)
 
-$(WASM_TARGET): $(SOURCES)
+$(WASM_TARGET): $(SOURCES) pre.js
 	@echo "Compiling to WebAssembly..."
 	$(EMCC) $(EMCC_FLAGS) $(SOURCES) -o $(WASM_TARGET)
 
