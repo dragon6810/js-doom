@@ -10,6 +10,8 @@ lumpinfo_t *lumps = NULL;
 int nwads = 0;
 FILE *wads[MAX_WAD];
 
+color_t *palette = NULL;
+
 void wad_loadlumpinfos(int32_t nlump, int32_t loc)
 {
     int i;
@@ -126,4 +128,24 @@ void wad_clearcache(void)
         free(lumps[i].cache);
         lumps[i].cache = NULL;
     }
+}
+
+void wad_setpalette(int palnum)
+{
+    lumpinfo_t *lump;
+
+    lump = wad_findlump("PLAYPAL", true);
+    if(!lump)
+    {
+        fprintf(stderr, "wad_setpalette: no PLAYPAL lump\n");
+        return;
+    }
+
+    if(palnum < 0 || palnum > lump->size / 768)
+    {
+        fprintf(stderr, "wad_setpalette: palnum out of bounds\n");
+        return;
+    }
+
+    palette = lump->cache + palnum * 768;
 }

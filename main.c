@@ -75,6 +75,7 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     
     wad_load("doom.wad");
+    wad_setpalette(0);
 
     level_load(1, 1);
 

@@ -17,7 +17,7 @@ typedef struct
 } lumpinfo_t;
 
 // total size of post_t is sizeof(post_t) + len + 1
-typedef struct
+typedef struct __attribute__((packed))
 {
     uint8_t ystart; // if 0xFF, terminate
     uint8_t len;
@@ -26,15 +26,25 @@ typedef struct
     // note additional padding byte after payload
 } post_t;
 
+typedef struct __attribute__((packed))
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} color_t;
+
 extern int nlumps;
 extern lumpinfo_t *lumps;
 extern int nwads;
 extern FILE *wads[MAX_WAD];
+
+extern color_t *palette;
 
 void wad_load(const char* filename);
 lumpinfo_t* wad_findlump(const char* name, bool cache);
 void wad_cache(lumpinfo_t* lump);
 void wad_decache(lumpinfo_t* lump);
 void wad_clearcache(void); // probably should be called at the end of a level
+void wad_setpalette(int palnum);
 
 #endif
