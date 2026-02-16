@@ -7,7 +7,7 @@
 
 #define MAX_WAD 16
 
-typedef struct lumpinfo_s
+typedef struct
 {
     char name[9];
     int wad;
@@ -15,6 +15,16 @@ typedef struct lumpinfo_s
 
     void *cache;
 } lumpinfo_t;
+
+// total size of post_t is sizeof(post_t) + len + 1
+typedef struct
+{
+    uint8_t ystart; // if 0xFF, terminate
+    uint8_t len;
+    uint8_t pad;
+    uint8_t payload[0]; // length len
+    // note additional padding byte after payload
+} post_t;
 
 extern int nlumps;
 extern lumpinfo_t *lumps;

@@ -1,6 +1,9 @@
 #include "wad.h"
+
 #include <stdlib.h>
 #include <string.h>
+
+#include "tex.h"
 
 int nlumps = 0;
 lumpinfo_t *lumps = NULL;
@@ -70,6 +73,8 @@ void wad_load(const char* filename)
 
     wads[nwads++] = ptr;
     wad_loadlumpinfos(nlump, lumpinfoloc);
+
+    tex_dowad();
 }
 
 lumpinfo_t* wad_findlump(const char* name, bool cache)
