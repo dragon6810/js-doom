@@ -12,9 +12,6 @@ export class Visplane
         this.maxx = maxx;
         this.height = height;
         this.tex = tex;
-        
-        this.miny = gameheight;
-        this.maxy = -1;
 
         this.tops = new Int16Array(gamewidth).fill(-1);
         this.bottoms = new Int16Array(gamewidth).fill(-1);
@@ -88,17 +85,6 @@ export function renderplanes()
 
 export function addvisplane(visplane)
 {
-    visplane.miny = gameheight;
-    visplane.maxy = -1;
-
-    for(let x=visplane.minx; x<=visplane.maxx; x++)
-    {
-        if(visplane.tops[x] < visplane.miny)
-            visplane.miny = visplane.tops[x];
-        if(visplane.bottoms[x] > visplane.maxy)
-            visplane.maxy = visplane.bottoms[x];
-    }
-
     // TODO: merging?
     visplanes.push(visplane);
 }
