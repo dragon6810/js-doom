@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <stdint.h> 
 
+#include "level.h"
 #include "player.h"
 #include "wad.h"
 
@@ -75,9 +76,7 @@ int main()
     
     wad_load("doom.wad");
 
-    printf("%d lumps\n", nlumps);
-    printf("first lump: %s\n", lumps[0].name);
-    printf("last lump: %s\n", lumps[nlumps-1].name);
+    level_load(1, 1);
 
     SDL_Window *window;
     SDL_CreateWindowAndRenderer(gamewidth, gameheight, 0, &window, &renderer);

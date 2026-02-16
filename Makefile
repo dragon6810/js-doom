@@ -11,7 +11,7 @@ EMCC = emcc
 EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js --preload-file doom.wad
 
 # Source files
-SOURCES = main.c wad.c player.c
+SOURCES = main.c wad.c player.c level.c
 
 all: $(WASM_TARGET)
 

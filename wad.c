@@ -71,3 +71,54 @@ void wad_load(const char* filename)
     wads[nwads++] = ptr;
     wad_loadlumpinfos(nlump, lumpinfoloc);
 }
+
+lumpinfo_t* wad_findlump(const char* name, bool cache)
+{
+    int i;
+
+    for(i=nlumps-1; i>=0; i--)
+    {
+        if(strcasecmp(lumps[i].name, name))
+            continue;
+        
+        if(cache)
+            wad_cache(&lumps[i]);
+        return &lumps[i];
+    }
+
+    return NULL;
+}
+
+void wad_cache(lumpinfo_t* lump)
+{
+    FILE *ptr;
+
+    if(lump->cache)
+        return;
+
+    ptr = wads[lump->wad];
+    fseek(ptr, lump->loc, SEEK_SET);
+
+    lump->cache = malloc(lump->size);
+    fread(lump->cache, 1, lump->size, ptr);
+}
+
+void wad_decache(lumpinfo_t* lump)
+{
+    if(!lump->cache)
+        return;
+    free(lump->cache);
+}
+
+void wad_clearcache(void)
+{
+    int i;
+
+    for(i=0; i<nlumps; i++)
+    {
+        if(lumps[i].cache)
+            continue;
+        free(lumps[i].cache);
+        lumps[i].cache = NULL;
+    }
+}
