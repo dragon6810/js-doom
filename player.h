@@ -1,3 +1,6 @@
+#ifndef _PLAYER_H
+#define _PLAYER_H
+
 #include "math.h"
 
 #define CMD_FORWARD 0x01
@@ -22,3 +25,5 @@ typedef struct
 extern player_t player;
 
 void player_docmd(player_t* player, const playercmd_t* cmd);
+
+#endif

@@ -1,0 +1,73 @@
+#include "wad.h"
+#include <stdlib.h>
+#include <string.h>
+
+int nlumps = 0;
+lumpinfo_t *lumps = NULL;
+int nwads = 0;
+FILE *wads[MAX_WAD];
+
+void wad_loadlumpinfos(int32_t nlump, int32_t loc)
+{
+    int i;
+
+    FILE *ptr;
+    lumpinfo_t *plump;
+    int32_t filepos, size;
+
+    ptr = wads[nwads-1];
+    for(i=0; i<nlump; i++)
+    {
+        plump = &lumps[nlumps++];
+        fseek(ptr, loc + i * 16, SEEK_SET);
+
+        fread(&filepos, sizeof(int32_t), 1, ptr);
+        fread(&size, sizeof(int32_t), 1, ptr);
+        fread(plump->name, 1, 8, ptr);
+
+        plump->loc = filepos;
+        plump->size = size;
+        plump->name[8] = 0;
+        plump->wad = nwads-1;
+        plump->cache = NULL;
+    }
+}
+
+void wad_load(const char* filename)
+{
+    char magic[5];
+    int32_t nlump, lumpinfoloc;
+
+    if(nwads >= MAX_WAD)
+    {
+        fprintf(stderr, "wad_load: %d max wads, skipped \"%s\"\n", MAX_WAD, filename);
+        return;
+    }
+
+    FILE *ptr = fopen(filename, "rb");
+    if(!ptr)
+    {
+        fprintf(stderr, "wad_load: could not open file \"%s\"\n", filename);
+        return;
+    }
+
+    magic[4] = 0;
+    fread(magic, 1, 4, ptr);
+    if(strcmp(magic, "IWAD") && strcmp(magic, "PWAD"))
+    {
+        fclose(ptr);
+        fprintf(stderr, "wad_load: file \"%s\" is not a valid wad file\n", filename);
+        return;
+    }
+
+    fread(&nlump, sizeof(int32_t), 1, ptr);
+    fread(&lumpinfoloc, sizeof(int32_t), 1, ptr);
+
+    if(!lumps)
+        lumps = malloc(nlump * sizeof(lumpinfo_t));
+    else
+        lumps = realloc(lumps, (nlumps + nlump) * sizeof(lumpinfo_t));
+
+    wads[nwads++] = ptr;
+    wad_loadlumpinfos(nlump, lumpinfoloc);
+}

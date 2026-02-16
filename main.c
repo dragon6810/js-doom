@@ -1,22 +1,18 @@
 #include <stdio.h>
 #include <emscripten.h>
 #include <SDL.h>
-#include <stdint.h>
+#include <stdint.h> 
 
 #include "player.h"
+#include "wad.h"
 
-// Global screen dimensions
 const int gamewidth = 1280;
 const int gameheight = 800;
 
 SDL_Renderer *renderer;
 SDL_Texture *screenTexture;
-uint32_t *pixels; // Our raw pixel buffer
+uint32_t *pixels;
 
-// Simple example for now: a moving colored rectangle
-int rect_x = 10;
-int rect_y = 10;
-const int rect_size = 50;
 const Uint8* keystates;
 
 double lastframetime, lastfpscheck;
@@ -75,18 +71,26 @@ void loop(void)
 
 int main()
 {
-    SDL_Window *window;
     SDL_Init(SDL_INIT_VIDEO);
     
+    wad_load("doom.wad");
+
+    printf("%d lumps\n", nlumps);
+    printf("first lump: %s\n", lumps[0].name);
+    printf("last lump: %s\n", lumps[nlumps-1].name);
+
+    SDL_Window *window;
     SDL_CreateWindowAndRenderer(gamewidth, gameheight, 0, &window, &renderer);
+
     screenTexture = SDL_CreateTexture(renderer,
                                       SDL_PIXELFORMAT_ARGB8888,
                                       SDL_TEXTUREACCESS_STREAMING,
                                       gamewidth, gameheight);
-    pixels = malloc(gamewidth * gameheight * sizeof(uint32_t));
+
+    pixels = (uint32_t*) malloc(gamewidth * gameheight * sizeof(uint32_t));
+    
     keystates = SDL_GetKeyboardState(NULL);
 
-    lastframetime = lastfpscheck = emscripten_get_now();
     emscripten_set_main_loop(loop, 0, 1);
 
     free(pixels);

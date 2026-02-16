@@ -8,10 +8,10 @@ EMCC = emcc
 # -O3 for optimization
 # -s USE_SDL=2 to include SDL2 support
 # --pre-js to specify the canvas
-EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js
+EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js --preload-file doom.wad
 
 # Source files
-SOURCES = main.c player.c
+SOURCES = main.c wad.c player.c
 
 all: $(WASM_TARGET)
 

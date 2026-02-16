@@ -1,3 +1,4 @@
 doom.wad
-*.wasm
+main.wasm
 main.js
+main.data
