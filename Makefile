@@ -11,7 +11,7 @@ EMCC = emcc
 EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js
 
 # Source files
-SOURCES = main.c
+SOURCES = main.c player.c
 
 all: $(WASM_TARGET)
 

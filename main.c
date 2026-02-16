@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <emscripten.h>
 #include <SDL.h>
-#include <stdint.h> // For uint32_t
+#include <stdint.h>
+
+#include "player.h"
 
 // Global screen dimensions
 const int gamewidth = 1280;
@@ -20,12 +22,33 @@ const Uint8* keystates;
 double lastframetime, lastfpscheck;
 int fpsframes;
 
-void loop()
+playercmd_t inputcmd;
+
+void gatherinput(void)
 {
+    const angle_t turnspeed = DEGTOANG(180.0 * inputcmd.frametime);
+
+    inputcmd.flags = 0;
+
+    SDL_PumpEvents();
+    if(keystates[SDL_SCANCODE_W]) inputcmd.flags |= CMD_FORWARD;
+    if(keystates[SDL_SCANCODE_S]) inputcmd.flags |= CMD_BACK;
+    if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
+    if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
+
+    inputcmd.deltaangle = 0;
+    if(keystates[SDL_SCANCODE_LEFT]) inputcmd.deltaangle += turnspeed;
+    if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.deltaangle -= turnspeed;
+}
+
+void loop(void)
+{
+    int i;
+
     double curtime, frametime;
 
     curtime = emscripten_get_now();
-    frametime = (curtime - lastframetime) / 1000.0;
+    frametime = inputcmd.frametime = (curtime - lastframetime) / 1000.0;
 
     if(curtime - lastfpscheck > 1000)
     {
@@ -34,29 +57,11 @@ void loop()
         lastfpscheck = curtime;
     }
 
-    SDL_PumpEvents();
-    if (keystates[SDL_SCANCODE_LEFT]) rect_x -= 5;
-    if (keystates[SDL_SCANCODE_RIGHT]) rect_x += 5;
-    if (keystates[SDL_SCANCODE_UP]) rect_y -= 5;
-    if (keystates[SDL_SCANCODE_DOWN]) rect_y += 5;
+    gatherinput();
+    player_docmd(&player, &inputcmd);
 
-    // Clear screen (equivalent to pixels32.fill(0xFF000000);)
-    for (int i = 0; i < gamewidth * gameheight; ++i) {
-        pixels[i] = 0xFF000000; // Opaque Black (AARRGGBB - Little Endian)
-    }
-
-    // Draw a colored rectangle directly to the pixel buffer
-    // Color: Opaque Red (FF0000FF - AARRGGBB)
-    uint32_t red = 0xFFFF0000; // Example color
-    for (int y = 0; y < rect_size; ++y) {
-        for (int x = 0; x < rect_size; ++x) {
-            int px = rect_x + x;
-            int py = rect_y + y;
-            if (px >= 0 && px < gamewidth && py >= 0 && py < gameheight) {
-                pixels[py * gamewidth + px] = red;
-            }
-        }
-    }
+    for(i=0; i<gamewidth*gameheight; i++)
+        pixels[i] = 0xFF000000;
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, gamewidth * sizeof(uint32_t));
 

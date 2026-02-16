@@ -27,4 +27,6 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
 
     player->x += forwardmove * cosangle - leftmove * sinangle;
     player->y += forwardmove * sinangle + leftmove * cosangle;
+
+    player->angle += cmd->deltaangle;
 }
