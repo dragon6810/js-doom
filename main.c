@@ -17,9 +17,23 @@ int rect_y = 10;
 const int rect_size = 50;
 const Uint8* keystates;
 
-void main_loop()
+double lastframetime, lastfpscheck;
+int fpsframes;
+
+void loop()
 {
-    // Handle input
+    double curtime, frametime;
+
+    curtime = emscripten_get_now();
+    frametime = (curtime - lastframetime) / 1000.0;
+
+    if(curtime - lastfpscheck > 1000)
+    {
+        printf("%d fps\n", fpsframes);
+        fpsframes = 0;
+        lastfpscheck = curtime;
+    }
+
     SDL_PumpEvents();
     if (keystates[SDL_SCANCODE_LEFT]) rect_x -= 5;
     if (keystates[SDL_SCANCODE_RIGHT]) rect_x += 5;
@@ -44,43 +58,32 @@ void main_loop()
         }
     }
 
-    // Update the texture with our pixel data
     SDL_UpdateTexture(screenTexture, NULL, pixels, gamewidth * sizeof(uint32_t));
 
-    // Copy the texture to the renderer
     SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
 
-    // Present buffer
     SDL_RenderPresent(renderer);
+
+    lastframetime = curtime;
+    fpsframes++;
 }
 
 int main()
 {
-    SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window;
+    SDL_Init(SDL_INIT_VIDEO);
     
-    // Create an SDL window and renderer
     SDL_CreateWindowAndRenderer(gamewidth, gameheight, 0, &window, &renderer);
-
-    // Create the texture that we will update with our raw pixels
     screenTexture = SDL_CreateTexture(renderer,
-                                      SDL_PIXELFORMAT_ARGB8888, // AARRGGBB format (common for web)
-                                      SDL_TEXTUREACCESS_STREAMING, // Allows frequent updates
+                                      SDL_PIXELFORMAT_ARGB8888,
+                                      SDL_TEXTUREACCESS_STREAMING,
                                       gamewidth, gameheight);
-
-    // Allocate our pixel buffer
-    pixels = (uint32_t*) malloc(gamewidth * gameheight * sizeof(uint32_t));
-    if (pixels == NULL) {
-        fprintf(stderr, "Failed to allocate pixel buffer!\n");
-        return 1;
-    }
-    
+    pixels = malloc(gamewidth * gameheight * sizeof(uint32_t));
     keystates = SDL_GetKeyboardState(NULL);
 
-    // Start the main loop
-    emscripten_set_main_loop(main_loop, 0, 1);
+    lastframetime = lastfpscheck = emscripten_get_now();
+    emscripten_set_main_loop(loop, 0, 1);
 
-    // Cleanup (this part is technically unreachable in an infinite Emscripten loop)
     free(pixels);
     SDL_DestroyTexture(screenTexture);
     SDL_DestroyRenderer(renderer);
