@@ -21,7 +21,10 @@
 #define ANGSIN(ang) sin(ANGTORAD(ang))
 #define ANGCOS(ang) cos(ANGTORAD(ang))
 #define ANGTAN(ang) tan(ANGTORAD(ang))
+#define ANGATAN(val) RADTOANG(atan(val))
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
 typedef uint32_t angle_t;
 typedef int32_t sangle_t;
+
+float magnitude(float x, float y);

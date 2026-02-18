@@ -23,17 +23,87 @@ angle_t unclippeda1;
 const int npastelcolors = 10;
 const int pastelcolors[npastelcolors] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
 
+int render_angletox(angle_t angle)
+{
+    const float halfplane = HPLANE / 2;
+
+    float alpha;
+    int x;
+
+    // screen left -> (1, -1) <- screen right
+    alpha = ANGTAN(angle) / halfplane;
+
+    x = (-alpha / 2.0 + 0.5) * screenwidth;
+    if(x < 0)
+        x = 0;
+    if(x >= screenwidth)
+        x = screenwidth - 1;
+    
+    return x;
+}
+
+angle_t render_xtoangle(int x)
+{
+    const float halfplane = HPLANE / 2;
+
+    float alpha, tangent;
+
+    alpha = 1.0 - (2.0 * x) / (float) screenwidth;
+    tangent = alpha * halfplane;
+    
+    return ANGATAN(tangent);
+}
+
 void render_segrange(int x1, int x2, seg_t* seg)
 {
+    // how many pixels tall is a unit when it is 1 unit from the camera
+    const float pixelheight = (float) screenheight / (float) VPLANE;
+
     int x, y;
 
     int color;
+    int dx;
+    float worldtop, worldbottom;
+    float dist, dist1, dist2, scale, scale1, scale2, scalestep;
+    float top1, top2, topstep, h1, h2, hstep;
+    float top, height;
+    angle_t normal, a1, a2;
 
     color = pastelcolors[(seg - segs) % npastelcolors];
 
-    for(x=x1; x<=x2; x++)
+    a1 = render_xtoangle(x1) + viewangle;
+    a2 = render_xtoangle(x2) + viewangle;
+
+    normal = seg->angle + ANG90;
+    // perpendicular distance from line to camera
+    dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
+
+    dist1 = dist / ANGCOS(a1 - normal) * ANGCOS(a1 - viewangle);
+    dist2 = dist / ANGCOS(a2 - normal) * ANGCOS(a2 - viewangle);
+
+    scale1 = 1.0 / dist1;
+    scale2 = 1.0 / dist2;
+    dx = x2 - x1;
+    scalestep = (scale2 - scale1) / (float) dx;
+
+    worldtop = seg->frontside->sector->ceilheight;
+    if(seg->backside && seg->backside->sector->ceilheight < worldtop)
+        worldtop = seg->backside->sector->ceilheight;
+    worldbottom = seg->frontside->sector->floorheight;
+    if(seg->backside && seg->backside->sector->floorheight > worldbottom)
+        worldbottom = seg->backside->sector->floorheight;
+
+    top1 = -(worldtop - viewz) * scale1 * pixelheight + screenheight / 2;
+    top2 = -(worldtop - viewz) * scale2 * pixelheight + screenheight / 2;
+    topstep = (top2 - top1) / (float) dx;
+
+    h1 = (worldtop - worldbottom) * scale1 * pixelheight;
+    h2 = (worldtop - worldbottom) * scale2 * pixelheight;
+    hstep = (h2 - h1) / (float) dx;
+
+    for(x=x1, top=top1, height=h1; x<=x2; x++, top+=topstep, height+=hstep)
     {
-        for(y=0; y<screenheight; y++)
+        for(y=top; y<top+height; y++)
             pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
     }
 }
@@ -142,24 +212,6 @@ void render_clipseg(int x1, int x2, seg_t* seg)
         render_segrange(x1, x2, seg);
 }
 
-int render_angletox(angle_t angle)
-{
-    const float halfplane = HPLANE / 2;
-
-    float alpha;
-    int x;
-
-    // screen left -> (1, -1) <- screen right
-    alpha = ANGTAN(angle) / halfplane;
-
-    x = (-alpha / 2.0 + 0.5) * screenwidth;
-    if(x < 0)
-        x = 0;
-    if(x >= screenwidth)
-        x = screenwidth - 1;
-    
-    return x;
-}
 
 void render_seg(seg_t* seg)
 {
