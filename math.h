@@ -15,8 +15,8 @@
 
 #define ANGTORAD(ang) ((float) ((double) (ang) / (double) BAM_SCALE * 2.0 * (double) M_PI))
 #define ANGTODEG(ang) ((float) ((double) (ang) / (double) BAM_SCALE * 360.0))
-#define RADTOANG(rad) ((angle_t) ((double) (rad) / (2.0 * (double) M_PI) * (double) BAM_SCALE))
-#define DEGTOANG(deg) ((angle_t) ((double) (deg) / 360.0 * (double) BAM_SCALE))
+#define RADTOANG(rad) ((angle_t) (sangle_t) ((double) (rad) / (2.0 * M_PI) * (double) BAM_SCALE))
+#define DEGTOANG(deg) ((angle_t) (sangle_t) ((double) (deg) / 360.0 * (double) BAM_SCALE))
 
 #define ANGSIN(ang) sin(ANGTORAD(ang))
 #define ANGCOS(ang) cos(ANGTORAD(ang))
@@ -24,3 +24,4 @@
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
 typedef uint32_t angle_t;
+typedef int32_t sangle_t;

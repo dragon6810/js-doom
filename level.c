@@ -97,6 +97,17 @@ node_t *nodes = NULL;
 int nsegs = 0;
 seg_t *segs = NULL;
 
+int level_nodeside(node_t* node, int x, int y)
+{
+    float dx, dy, det;
+
+    dx = x - node->x;
+    dy = y - node->y;
+
+    det = dx * node->dy - node->dx * dy;
+    return det < 0;
+}
+
 void level_loadverts(lumpinfo_t* header)
 {
     int i;

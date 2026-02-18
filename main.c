@@ -62,6 +62,10 @@ void loop(void)
     for(i=0; i<screenwidth*screenheight; i++)
         pixels[i] = 0xFF000000;
 
+    viewx = player.x;
+    viewy = player.y;
+    viewz = player.z = 41;
+    viewangle = player.angle;
     render();
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
@@ -99,7 +103,7 @@ int main()
     wad_setpalette(0);
 
     level_load(1, 1);
-    
+
     keystates = SDL_GetKeyboardState(NULL);
 
     emscripten_set_main_loop(loop, 0, 1);

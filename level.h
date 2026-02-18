@@ -67,7 +67,7 @@ typedef struct
     int x, y;
     int dx, dy;
     int bbox[2][4];
-    int16_t children[2];
+    int children[2];
 } node_t;
 
 struct sector_s
@@ -96,6 +96,7 @@ extern node_t *nodes;
 extern int nsegs;
 extern seg_t *segs;
 
+int level_nodeside(node_t* node, int x, int y);
 void level_load(int episode, int map);
 
 #endif
