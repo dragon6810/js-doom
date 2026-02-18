@@ -216,8 +216,14 @@ void level_loadlinedefs(lumpinfo_t* header)
         linedefs[i].flags = maplines[i].flags;
         linedefs[i].special = maplines[i].special;
         linedefs[i].tag = maplines[i].tag;
-        linedefs[i].front = &sidedefs[maplines[i].front];
-        linedefs[i].back = &sidedefs[maplines[i].back];
+        if(maplines[i].front >= 0)
+            linedefs[i].front = &sidedefs[maplines[i].front];
+        else
+            linedefs[i].front = NULL;
+        if(maplines[i].back >= 0)
+            linedefs[i].back = &sidedefs[maplines[i].back];
+        else
+            linedefs[i].back = NULL;
     }
 
     wad_decache(lump);

@@ -24,6 +24,9 @@
 #define ANGATAN(val) RADTOANG(atan(val))
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 typedef uint32_t angle_t;
 typedef int32_t sangle_t;
 

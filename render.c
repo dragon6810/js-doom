@@ -36,8 +36,8 @@ int render_angletox(angle_t angle)
     x = (-alpha / 2.0 + 0.5) * screenwidth;
     if(x < 0)
         x = 0;
-    if(x >= screenwidth)
-        x = screenwidth - 1;
+    if(x > screenwidth)
+        x = screenwidth;
     
     return x;
 }
@@ -64,10 +64,14 @@ void render_segrange(int x1, int x2, seg_t* seg)
     int color;
     int dx;
     float worldtop, worldbottom;
-    float dist, dist1, dist2, scale, scale1, scale2, scalestep;
+    float dist, scale, scale1, scale2, scalestep;
     float top1, top2, topstep, h1, h2, hstep;
     float top, height;
-    angle_t normal, a1, a2;
+    float sbase, s;
+    angle_t normal, a1, a2, a;
+    int pxtop, pxbottom;
+    float t, tstep;
+    int mods, modt;
 
     color = pastelcolors[(seg - segs) % npastelcolors];
 
@@ -78,20 +82,26 @@ void render_segrange(int x1, int x2, seg_t* seg)
     // perpendicular distance from line to camera
     dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
 
-    dist1 = dist / ANGCOS(a1 - normal) * ANGCOS(a1 - viewangle);
-    dist2 = dist / ANGCOS(a2 - normal) * ANGCOS(a2 - viewangle);
+    scale1 = ANGCOS(a1 - normal) / (dist * ANGCOS(a1 - viewangle));
+    scale2 = ANGCOS(a2 - normal) / (dist * ANGCOS(a2 - viewangle));
 
-    scale1 = 1.0 / dist1;
-    scale2 = 1.0 / dist2;
     dx = x2 - x1;
     scalestep = (scale2 - scale1) / (float) dx;
 
     worldtop = seg->frontside->sector->ceilheight;
-    if(seg->backside && seg->backside->sector->ceilheight < worldtop)
-        worldtop = seg->backside->sector->ceilheight;
     worldbottom = seg->frontside->sector->floorheight;
-    if(seg->backside && seg->backside->sector->floorheight > worldbottom)
-        worldbottom = seg->backside->sector->floorheight;
+
+    if(seg->backside && seg->backside->sector)
+    {
+        worldtop = MIN(worldtop, seg->backside->sector->ceilheight);
+        worldbottom = MAX(worldbottom, seg->backside->sector->floorheight);
+    }
+
+    if(worldbottom >= worldtop)
+        return;
+    if(!seg->frontside->mid)
+        return;
+    tex_stitch(seg->frontside->mid);
 
     top1 = -(worldtop - viewz) * scale1 * pixelheight + screenheight / 2;
     top2 = -(worldtop - viewz) * scale2 * pixelheight + screenheight / 2;
@@ -101,10 +111,36 @@ void render_segrange(int x1, int x2, seg_t* seg)
     h2 = (worldtop - worldbottom) * scale2 * pixelheight;
     hstep = (h2 - h1) / (float) dx;
 
-    for(x=x1, top=top1, height=h1; x<=x2; x++, top+=topstep, height+=hstep)
+    sbase = seg->frontside->xoffs + seg->offset;
+
+    for(x=x1, scale=scale1, top=top1, height=h1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
     {
-        for(y=top; y<top+height; y++)
+        pxtop = top;
+        pxbottom = top + height;
+        if(pxtop >= screenheight)
+            continue;
+        if(pxbottom < 0)
+            continue;
+
+        tstep = 1.0 / (pixelheight * scale);
+
+        pxtop = MAX(pxtop, 0);
+        pxbottom = MIN(pxbottom, screenheight - 1);
+
+        a = render_xtoangle(x);
+        s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
+        mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
+
+        t = tstep * (pxtop - top);
+        color = (int) s % 256;
+        for(y=pxtop; y<=pxbottom; y++, t+=tstep)
+        {
+            color = (int) (s + t) % 256;
+            modt = ((int) t % seg->frontside->mid->h + seg->frontside->mid->h) % seg->frontside->mid->h;
+            color = seg->frontside->mid->stitch[mods * seg->frontside->mid->h + modt];
+            
             pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+        }
     }
 }
 
