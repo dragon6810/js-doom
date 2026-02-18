@@ -20,9 +20,22 @@ clipspan_t clipspans[MAX_CLIPSPAN];
 
 angle_t unclippeda1;
 
+const int npastelcolors = 10;
+const int pastelcolors[npastelcolors] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
+
 void render_segrange(int x1, int x2, seg_t* seg)
 {
-    printf("(%d, %d)\n", x1, x2);
+    int x, y;
+
+    int color;
+
+    color = pastelcolors[(seg - segs) % npastelcolors];
+
+    for(x=x1; x<=x2; x++)
+    {
+        for(y=0; y<screenheight; y++)
+            pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+    }
 }
 
 void render_clipandaddseg(int x1, int x2, seg_t *seg)
@@ -131,7 +144,7 @@ void render_clipseg(int x1, int x2, seg_t* seg)
 
 int render_angletox(angle_t angle)
 {
-    const float halfplane = HPLANE - 2;
+    const float halfplane = HPLANE / 2;
 
     float alpha;
     int x;
@@ -168,20 +181,20 @@ void render_seg(seg_t* seg)
     if(a2 > (HFOV/2) && a2 < -(HFOV/2) && -(HFOV/2) - a2 >= theta)
         return;
 
-
     if(a1 < ANG180 && a1 > HFOV/2)
         a1 = HFOV/2;
     if(a2 > ANG180 && a2 < -HFOV/2)
         a2 = -HFOV/2;
-
-
+    
     x1 = render_angletox(a1);
     x2 = render_angletox(a2) - 1; // so we don't double up where segs meet
 
     if(x1 > x2)
         return;
-    
 
+    render_segrange(x1, x2, seg);
+
+    /*
     // solid wall
     if(!seg->backside)
         return render_clipandaddseg(x1, x2, seg);
@@ -201,6 +214,7 @@ void render_seg(seg_t* seg)
 
     // window or something
     render_clipseg(x1, x2, seg);
+    */
 }
 
 void render_subsector(int issector)
@@ -225,8 +239,8 @@ void render_node(int inode)
     node = &nodes[inode];
     side = level_nodeside(node, viewx, viewy);
 
-    render_node(node->children[side]);
     render_node(node->children[!side]);
+    render_node(node->children[side]);
 }
 
 void render_setup(void)
