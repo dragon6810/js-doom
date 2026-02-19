@@ -64,10 +64,10 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
     int color;
     int dx;
-    float worldtop, worldbottom;
+    float portaltop, portalbottom, worldtop, worldbottom;
     float dist, scale, scale1, scale2, scalestep;
     float top1, top2, topstep, h1, h2, hstep;
-    float top, height;
+    float top, height, tsil, bsil, tsil1, tsil2, bsil1, bsil2, tsilstep, bsilstep;
     float sbase, s;
     angle_t normal, a1, a2, a;
     int pxtop, pxbottom;
@@ -89,58 +89,115 @@ void render_segrange(int x1, int x2, seg_t* seg)
     dx = x2 - x1;
     scalestep = (scale2 - scale1) / (float) dx;
 
-    worldtop = seg->frontside->sector->ceilheight;
-    worldbottom = seg->frontside->sector->floorheight;
+    worldtop = portaltop = seg->frontside->sector->ceilheight;
+    worldbottom = portalbottom = seg->frontside->sector->floorheight;
 
     if(seg->backside && seg->backside->sector)
     {
-        worldtop = MIN(worldtop, seg->backside->sector->ceilheight);
-        worldbottom = MAX(worldbottom, seg->backside->sector->floorheight);
+        portaltop = MIN(portaltop, seg->backside->sector->ceilheight);
+        portalbottom = MAX(portalbottom, seg->backside->sector->floorheight);
     }
 
-    if(worldbottom >= worldtop)
-        return;
-    if(!seg->frontside->mid)
-        return;
-    tex_stitch(seg->frontside->mid);
+    if(seg->frontside->mid)
+        tex_stitch(seg->frontside->mid);
+    if(seg->frontside->upper)
+        tex_stitch(seg->frontside->upper);
+    if(seg->frontside->lower)
+        tex_stitch(seg->frontside->lower);
 
-    top1 = -(worldtop - viewz) * scale1 * pixelheight + screenheight / 2;
-    top2 = -(worldtop - viewz) * scale2 * pixelheight + screenheight / 2;
+    top1 = -(portaltop - viewz) * scale1 * pixelheight + screenheight / 2;
+    top2 = -(portaltop - viewz) * scale2 * pixelheight + screenheight / 2;
     topstep = (top2 - top1) / (float) dx;
 
-    h1 = (worldtop - worldbottom) * scale1 * pixelheight;
-    h2 = (worldtop - worldbottom) * scale2 * pixelheight;
+    h1 = (portaltop - portalbottom) * scale1 * pixelheight;
+    h2 = (portaltop - portalbottom) * scale2 * pixelheight;
     hstep = (h2 - h1) / (float) dx;
+    tsil1 = (worldtop - portaltop) * scale1 * pixelheight;
+    tsil2 = (worldtop - portaltop) * scale2 * pixelheight;
+    tsilstep = (tsil2 - tsil1) / (float) dx;
+    bsil1 = (portalbottom - worldbottom) * scale1 * pixelheight;
+    bsil2 = (portalbottom - worldbottom) * scale2 * pixelheight;
+    bsilstep = (bsil2 - bsil1) / (float) dx;
 
     sbase = seg->frontside->xoffs + seg->offset;
 
-    for(x=x1, scale=scale1, top=top1, height=h1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
+    for(x=x1, scale=scale1, top=top1, height=h1, tsil=tsil1, bsil=bsil1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep, tsil+=tsilstep, bsil+=bsilstep)
     {
-        pxtop = top;
-        pxbottom = top + height;
-        if(pxtop >= screenheight)
-            continue;
-        if(pxbottom < 0)
-            continue;
-
         tstep = 1.0 / (pixelheight * scale);
-
-        pxtop = MAX(pxtop, 0);
-        pxbottom = MIN(pxbottom, screenheight - 1);
 
         a = render_xtoangle(x);
         s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
-        mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
 
         t = tstep * (pxtop - top);
         color = (int) s % 256;
-        for(y=pxtop; y<=pxbottom; y++, t+=tstep)
+
+        if(pxtop < screenheight && pxbottom >= 0)
         {
-            color = (int) (s + t) % 256;
-            modt = ((int) t % seg->frontside->mid->h + seg->frontside->mid->h) % seg->frontside->mid->h;
-            color = seg->frontside->mid->stitch[mods * seg->frontside->mid->h + modt];
+            pxtop = top;
+            pxbottom = top + height;
+
+            pxtop = MAX(pxtop, 0);
+            pxbottom = MIN(pxbottom, screenheight - 1);
             
-            pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+            if(seg->frontside->mid)
+            {
+                t = tstep * (pxtop - top);
+                mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
+                for(y=pxtop; y<=pxbottom; y++, t+=tstep)
+                {
+                    color = (int) (s + t) % 256;
+                    modt = ((int) t % seg->frontside->mid->h + seg->frontside->mid->h) % seg->frontside->mid->h;
+                    color = seg->frontside->mid->stitch[mods * seg->frontside->mid->h + modt];
+                    
+                    pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+                }
+            }
+        }
+
+        if(top - tsil < screenheight && tsil >= 1)
+        {
+            pxtop = top - tsil;
+            pxbottom = top - 1;
+
+            pxtop = MAX(pxtop, 0);
+            pxbottom = MIN(pxbottom, screenheight - 1);
+
+            if(seg->frontside->upper)
+            {
+                t = tstep * (pxtop - top);
+                mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
+                for(y=pxtop; y<=pxbottom; y++, t+=tstep)
+                {
+                    color = (int) (s + t) % 256;
+                    modt = ((int) t % seg->frontside->upper->h + seg->frontside->upper->h) % seg->frontside->upper->h;
+                    color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];
+                    
+                    pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+                }
+            }
+        }
+
+        if(top + height + bsil >= 0 && bsil >= 1)
+        {
+            pxtop = top + height + 1;
+            pxbottom = top + height + 1 + bsil;
+
+            pxtop = MAX(pxtop, 0);
+            pxbottom = MIN(pxbottom, screenheight - 1);
+
+            if(seg->frontside->lower)
+            {
+                t = tstep * (pxtop - top);
+                mods = ((int) s % seg->frontside->lower->w + seg->frontside->lower->w) % seg->frontside->lower->w;
+                for(y=pxtop; y<=pxbottom; y++, t+=tstep)
+                {
+                    color = (int) (s + t) % 256;
+                    modt = ((int) t % seg->frontside->lower->h + seg->frontside->lower->h) % seg->frontside->lower->h;
+                    color = seg->frontside->lower->stitch[mods * seg->frontside->lower->h + modt];
+                    
+                    pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+                }
+            }
         }
     }
 }
