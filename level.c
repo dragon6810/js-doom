@@ -304,6 +304,7 @@ void level_loadsegs(lumpinfo_t* header)
         segs[i].v2 = &verts[mapsegs[i].v2];
         segs[i].angle = mapsegs[i].angle << 16;
         segs[i].line = &linedefs[mapsegs[i].linedef];
+        segs[i].offset = mapsegs[i].offset;
         if(!mapsegs[i].direction)
         {
             segs[i].frontside = segs[i].line->front;

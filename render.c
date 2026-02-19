@@ -46,9 +46,10 @@ angle_t render_xtoangle(int x)
 {
     const float halfplane = HPLANE / 2;
 
-    float alpha, tangent;
+    float f, alpha, tangent;
 
-    alpha = 1.0 - (2.0 * x) / (float) screenwidth;
+    f = (float) x + 0.5;
+    alpha = 1.0 - (2.0 * f) / (float) screenwidth;
     tangent = alpha * halfplane;
     
     return ANGATAN(tangent);
@@ -74,7 +75,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     int mods, modt;
 
     color = pastelcolors[(seg - segs) % npastelcolors];
-
+    
     a1 = render_xtoangle(x1) + viewangle;
     a2 = render_xtoangle(x2) + viewangle;
 
@@ -148,106 +149,72 @@ void render_clipandaddseg(int x1, int x2, seg_t *seg)
 {
     int i, j;
 
-    if (x1 > x2)
-        return;
-    
-    i = 0;
-    while(clipspans[i].x2 < x1 - 1)
-        i++;
+    for(i=0; x2>=clipspans[i].x1-1 && x1<=x2; i++)
+    {
+        if(clipspans[i].x2 < x1 - 1)
+            continue;
 
-    if(x2<clipspans[i].x1 - 1)
+        if(x1 < clipspans[i].x1)
+        {
+            render_segrange(x1, clipspans[i].x1 - 1, seg);
+            clipspans[i].x1 = x1;
+
+            if(clipspans[i-1].x2 >= clipspans[i].x1 - 1)
+            {
+                clipspans[i-1].x2 = clipspans[i].x2;
+                
+                nclipspans--;
+                for(j=i; j<nclipspans; j++)
+                    clipspans[j] = clipspans[j+1];
+                i--;
+            }
+        }
+
+        x1 = clipspans[i].x2 + 1;
+    }
+
+    if(x1 <= x2)
     {
         render_segrange(x1, x2, seg);
 
-        if(nclipspans >= MAX_CLIPSPAN)
+        if(clipspans[i-1].x2 >= x1 - 1)
         {
-            fprintf(stderr, "render_clipandaddseg: max clipspans reached\n");
-            return;
+            clipspans[i-1].x2 = x2;
         }
-
-        for(j=nclipspans-1; j>=i; j--)
-            clipspans[j + 1] = clipspans[j];
-        nclipspans++;
-
-        clipspans[i].x1 = x1;
-        clipspans[i].x2 = x2;
-
-        if(i && clipspans[i - 1].x2 >= clipspans[i].x1 - 1)
+        else
         {
-            if(clipspans[i].x2 > clipspans[i - 1].x2)
-                clipspans[i - 1].x2 = clipspans[i].x2;
+            if(nclipspans >= MAX_CLIPSPAN)
+            {
+                fprintf(stderr, "render_clipandaddseg: MAX_CLIPSPAN reached\n");
+                return;
+            }
 
-            for(j=i; j<nclipspans-1; j++)
-                clipspans[j] = clipspans[j + 1];
-            nclipspans--;
-            i--;
+            nclipspans++;
+            for(j = nclipspans - 1; j > i; j--)
+                clipspans[j] = clipspans[j-1];
+            
+            clipspans[i].x1 = x1;
+            clipspans[i].x2 = x2;
         }
-
-        while(i + 1 < nclipspans && clipspans[i].x2 >= clipspans[i + 1].x1 - 1)
-        {
-            if(clipspans[i + 1].x2 > clipspans[i].x2)
-                clipspans[i].x2 = clipspans[i + 1].x2;
-
-            for(j = i + 1; j < nclipspans - 1; j++)
-                clipspans[j] = clipspans[j + 1];
-            nclipspans--;
-        }
-
-        return;
     }
-
-    if(x1 < clipspans[i].x1)
-        render_segrange(x1, clipspans[i].x1 - 1, seg);
-
-    if(x1 < clipspans[i].x1)
-        clipspans[i].x1 = x1;
-    if(x2 > clipspans[i].x2)
-        clipspans[i].x2 = x2;
-
-    if(i && clipspans[i - 1].x2 >= clipspans[i].x1 - 1)
-    {
-        if(clipspans[i].x2 > clipspans[i - 1].x2)
-            clipspans[i - 1].x2 = clipspans[i].x2;
-
-        for(j=i; j<nclipspans-1; j++)
-            clipspans[j] = clipspans[j + 1];
-        nclipspans--;
-        i--;
-    }
-
-    while(i + 1 < nclipspans && clipspans[i].x2 >= clipspans[i + 1].x1 - 1)
-    {
-        if(clipspans[i + 1].x2 > clipspans[i].x2)
-            clipspans[i].x2 = clipspans[i + 1].x2;
-
-        for(j=i+1; j<nclipspans-1; j++)
-            clipspans[j] = clipspans[j + 1];
-        nclipspans--;
-    }
-
-    if(x2 > clipspans[i].x2)
-        render_segrange(clipspans[i].x2 + 1, x2, seg);
 }
-
 void render_clipseg(int x1, int x2, seg_t* seg)
 {
     int i;
-
-    i = 0;
-    while(clipspans[i].x2 < x1)
-        i++;
-    
-    for(; x2>=clipspans[i].x1 && x1<=x2; i++)
+    for(i=0; x2>=clipspans[i].x1 && x1<=x2; i++)
     {
+        if(clipspans[i].x2 < x1)
+            continue;
+
         if(x1 < clipspans[i].x1)
             render_segrange(x1, clipspans[i].x1-1, seg);
+
         x1 = clipspans[i].x2+1;
     }
 
     if(x1 <= x2)
         render_segrange(x1, x2, seg);
 }
-
 
 void render_seg(seg_t* seg)
 {
@@ -264,14 +231,14 @@ void render_seg(seg_t* seg)
     a1 -= viewangle;
     a2 -= viewangle;
 
-    if(a1 < -(HFOV/2) && a1 > (HFOV/2) && a1 - (HFOV/2) >= theta)
+    if(a1 < (ANG360-HFOV/2) && a1 > (HFOV/2) && a1 - (HFOV/2) >= theta)
         return;
-    if(a2 > (HFOV/2) && a2 < -(HFOV/2) && -(HFOV/2) - a2 >= theta)
+    if(a2 > (HFOV/2) && a2 < (ANG360-HFOV/2) && (ANG360-HFOV/2) - a2 >= theta)
         return;
 
-    if(a1 < ANG180 && a1 > HFOV/2)
+    if(a1 < (ANG360-HFOV/2) && a1 > HFOV/2)
         a1 = HFOV/2;
-    if(a2 > ANG180 && a2 < -HFOV/2)
+    if(a2 > HFOV/2 && a2 < (ANG360-HFOV/2))
         a2 = -HFOV/2;
     
     x1 = render_angletox(a1);
@@ -280,9 +247,6 @@ void render_seg(seg_t* seg)
     if(x1 > x2)
         return;
 
-    render_segrange(x1, x2, seg);
-
-    /*
     // solid wall
     if(!seg->backside)
         return render_clipandaddseg(x1, x2, seg);
@@ -302,7 +266,6 @@ void render_seg(seg_t* seg)
 
     // window or something
     render_clipseg(x1, x2, seg);
-    */
 }
 
 void render_subsector(int issector)
@@ -327,8 +290,8 @@ void render_node(int inode)
     node = &nodes[inode];
     side = level_nodeside(node, viewx, viewy);
 
-    render_node(node->children[!side]);
     render_node(node->children[side]);
+    render_node(node->children[!side]);
 }
 
 void render_setup(void)
@@ -342,5 +305,6 @@ void render_setup(void)
 
 void render(void)
 {
+    render_setup();
     render_node(nnodes-1);   
 }

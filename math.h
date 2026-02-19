@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 
+#define ANG360 0xFFFFFFFFu
 #define ANG270 (ANG180 + ANG90)
 #define ANG180 0x80000000u
 #define ANG90  0x40000000u
