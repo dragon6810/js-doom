@@ -99,6 +99,8 @@ int main()
 {
     SDL_Init(SDL_INIT_VIDEO);
     
+    render_init();
+    
     wad_load("doom.wad");
     wad_setpalette(0);
 

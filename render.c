@@ -5,6 +5,8 @@
 #include "tex.h"
 #include "wad.h"
 
+#include <stdlib.h>
+
 #define MAX_CLIPSPAN 192
 
 float viewx = 0, viewy = 0, viewz = 0;
@@ -17,11 +19,19 @@ typedef struct
 
 int nclipspans = 0;
 clipspan_t clipspans[MAX_CLIPSPAN];
+int16_t *topclips = NULL;
+int16_t *bottomclips = NULL;
 
 angle_t unclippeda1;
 
 const int npastelcolors = 10;
 const int pastelcolors[npastelcolors] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
+
+void render_init(void)
+{
+    topclips = malloc(screenwidth * sizeof(int16_t));
+    bottomclips = malloc(screenwidth * sizeof(int16_t));
+}
 
 int render_angletox(angle_t angle)
 {
@@ -73,6 +83,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     int pxtop, pxbottom;
     float t, tstep;
     int mods, modt;
+    int16_t topclip, bottomclip;
 
     color = pastelcolors[(seg - segs) % npastelcolors];
     
@@ -123,6 +134,9 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
     for(x=x1, scale=scale1, top=top1, height=h1, tsil=tsil1, bsil=bsil1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep, tsil+=tsilstep, bsil+=bsilstep)
     {
+        topclip = topclips[x];
+        bottomclip = bottomclips[x];
+
         tstep = 1.0 / (pixelheight * scale);
 
         a = render_xtoangle(x);
@@ -136,12 +150,17 @@ void render_segrange(int x1, int x2, seg_t* seg)
             pxtop = top;
             pxbottom = top + height;
 
-            pxtop = MAX(pxtop, 0);
-            pxbottom = MIN(pxbottom, screenheight - 1);
+            pxtop = MAX(pxtop, topclips[x] + 1);
+            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
+
+            topclip = pxtop - 1;
+            bottomclip = pxbottom + 1;
             
             if(seg->frontside->mid)
             {
                 t = tstep * (pxtop - top);
+                if(seg->line->flags & LINEDEF_LOWERUNPEG)
+                    t -= (worldtop - worldbottom);
                 mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
                 for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                 {
@@ -159,12 +178,14 @@ void render_segrange(int x1, int x2, seg_t* seg)
             pxtop = top - tsil;
             pxbottom = top - 1;
 
-            pxtop = MAX(pxtop, 0);
-            pxbottom = MIN(pxbottom, screenheight - 1);
+            pxtop = MAX(pxtop, topclips[x] + 1);
+            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
 
             if(seg->frontside->upper)
             {
                 t = tstep * (pxtop - top);
+                if(seg->line->flags & LINEDEF_UPPERUNPEG)
+                    t += (worldtop - portaltop);
                 mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
                 for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                 {
@@ -182,12 +203,16 @@ void render_segrange(int x1, int x2, seg_t* seg)
             pxtop = top + height + 1;
             pxbottom = top + height + 1 + bsil;
 
-            pxtop = MAX(pxtop, 0);
-            pxbottom = MIN(pxbottom, screenheight - 1);
+            pxtop = MAX(pxtop, topclips[x] + 1);
+            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
 
             if(seg->frontside->lower)
             {
                 t = tstep * (pxtop - top);
+                if(seg->line->flags & LINEDEF_LOWERUNPEG)
+                    t -= (portaltop - worldbottom);
+                else
+                    t -= (portaltop - portalbottom);
                 mods = ((int) s % seg->frontside->lower->w + seg->frontside->lower->w) % seg->frontside->lower->w;
                 for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                 {
@@ -199,6 +224,9 @@ void render_segrange(int x1, int x2, seg_t* seg)
                 }
             }
         }
+
+        topclips[x] = topclip;
+        bottomclips[x] = bottomclip;
     }
 }
 
@@ -353,11 +381,19 @@ void render_node(int inode)
 
 void render_setup(void)
 {
+    int i;
+
     nclipspans = 2;
     clipspans[0].x1 = INT16_MIN;
     clipspans[0].x2 = -1;
     clipspans[1].x1 = screenwidth;
     clipspans[1].x2 = INT16_MAX;
+
+    for(i=0; i<screenwidth; i++)
+    {
+        topclips[i] = -1;
+        bottomclips[i] = screenheight;
+    }
 }
 
 void render(void)

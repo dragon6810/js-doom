@@ -11,6 +11,7 @@
 extern float viewx, viewy, viewz;
 extern angle_t viewangle;
 
+void render_init(void);
 void render(void);
 
 #endif
