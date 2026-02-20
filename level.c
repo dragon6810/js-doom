@@ -20,6 +20,15 @@
 
 typedef struct __attribute__((packed))
 {
+    int16_t x;
+    int16_t y;
+    int16_t angle;
+    int16_t type;
+    int16_t flags;
+} mapthing_t;
+
+typedef struct __attribute__((packed))
+{
     int16_t v1;
     int16_t v2;
     int16_t flags;
@@ -106,6 +115,25 @@ int level_nodeside(node_t* node, int x, int y)
 
     det = dx * node->dy - node->dx * dy;
     return det < 0;
+}
+
+void level_loadthings(lumpinfo_t* header)
+{
+
+}
+
+void level_linksectors(void)
+{
+    int ss;
+
+    ssector_t *ssector;
+
+    for(ss=0, ssector=ssectors; ss<nssectors; ss++, ssector++)
+    {
+        if(!ssector->nsegs)
+            continue;
+        ssector->sector = segs[ssector->firstseg].frontside->sector;
+    }
 }
 
 void level_loadverts(lumpinfo_t* header)
@@ -335,6 +363,7 @@ void level_load(int episode, int map)
     levelname[1] = '0' + episode;
     levelname[2] = 'M';
     levelname[3] = '0' + map;
+    levelname[4] = 0;
 
     lump = wad_findlump(levelname, false);
     if(!lump)
@@ -350,6 +379,8 @@ void level_load(int episode, int map)
     level_loadssectors(lump);
     level_loadnodes(lump);
     level_loadsegs(lump);
+
+    level_linksectors();
 
     printf("loaded %s\n", levelname);
 }

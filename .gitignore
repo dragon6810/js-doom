@@ -2,3 +2,4 @@ doom.wad
 main.wasm
 main.js
 main.data
+*.map

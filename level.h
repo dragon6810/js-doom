@@ -5,6 +5,12 @@
 #include "tex.h"
 #include "wad.h"
 
+#define THING_EASY           0x0001
+#define THING_MEDIUM         0x0002
+#define THING_HARD           0x0004
+#define THING_AMBUSH         0x0008
+#define THING_NOSINGLEPLAYER 0x0010
+
 #define LINEDEF_BLOCKALL      0x0001
 #define LINEDEF_BLOCKMONSTERS 0x0002
 #define LINEDEF_TWOSIDED      0x0004
@@ -18,6 +24,19 @@
 typedef struct sector_s sector_t;
 typedef struct sidedef_s sidedef_t;
 typedef struct vertex_s vertex_t;
+
+typedef enum
+{
+    OBJECT_PLAYER=0,
+    OBJECT_TECHPILLAR,
+} object_e;
+
+typedef struct
+{
+    float x, y;
+    angle_t angle;
+    object_e type;
+} object_t;
 
 typedef struct
 {

@@ -59,9 +59,6 @@ void loop(void)
     gatherinput();
     player_docmd(&player, &inputcmd);
 
-    for(i=0; i<screenwidth*screenheight; i++)
-        pixels[i] = 0xFF000000;
-
     viewx = player.x;
     viewy = player.y;
     viewz = player.z = 41;
@@ -100,7 +97,7 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
     
     render_init();
-    
+
     wad_load("doom.wad");
     wad_setpalette(0);
 
