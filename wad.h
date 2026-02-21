@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "info.h"
+
 #define MAX_WAD 16
 
 typedef struct
@@ -15,6 +17,16 @@ typedef struct
 
     void *cache;
 } lumpinfo_t;
+
+typedef struct __attribute__((packed))
+{
+    int16_t w;
+    int16_t h;
+    int16_t	xoffs;
+    int16_t	yoffs;
+    int32_t postoffs[0]; // length w
+    // posts follow
+} pic_t;
 
 // total size of post_t is sizeof(post_t) + len + 1
 typedef struct __attribute__((packed))
@@ -38,6 +50,7 @@ extern lumpinfo_t *lumps;
 extern int nwads;
 extern FILE *wads[MAX_WAD];
 
+extern lumpinfo_t *sprites[NUMSPRITES][256 - 'A'];
 extern color_t *palette;
 
 void wad_load(const char* filename);

@@ -6,10 +6,10 @@ Parse DOOM's official multigen.txt format (id's MULTIGEN) and generate:
   - info.h
   - info.c
 
-What this supports (quirks seen in real multigen.txt files):
+Supported "official-ish" quirks:
 - State lines start with "S_":
     S_<STATENAME>  <SPRITENAME>  <FRAME>[*]  <TICS>  <ACTION>  <NEXTSTATE>  [MISC1 [MISC2]]
-  * Fullbright marker '*' may appear on FRAME (e.g. A*, [*) OR (in some scripts) on TICS (e.g. 8*).
+  * Fullbright marker '*' may appear on FRAME (e.g. A*, [*) OR on TICS (e.g. 8*).
   * FRAME is not limited to A-Z; '[' '\\' ']' etc are accepted and mapped as (ord(ch)-ord('A')).
 
 - Info blocks:
@@ -27,23 +27,24 @@ What this supports (quirks seen in real multigen.txt files):
   which defines the ordered field list and defaults.
 
 Customizations for your engine:
-- You are NOT using fixed-point. Any expression containing FRACUNIT is rewritten to floating-point
-  literals (FRACUNIT -> 1.0f, integers -> N.0f, and redundant *1.0f removed).
-- You don't have sounds yet: any field whose name suggests a sound (contains "sound" case-insensitive)
-  is forced to literal 0 in the generated C.
+- You are NOT using fixed-point. ONLY fields that ever use FRACUNIT anywhere (default or overrides)
+  are emitted as float and have FRACUNIT rewritten to 1.0f (and integers rewritten to N.0f).
+  All other numeric fields remain int and are emitted verbatim.
+- You don't have sounds yet: any field with "sound" in the name (case-insensitive) is emitted as int
+  and forced to literal 0 in the generated C.
 
-Notes:
-- This generator emits "classic" Doom-shaped structs (state_t, mobjinfo_t) but with numeric
-  fields as float (except flags-like fields that are clearly bitmasks/integers).
-  Specifically:
-    - Fields starting with "str_" are char*
-    - Fields whose name contains "flags" or ends with "_flags" or is "flags" are int
-    - Fields whose name contains "sound" are int (and forced to 0 in output)
-    - Everything else is float
+Heuristics for types:
+- Fields starting with "str_" -> char*
+- Sound fields -> int (forced 0)
+- Flag fields (name contains "flags" or equals "flags" or ends with "_flags") -> int
+- Otherwise:
+    - float if the field ever references FRACUNIT in any value
+    - int otherwise
 
 Usage:
   python3 multigen_to_info.py multigen.txt
   python3 multigen_to_info.py multigen.txt --outdir ./out
+  python3 multigen_to_info.py multigen.txt --include doomdef.h
 """
 
 from __future__ import annotations
@@ -103,13 +104,18 @@ def is_sound_field(field: str) -> bool:
 
 def is_flags_field(field: str) -> bool:
     f = field.lower()
-    return f == "flags" or f.endswith("_flags") or "flags" in f
+    return f == "flags" or f.endswith("_flags") or ("flags" in f)
+
+
+def expr_uses_fracunit(expr: str) -> bool:
+    # Token-ish check; avoids matching "MYFRACUNITLIKE"
+    return re.search(r"\bFRACUNIT\b", expr) is not None
 
 
 def fixed_to_float_expr(expr: str) -> str:
     """
     Convert common fixed-point expressions using FRACUNIT into float-friendly expressions.
-    This is intentionally conservative (string rewrite), not a full expression parser.
+    Conservative string rewrite (not a full parser):
 
     - FRACUNIT -> 1.0f
     - Bare integers -> N.0f
@@ -117,17 +123,13 @@ def fixed_to_float_expr(expr: str) -> str:
     """
     e = expr
 
-    # Replace FRACUNIT with 1.0f
     e = re.sub(r"\bFRACUNIT\b", "1.0f", e)
 
-    # Convert integer tokens to float tokens (avoid touching identifiers)
-    # Examples: "68*1.0f" -> "68.0f*1.0f"
     def repl_int(m: re.Match) -> str:
         return f"{m.group(1)}.0f"
 
     e = re.sub(r"(?<![\w.])(\d+)(?![\w.])", repl_int, e)
 
-    # Simplify redundant multiplications by 1.0f
     e = e.replace("*1.0f", "")
     e = e.replace("1.0f*", "")
 
@@ -153,7 +155,7 @@ def parse_multigen(path: Path):
         raise MultigenError("empty script")
 
     spritenames: List[str] = []
-    actionnames: List[str] = ["NULL"]  # action 0 is NULL like doom
+    actionnames: List[str] = ["NULL"]
     states: List[State] = []
     statename_to_index: Dict[str, int] = {}
 
@@ -161,7 +163,6 @@ def parse_multigen(path: Path):
     # base fields from DEFAULT: (fieldname, default_value, is_string)
     base_fields: List[Tuple[str, str, bool]] = []
     field_index: Dict[str, int] = {}
-    # per-type overrides aligned to base_fields: Optional[str] per field
     overrides: List[List[Optional[str]]] = []
 
     misc_counter = 0
@@ -226,24 +227,23 @@ def parse_multigen(path: Path):
             while j < len(token_list) and (token_list[j] not in field_index):
                 j += 1
 
-            expr_tokens = token_list[start:j]
-            val = "".join(expr_tokens)
+            val = "".join(token_list[start:j])
             overrides[current_type][fi] = val
 
-    # ---- Parse rest (interleaved $ blocks and S_ lines)
+    # ---- Parse rest
     current_type: Optional[int] = None
 
     while i < len(lines):
         lt = lines[i]
         toks = lt.toks
 
-        # State line
         if toks[0].startswith("S_"):
             if len(toks) < 6:
                 raise MultigenError(
                     f"line {lt.line_no}: state line must have at least 6 tokens "
                     "(S_NAME SPRT FRAME TICS ACTION NEXTSTATE)"
                 )
+
             st_name = toks[0]
             if st_name.lower() in statename_to_index:
                 raise MultigenError(f"line {lt.line_no}: duplicate state '{st_name}'")
@@ -252,7 +252,6 @@ def parse_multigen(path: Path):
             action_tok = toks[4]
             next_tok = toks[5]
 
-            # frame token: single ASCII char, optional trailing '*'
             raw_frame_tok = toks[2]
             fullbright = False
             if raw_frame_tok.endswith("*"):
@@ -266,7 +265,6 @@ def parse_multigen(path: Path):
             if frame < 0:
                 raise MultigenError(f"line {lt.line_no}: bad frame token '{toks[2]}'")
 
-            # tics token: integer, but tolerate trailing '*'
             raw_tics_tok = toks[3]
             if raw_tics_tok.endswith("*"):
                 fullbright = True
@@ -314,7 +312,6 @@ def parse_multigen(path: Path):
             i += 1
             continue
 
-        # Type block start (with optional inline assignments)
         if toks[0] == "$":
             if len(toks) < 2:
                 raise MultigenError(f"line {lt.line_no}: '$' line must be '$ <NAME>' or '$ +'")
@@ -328,7 +325,6 @@ def parse_multigen(path: Path):
             overrides.append([None] * len(base_fields))
             current_type = len(typenam) - 1
 
-            # Inline assignments after "$ <NAME>"
             extra = toks[2:]
             if extra:
                 apply_assignments(extra, lt.line_no, current_type)
@@ -336,9 +332,9 @@ def parse_multigen(path: Path):
             i += 1
             continue
 
-        # Regular info line(s)
         if current_type is None:
             raise MultigenError(f"line {lt.line_no}: info fields appear before any '$ <TYPE>' block")
+
         apply_assignments(toks, lt.line_no, current_type)
         i += 1
 
@@ -352,7 +348,41 @@ def parse_multigen(path: Path):
     return spritenames, actionnames, states, typenam, base_fields, overrides
 
 
-def write_info_h(out: Path, spritenames, states, typenam, base_fields) -> None:
+def compute_field_fracunit_usage(
+    base_fields: List[Tuple[str, str, bool]],
+    overrides: List[List[Optional[str]]],
+) -> List[bool]:
+    """
+    For each field, decide if it EVER references FRACUNIT across defaults and overrides.
+    """
+    n = len(base_fields)
+    uses = [False] * n
+
+    # defaults
+    for i, (_field, base, is_str) in enumerate(base_fields):
+        if is_str:
+            continue
+        if expr_uses_fracunit(base):
+            uses[i] = True
+
+    # overrides
+    for row in overrides:
+        for i, v in enumerate(row):
+            if v is None:
+                continue
+            if expr_uses_fracunit(v):
+                uses[i] = True
+
+    return uses
+
+def write_info_h(
+    out: Path,
+    spritenames,
+    states,
+    typenam,
+    base_fields: List[Tuple[str, str, bool]],
+    field_uses_fracunit: List[bool],
+) -> None:
     guard = "INFO_H"
     with out.open("w", encoding="utf-8", newline="\n") as f:
         f.write("// generated by multigen_to_info.py\n\n")
@@ -433,16 +463,19 @@ def write_info_h(out: Path, spritenames, states, typenam, base_fields) -> None:
             f.write(f"    {c_ident(t)},\n")
         f.write("    NUMMOBJTYPES\n} mobjtype_t;\n\n")
 
-        # mobjinfo_t derived from DEFAULT fields, but with your float-vs-int policy
+        
         f.write("typedef struct {\n")
-        for (field, _base, is_str) in base_fields:
+        for i, (field, _base, is_str) in enumerate(base_fields):
             fld = c_ident(field)
             if is_str:
                 f.write(f"    char *{fld};\n")
             elif is_sound_field(field) or is_flags_field(field):
                 f.write(f"    int   {fld};\n")
             else:
-                f.write(f"    float {fld};\n")
+                if field_uses_fracunit[i]:
+                    f.write(f"    float {fld};\n")
+                else:
+                    f.write(f"    int   {fld};\n")
         f.write("} mobjinfo_t;\n\n")
 
         f.write("extern mobjinfo_t mobjinfo[NUMMOBJTYPES];\n\n")
@@ -455,26 +488,24 @@ def write_info_c(
     actionnames,
     states,
     typenam,
-    base_fields,
-    overrides,
+    base_fields: List[Tuple[str, str, bool]],
+    overrides: List[List[Optional[str]]],
+    field_uses_fracunit: List[bool],
 ) -> None:
     with out.open("w", encoding="utf-8", newline="\n") as f:
         f.write('#include "info.h"\n')
         f.write("// generated by multigen_to_info.py\n\n")
 
-        # sprnames
         f.write("char *sprnames[NUMSPRITES] = {\n")
         for i, s in enumerate(spritenames):
             f.write(f'    "{s}"')
             f.write(",\n" if i != len(spritenames) - 1 else "\n")
         f.write("};\n\n")
 
-        # action prototypes (skip NULL)
         for a in actionnames[1:]:
             f.write(f"void {c_ident(a)}();\n")
         f.write("\n")
 
-        # states
         f.write("state_t states[NUMSTATES] = {\n")
         for st in states:
             spr = f"SPR_{c_ident(spritenames[st.sprite_i])}"
@@ -486,7 +517,6 @@ def write_info_c(
             )
         f.write("};\n\n")
 
-        # mobjinfo
         f.write("mobjinfo_t mobjinfo[NUMMOBJTYPES] = {\n")
         for ti, tname in enumerate(typenam):
             f.write(f"    {{   // {tname}\n")
@@ -497,23 +527,20 @@ def write_info_c(
                 if is_str:
                     val = raw
                 elif is_sound_field(field):
-                    val = "0"  # force sounds to 0 for now
+                    val = "0"
                 elif is_flags_field(field):
-                    val = raw  # keep bitmask-like expressions intact
+                    val = raw
                 else:
-                    val = fixed_to_float_expr(raw)
-
-                    # Ensure a trailing 'f' exists for plain numeric literals (optional hygiene)
-                    # If it's an expression (contains operators/identifiers), we leave it alone.
-                    # Example: "68.0f" OK; "(20.0f/35.0f)" OK.
-                    pass
+                    if field_uses_fracunit[fi]:
+                        val = fixed_to_float_expr(raw)
+                    else:
+                        val = raw
 
                 comma = "," if fi != len(base_fields) - 1 else ""
                 f.write(f"        {val}{comma}   // {field}\n")
             f.write("    }")
             f.write(",\n" if ti != len(typenam) - 1 else "\n")
         f.write("};\n")
-
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Parse DOOM multigen.txt and emit info.h/info.c")
@@ -532,20 +559,44 @@ def main() -> int:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
 
+    field_uses_fracunit = compute_field_fracunit_usage(base_fields, overrides)
+
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
     info_h = outdir / "info.h"
     info_c = outdir / "info.c"
 
-    write_info_h(info_h, spritenames, states, typenam, base_fields)
-    write_info_c(info_c, spritenames, actionnames, states, typenam, base_fields, overrides)
+    write_info_h(info_h, spritenames, states, typenam, base_fields, field_uses_fracunit)
+    write_info_c(
+        info_c,
+        spritenames,
+        actionnames,
+        states,
+        typenam,
+        base_fields,
+        overrides,
+        field_uses_fracunit,
+    )
+
+    n_float = 0
+    n_int = 0
+    for i, (field, _base, is_str) in enumerate(base_fields):
+        if is_str:
+            continue
+        if is_sound_field(field) or is_flags_field(field):
+            n_int += 1
+        elif field_uses_fracunit[i]:
+            n_float += 1
+        else:
+            n_int += 1
 
     print(f"Wrote {info_h}")
     print(f"Wrote {info_c}")
     print(
         f"{len(states)} states, {len(typenam)} mobj types, "
-        f"{len(spritenames)} sprites, {len(actionnames)-1} actions"
+        f"{len(spritenames)} sprites, {len(actionnames)-1} actions, "
+        f"{n_float} float fields (FRACUNIT), {n_int} int fields"
     )
     return 0
 

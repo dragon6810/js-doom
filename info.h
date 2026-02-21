@@ -1304,29 +1304,29 @@ typedef enum {
 } mobjtype_t;
 
 typedef struct {
-    float doomednum;
-    float spawnstate;
-    float spawnhealth;
-    float seestate;
+    int   doomednum;
+    int   spawnstate;
+    int   spawnhealth;
+    int   seestate;
     int   seesound;
-    float reactiontime;
+    int   reactiontime;
     int   attacksound;
-    float painstate;
-    float painchance;
+    int   painstate;
+    int   painchance;
     int   painsound;
-    float meleestate;
-    float missilestate;
-    float deathstate;
-    float xdeathstate;
+    int   meleestate;
+    int   missilestate;
+    int   deathstate;
+    int   xdeathstate;
     int   deathsound;
     float speed;
     float radius;
     float height;
-    float mass;
-    float damage;
+    int   mass;
+    int   damage;
     int   activesound;
     int   flags;
-    float raisestate;
+    int   raisestate;
 } mobjinfo_t;
 
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];

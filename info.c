@@ -1189,15 +1189,15 @@ state_t states[NUMSTATES] = {
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
     {   // MT_PLAYER
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_PLAY,   // spawnstate
-        100.0f,   // spawnhealth
+        100,   // spawnhealth
         S_PLAY_RUN1,   // seestate
         0,   // seesound
-        0.0f,   // reactiontime
+        0,   // reactiontime
         0,   // attacksound
         S_PLAY_PAIN,   // painstate
-        255.0f,   // painchance
+        255,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_PLAY_ATK1,   // missilestate
@@ -1207,24 +1207,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_DROPOFF|MF_PICKUP|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_POSSESSED
-        3004.0f,   // doomednum
+        3004,   // doomednum
         S_POSS_STND,   // spawnstate
-        20.0f,   // spawnhealth
+        20,   // spawnhealth
         S_POSS_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_POSS_PAIN,   // painstate
-        200.0f,   // painchance
+        200,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_POSS_ATK1,   // missilestate
         S_POSS_DIE1,   // deathstate
         S_POSS_XDIE1,   // xdeathstate
@@ -1232,24 +1232,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_POSS_RAISE1   // raisestate
     },
     {   // MT_SHOTGUY
-        9.0f,   // doomednum
+        9,   // doomednum
         S_SPOS_STND,   // spawnstate
-        30.0f,   // spawnhealth
+        30,   // spawnhealth
         S_SPOS_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SPOS_PAIN,   // painstate
-        170.0f,   // painchance
+        170,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_SPOS_ATK1,   // missilestate
         S_SPOS_DIE1,   // deathstate
         S_SPOS_XDIE1,   // xdeathstate
@@ -1257,24 +1257,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_SPOS_RAISE1   // raisestate
     },
     {   // MT_VILE
-        64.0f,   // doomednum
+        64,   // doomednum
         S_VILE_STND,   // spawnstate
-        700.0f,   // spawnhealth
+        700,   // spawnhealth
         S_VILE_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_VILE_PAIN,   // painstate
-        10.0f,   // painchance
+        10,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_VILE_ATK1,   // missilestate
         S_VILE_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1282,22 +1282,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         15.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        500.0f,   // mass
-        0.0f,   // damage
+        500,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_FIRE
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_FIRE1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1307,22 +1307,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_UNDEAD
-        66.0f,   // doomednum
+        66,   // doomednum
         S_SKEL_STND,   // spawnstate
-        300.0f,   // spawnhealth
+        300,   // spawnhealth
         S_SKEL_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SKEL_PAIN,   // painstate
-        100.0f,   // painchance
+        100,   // painchance
         0,   // painsound
         S_SKEL_FIST1,   // meleestate
         S_SKEL_MISS1,   // missilestate
@@ -1332,22 +1332,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         10.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        500.0f,   // mass
-        0.0f,   // damage
+        500,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_SKEL_RAISE1   // raisestate
     },
     {   // MT_TRACER
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_TRACER,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1357,22 +1357,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         10.0f,   // speed
         11.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        10.0f,   // damage
+        100,   // mass
+        10,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SMOKE
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_SMOKE1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1382,24 +1382,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_FATSO
-        67.0f,   // doomednum
+        67,   // doomednum
         S_FATT_STND,   // spawnstate
-        600.0f,   // spawnhealth
+        600,   // spawnhealth
         S_FATT_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_FATT_PAIN,   // painstate
-        80.0f,   // painchance
+        80,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_FATT_ATK1,   // missilestate
         S_FATT_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1407,22 +1407,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         48.0f,   // radius
         64.0f,   // height
-        1000.0f,   // mass
-        0.0f,   // damage
+        1000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_FATT_RAISE1   // raisestate
     },
     {   // MT_FATSHOT
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_FATSHOT1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1432,24 +1432,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         20.0f,   // speed
         6.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        8.0f,   // damage
+        100,   // mass
+        8,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_CHAINGUY
-        65.0f,   // doomednum
+        65,   // doomednum
         S_CPOS_STND,   // spawnstate
-        70.0f,   // spawnhealth
+        70,   // spawnhealth
         S_CPOS_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_CPOS_PAIN,   // painstate
-        170.0f,   // painchance
+        170,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_CPOS_ATK1,   // missilestate
         S_CPOS_DIE1,   // deathstate
         S_CPOS_XDIE1,   // xdeathstate
@@ -1457,22 +1457,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_CPOS_RAISE1   // raisestate
     },
     {   // MT_TROOP
-        3001.0f,   // doomednum
+        3001,   // doomednum
         S_TROO_STND,   // spawnstate
-        60.0f,   // spawnhealth
+        60,   // spawnhealth
         S_TROO_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_TROO_PAIN,   // painstate
-        200.0f,   // painchance
+        200,   // painchance
         0,   // painsound
         S_TROO_ATK1,   // meleestate
         S_TROO_ATK1,   // missilestate
@@ -1482,74 +1482,74 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_TROO_RAISE1   // raisestate
     },
     {   // MT_SERGEANT
-        3002.0f,   // doomednum
+        3002,   // doomednum
         S_SARG_STND,   // spawnstate
-        150.0f,   // spawnhealth
+        150,   // spawnhealth
         S_SARG_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SARG_PAIN,   // painstate
-        180.0f,   // painchance
+        180,   // painchance
         0,   // painsound
         S_SARG_ATK1,   // meleestate
-        0.0f,   // missilestate
+        0,   // missilestate
         S_SARG_DIE1,   // deathstate
         S_NULL,   // xdeathstate
         0,   // deathsound
         10.0f,   // speed
         30.0f,   // radius
         56.0f,   // height
-        400.0f,   // mass
-        0.0f,   // damage
+        400,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_SARG_RAISE1   // raisestate
     },
     {   // MT_SHADOWS
-        58.0f,   // doomednum
+        58,   // doomednum
         S_SARG_STND,   // spawnstate
-        150.0f,   // spawnhealth
+        150,   // spawnhealth
         S_SARG_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SARG_PAIN,   // painstate
-        180.0f,   // painchance
+        180,   // painchance
         0,   // painsound
         S_SARG_ATK1,   // meleestate
-        0.0f,   // missilestate
+        0,   // missilestate
         S_SARG_DIE1,   // deathstate
         S_NULL,   // xdeathstate
         0,   // deathsound
         10.0f,   // speed
         30.0f,   // radius
         56.0f,   // height
-        400.0f,   // mass
-        0.0f,   // damage
+        400,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_SHADOW|MF_COUNTKILL,   // flags
         S_SARG_RAISE1   // raisestate
     },
     {   // MT_HEAD
-        3005.0f,   // doomednum
+        3005,   // doomednum
         S_HEAD_STND,   // spawnstate
-        400.0f,   // spawnhealth
+        400,   // spawnhealth
         S_HEAD_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_HEAD_PAIN,   // painstate
-        128.0f,   // painchance
+        128,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_HEAD_ATK1,   // missilestate
         S_HEAD_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1557,22 +1557,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         31.0f,   // radius
         56.0f,   // height
-        400.0f,   // mass
-        0.0f,   // damage
+        400,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_FLOAT|MF_NOGRAVITY|MF_COUNTKILL,   // flags
         S_HEAD_RAISE1   // raisestate
     },
     {   // MT_BRUISER
-        3003.0f,   // doomednum
+        3003,   // doomednum
         S_BOSS_STND,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_BOSS_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_BOSS_PAIN,   // painstate
-        50.0f,   // painchance
+        50,   // painchance
         0,   // painsound
         S_BOSS_ATK1,   // meleestate
         S_BOSS_ATK1,   // missilestate
@@ -1582,22 +1582,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         24.0f,   // radius
         64.0f,   // height
-        1000.0f,   // mass
-        0.0f,   // damage
+        1000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_BOSS_RAISE1   // raisestate
     },
     {   // MT_BRUISERSHOT
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_BRBALL1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1607,22 +1607,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         15.0f,   // speed
         6.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        8.0f,   // damage
+        100,   // mass
+        8,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_KNIGHT
-        69.0f,   // doomednum
+        69,   // doomednum
         S_BOS2_STND,   // spawnstate
-        500.0f,   // spawnhealth
+        500,   // spawnhealth
         S_BOS2_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_BOS2_PAIN,   // painstate
-        50.0f,   // painchance
+        50,   // painchance
         0,   // painsound
         S_BOS2_ATK1,   // meleestate
         S_BOS2_ATK1,   // missilestate
@@ -1632,24 +1632,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         24.0f,   // radius
         64.0f,   // height
-        1000.0f,   // mass
-        0.0f,   // damage
+        1000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_BOS2_RAISE1   // raisestate
     },
     {   // MT_SKULL
-        3006.0f,   // doomednum
+        3006,   // doomednum
         S_SKULL_STND,   // spawnstate
-        100.0f,   // spawnhealth
+        100,   // spawnhealth
         S_SKULL_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SKULL_PAIN,   // painstate
-        256.0f,   // painchance
+        256,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_SKULL_ATK1,   // missilestate
         S_SKULL_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1657,24 +1657,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         16.0f,   // radius
         56.0f,   // height
-        50.0f,   // mass
-        3.0f,   // damage
+        50,   // mass
+        3,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_FLOAT|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SPIDER
-        7.0f,   // doomednum
+        7,   // doomednum
         S_SPID_STND,   // spawnstate
-        3000.0f,   // spawnhealth
+        3000,   // spawnhealth
         S_SPID_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SPID_PAIN,   // painstate
-        40.0f,   // painchance
+        40,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_SPID_ATK1,   // missilestate
         S_SPID_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1682,24 +1682,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         12.0f,   // speed
         128.0f,   // radius
         100.0f,   // height
-        1000.0f,   // mass
-        0.0f,   // damage
+        1000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BABY
-        68.0f,   // doomednum
+        68,   // doomednum
         S_BSPI_STND,   // spawnstate
-        500.0f,   // spawnhealth
+        500,   // spawnhealth
         S_BSPI_SIGHT,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_BSPI_PAIN,   // painstate
-        128.0f,   // painchance
+        128,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_BSPI_ATK1,   // missilestate
         S_BSPI_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1707,24 +1707,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         12.0f,   // speed
         64.0f,   // radius
         64.0f,   // height
-        600.0f,   // mass
-        0.0f,   // damage
+        600,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_BSPI_RAISE1   // raisestate
     },
     {   // MT_CYBORG
-        16.0f,   // doomednum
+        16,   // doomednum
         S_CYBER_STND,   // spawnstate
-        4000.0f,   // spawnhealth
+        4000,   // spawnhealth
         S_CYBER_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_CYBER_PAIN,   // painstate
-        20.0f,   // painchance
+        20,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_CYBER_ATK1,   // missilestate
         S_CYBER_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1732,24 +1732,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         16.0f,   // speed
         40.0f,   // radius
         110.0f,   // height
-        1000.0f,   // mass
-        0.0f,   // damage
+        1000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_PAIN
-        71.0f,   // doomednum
+        71,   // doomednum
         S_PAIN_STND,   // spawnstate
-        400.0f,   // spawnhealth
+        400,   // spawnhealth
         S_PAIN_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_PAIN_PAIN,   // painstate
-        128.0f,   // painchance
+        128,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_PAIN_ATK1,   // missilestate
         S_PAIN_DIE1,   // deathstate
         S_NULL,   // xdeathstate
@@ -1757,24 +1757,24 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         31.0f,   // radius
         56.0f,   // height
-        400.0f,   // mass
-        0.0f,   // damage
+        400,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_FLOAT|MF_NOGRAVITY|MF_COUNTKILL,   // flags
         S_PAIN_RAISE1   // raisestate
     },
     {   // MT_WOLFSS
-        84.0f,   // doomednum
+        84,   // doomednum
         S_SSWV_STND,   // spawnstate
-        50.0f,   // spawnhealth
+        50,   // spawnhealth
         S_SSWV_RUN1,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_SSWV_PAIN,   // painstate
-        170.0f,   // painchance
+        170,   // painchance
         0,   // painsound
-        0.0f,   // meleestate
+        0,   // meleestate
         S_SSWV_ATK1,   // missilestate
         S_SSWV_DIE1,   // deathstate
         S_SSWV_XDIE1,   // xdeathstate
@@ -1782,22 +1782,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         8.0f,   // speed
         20.0f,   // radius
         56.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_SSWV_RAISE1   // raisestate
     },
     {   // MT_KEEN
-        72.0f,   // doomednum
+        72,   // doomednum
         S_KEENSTND,   // spawnstate
-        100.0f,   // spawnhealth
+        100,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_KEENPAIN,   // painstate
-        256.0f,   // painchance
+        256,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1807,22 +1807,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         72.0f,   // height
-        10000000.0f,   // mass
-        0.0f,   // damage
+        10000000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY|MF_SHOOTABLE|MF_COUNTKILL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BOSSBRAIN
-        88.0f,   // doomednum
+        88,   // doomednum
         S_BRAIN,   // spawnstate
-        250.0f,   // spawnhealth
+        250,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_BRAIN_PAIN,   // painstate
-        255.0f,   // painchance
+        255,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1832,22 +1832,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        10000000.0f,   // mass
-        0.0f,   // damage
+        10000000,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BOSSSPIT
-        89.0f,   // doomednum
+        89,   // doomednum
         S_BRAINEYE,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_BRAINEYESEE,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1857,22 +1857,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         32.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOSECTOR,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BOSSTARGET
-        87.0f,   // doomednum
+        87,   // doomednum
         S_NULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1882,22 +1882,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         32.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOSECTOR,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SPAWNSHOT
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_SPAWN1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1907,22 +1907,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         10.0f,   // speed
         6.0f,   // radius
         32.0f,   // height
-        100.0f,   // mass
-        3.0f,   // damage
+        100,   // mass
+        3,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY|MF_NOCLIP,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SPAWNFIRE
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_SPAWNFIRE1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1932,22 +1932,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BARREL
-        2035.0f,   // doomednum
+        2035,   // doomednum
         S_BAR1,   // spawnstate
-        20.0f,   // spawnhealth
+        20,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1957,22 +1957,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         10.0f,   // radius
         42.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SHOOTABLE|MF_NOBLOOD,   // flags
         S_NULL   // raisestate
     },
     {   // MT_TROOPSHOT
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_TBALL1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -1982,22 +1982,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         10.0f,   // speed
         6.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        3.0f,   // damage
+        100,   // mass
+        3,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_HEADSHOT
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_RBALL1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2007,22 +2007,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         10.0f,   // speed
         6.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        5.0f,   // damage
+        100,   // mass
+        5,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_ROCKET
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_ROCKET,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2032,22 +2032,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         20.0f,   // speed
         11.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        20.0f,   // damage
+        100,   // mass
+        20,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_PLASMA
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_PLASBALL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2057,22 +2057,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         25.0f,   // speed
         13.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        5.0f,   // damage
+        100,   // mass
+        5,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BFG
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_BFGSHOT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2082,22 +2082,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         25.0f,   // speed
         13.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        100.0f,   // damage
+        100,   // mass
+        100,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_ARACHPLAZ
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_ARACH_PLAZ,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2107,22 +2107,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         25.0f,   // speed
         13.0f,   // radius
         8.0f,   // height
-        100.0f,   // mass
-        5.0f,   // damage
+        100,   // mass
+        5,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_MISSILE|MF_DROPOFF|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_PUFF
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_PUFF1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2132,22 +2132,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_BLOOD
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_BLOOD1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2157,22 +2157,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP,   // flags
         S_NULL   // raisestate
     },
     {   // MT_TFOG
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_TFOG,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2182,22 +2182,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_IFOG
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_IFOG,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2207,22 +2207,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_TELEPORTMAN
-        14.0f,   // doomednum
+        14,   // doomednum
         S_NULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2232,22 +2232,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOSECTOR,   // flags
         S_NULL   // raisestate
     },
     {   // MT_EXTRABFG
-        -1.0f,   // doomednum
+        -1,   // doomednum
         S_BFGEXP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2257,22 +2257,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC0
-        2018.0f,   // doomednum
+        2018,   // doomednum
         S_ARM1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2282,22 +2282,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC1
-        2019.0f,   // doomednum
+        2019,   // doomednum
         S_ARM2,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2307,22 +2307,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC2
-        2014.0f,   // doomednum
+        2014,   // doomednum
         S_BON1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2332,22 +2332,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC3
-        2015.0f,   // doomednum
+        2015,   // doomednum
         S_BON2,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2357,22 +2357,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC4
-        5.0f,   // doomednum
+        5,   // doomednum
         S_BKEY,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2382,22 +2382,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC5
-        13.0f,   // doomednum
+        13,   // doomednum
         S_RKEY,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2407,22 +2407,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC6
-        6.0f,   // doomednum
+        6,   // doomednum
         S_YKEY,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2432,22 +2432,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC7
-        39.0f,   // doomednum
+        39,   // doomednum
         S_YSKULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2457,22 +2457,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC8
-        38.0f,   // doomednum
+        38,   // doomednum
         S_RSKULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2482,22 +2482,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC9
-        40.0f,   // doomednum
+        40,   // doomednum
         S_BSKULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2507,22 +2507,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_NOTDMATCH,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC10
-        2011.0f,   // doomednum
+        2011,   // doomednum
         S_STIM,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2532,22 +2532,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC11
-        2012.0f,   // doomednum
+        2012,   // doomednum
         S_MEDI,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2557,22 +2557,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC12
-        2013.0f,   // doomednum
+        2013,   // doomednum
         S_SOUL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2582,22 +2582,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_INV
-        2022.0f,   // doomednum
+        2022,   // doomednum
         S_PINV,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2607,22 +2607,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC13
-        2023.0f,   // doomednum
+        2023,   // doomednum
         S_PSTR,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2632,22 +2632,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_INS
-        2024.0f,   // doomednum
+        2024,   // doomednum
         S_PINS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2657,22 +2657,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC14
-        2025.0f,   // doomednum
+        2025,   // doomednum
         S_SUIT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2682,22 +2682,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC15
-        2026.0f,   // doomednum
+        2026,   // doomednum
         S_PMAP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2707,22 +2707,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC16
-        2045.0f,   // doomednum
+        2045,   // doomednum
         S_PVIS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2732,22 +2732,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MEGA
-        83.0f,   // doomednum
+        83,   // doomednum
         S_MEGA,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2757,22 +2757,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL|MF_COUNTITEM,   // flags
         S_NULL   // raisestate
     },
     {   // MT_CLIP
-        2007.0f,   // doomednum
+        2007,   // doomednum
         S_CLIP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2782,22 +2782,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC17
-        2048.0f,   // doomednum
+        2048,   // doomednum
         S_AMMO,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2807,22 +2807,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC18
-        2010.0f,   // doomednum
+        2010,   // doomednum
         S_ROCK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2832,22 +2832,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC19
-        2046.0f,   // doomednum
+        2046,   // doomednum
         S_BROK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2857,22 +2857,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC20
-        2047.0f,   // doomednum
+        2047,   // doomednum
         S_CELL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2882,22 +2882,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC21
-        17.0f,   // doomednum
+        17,   // doomednum
         S_CELP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2907,22 +2907,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC22
-        2008.0f,   // doomednum
+        2008,   // doomednum
         S_SHEL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2932,22 +2932,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC23
-        2049.0f,   // doomednum
+        2049,   // doomednum
         S_SBOX,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2957,22 +2957,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC24
-        8.0f,   // doomednum
+        8,   // doomednum
         S_BPAK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -2982,22 +2982,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC25
-        2006.0f,   // doomednum
+        2006,   // doomednum
         S_BFUG,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3007,22 +3007,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_CHAINGUN
-        2002.0f,   // doomednum
+        2002,   // doomednum
         S_MGUN,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3032,22 +3032,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC26
-        2005.0f,   // doomednum
+        2005,   // doomednum
         S_CSAW,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3057,22 +3057,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC27
-        2003.0f,   // doomednum
+        2003,   // doomednum
         S_LAUN,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3082,22 +3082,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC28
-        2004.0f,   // doomednum
+        2004,   // doomednum
         S_PLAS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3107,22 +3107,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SHOTGUN
-        2001.0f,   // doomednum
+        2001,   // doomednum
         S_SHOT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3132,22 +3132,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_SUPERSHOTGUN
-        82.0f,   // doomednum
+        82,   // doomednum
         S_SHOT2,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3157,22 +3157,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPECIAL,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC29
-        85.0f,   // doomednum
+        85,   // doomednum
         S_TECHLAMP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3182,22 +3182,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC30
-        86.0f,   // doomednum
+        86,   // doomednum
         S_TECH2LAMP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3207,22 +3207,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC31
-        2028.0f,   // doomednum
+        2028,   // doomednum
         S_COLU,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3232,22 +3232,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC32
-        30.0f,   // doomednum
+        30,   // doomednum
         S_TALLGRNCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3257,22 +3257,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC33
-        31.0f,   // doomednum
+        31,   // doomednum
         S_SHRTGRNCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3282,22 +3282,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC34
-        32.0f,   // doomednum
+        32,   // doomednum
         S_TALLREDCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3307,22 +3307,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC35
-        33.0f,   // doomednum
+        33,   // doomednum
         S_SHRTREDCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3332,22 +3332,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC36
-        37.0f,   // doomednum
+        37,   // doomednum
         S_SKULLCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3357,22 +3357,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC37
-        36.0f,   // doomednum
+        36,   // doomednum
         S_HEARTCOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3382,22 +3382,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC38
-        41.0f,   // doomednum
+        41,   // doomednum
         S_EVILEYE,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3407,22 +3407,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC39
-        42.0f,   // doomednum
+        42,   // doomednum
         S_FLOATSKULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3432,22 +3432,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC40
-        43.0f,   // doomednum
+        43,   // doomednum
         S_TORCHTREE,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3457,22 +3457,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC41
-        44.0f,   // doomednum
+        44,   // doomednum
         S_BLUETORCH,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3482,22 +3482,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC42
-        45.0f,   // doomednum
+        45,   // doomednum
         S_GREENTORCH,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3507,22 +3507,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC43
-        46.0f,   // doomednum
+        46,   // doomednum
         S_REDTORCH,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3532,22 +3532,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC44
-        55.0f,   // doomednum
+        55,   // doomednum
         S_BTORCHSHRT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3557,22 +3557,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC45
-        56.0f,   // doomednum
+        56,   // doomednum
         S_GTORCHSHRT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3582,22 +3582,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC46
-        57.0f,   // doomednum
+        57,   // doomednum
         S_RTORCHSHRT,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3607,22 +3607,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC47
-        47.0f,   // doomednum
+        47,   // doomednum
         S_STALAGTITE,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3632,22 +3632,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC48
-        48.0f,   // doomednum
+        48,   // doomednum
         S_TECHPILLAR,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3657,22 +3657,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC49
-        34.0f,   // doomednum
+        34,   // doomednum
         S_CANDLESTIK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3682,22 +3682,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC50
-        35.0f,   // doomednum
+        35,   // doomednum
         S_CANDELABRA,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3707,22 +3707,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC51
-        49.0f,   // doomednum
+        49,   // doomednum
         S_BLOODYTWITCH,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3732,22 +3732,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         68.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC52
-        50.0f,   // doomednum
+        50,   // doomednum
         S_MEAT2,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3757,22 +3757,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         84.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC53
-        51.0f,   // doomednum
+        51,   // doomednum
         S_MEAT3,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3782,22 +3782,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         84.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC54
-        52.0f,   // doomednum
+        52,   // doomednum
         S_MEAT4,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3807,22 +3807,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         68.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC55
-        53.0f,   // doomednum
+        53,   // doomednum
         S_MEAT5,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3832,22 +3832,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         52.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC56
-        59.0f,   // doomednum
+        59,   // doomednum
         S_MEAT2,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3857,22 +3857,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         84.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC57
-        60.0f,   // doomednum
+        60,   // doomednum
         S_MEAT4,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3882,22 +3882,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         68.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC58
-        61.0f,   // doomednum
+        61,   // doomednum
         S_MEAT3,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3907,22 +3907,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         52.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC59
-        62.0f,   // doomednum
+        62,   // doomednum
         S_MEAT5,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3932,22 +3932,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         52.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC60
-        63.0f,   // doomednum
+        63,   // doomednum
         S_BLOODYTWITCH,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3957,22 +3957,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         68.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC61
-        22.0f,   // doomednum
+        22,   // doomednum
         S_HEAD_DIE6,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -3982,22 +3982,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC62
-        15.0f,   // doomednum
+        15,   // doomednum
         S_PLAY_DIE7,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4007,22 +4007,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC63
-        18.0f,   // doomednum
+        18,   // doomednum
         S_POSS_DIE5,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4032,22 +4032,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC64
-        21.0f,   // doomednum
+        21,   // doomednum
         S_SARG_DIE6,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4057,22 +4057,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC65
-        23.0f,   // doomednum
+        23,   // doomednum
         S_SKULL_DIE6,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4082,22 +4082,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC66
-        20.0f,   // doomednum
+        20,   // doomednum
         S_TROO_DIE5,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4107,22 +4107,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC67
-        19.0f,   // doomednum
+        19,   // doomednum
         S_SPOS_DIE5,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4132,22 +4132,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC68
-        10.0f,   // doomednum
+        10,   // doomednum
         S_PLAY_XDIE9,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4157,22 +4157,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC69
-        12.0f,   // doomednum
+        12,   // doomednum
         S_PLAY_XDIE9,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4182,22 +4182,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC70
-        28.0f,   // doomednum
+        28,   // doomednum
         S_HEADSONSTICK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4207,22 +4207,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC71
-        24.0f,   // doomednum
+        24,   // doomednum
         S_GIBS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4232,22 +4232,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         0,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC72
-        27.0f,   // doomednum
+        27,   // doomednum
         S_HEADONASTICK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4257,22 +4257,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC73
-        29.0f,   // doomednum
+        29,   // doomednum
         S_HEADCANDLES,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4282,22 +4282,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC74
-        25.0f,   // doomednum
+        25,   // doomednum
         S_DEADSTICK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4307,22 +4307,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC75
-        26.0f,   // doomednum
+        26,   // doomednum
         S_LIVESTICK,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4332,22 +4332,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC76
-        54.0f,   // doomednum
+        54,   // doomednum
         S_BIGTREE,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4357,22 +4357,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         32.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC77
-        70.0f,   // doomednum
+        70,   // doomednum
         S_BBAR1,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4382,22 +4382,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC78
-        73.0f,   // doomednum
+        73,   // doomednum
         S_HANGNOGUTS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4407,22 +4407,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         88.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC79
-        74.0f,   // doomednum
+        74,   // doomednum
         S_HANGBNOBRAIN,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4432,22 +4432,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         88.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC80
-        75.0f,   // doomednum
+        75,   // doomednum
         S_HANGTLOOKDN,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4457,22 +4457,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         64.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC81
-        76.0f,   // doomednum
+        76,   // doomednum
         S_HANGTSKULL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4482,22 +4482,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         64.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC82
-        77.0f,   // doomednum
+        77,   // doomednum
         S_HANGTLOOKUP,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4507,22 +4507,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         64.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC83
-        78.0f,   // doomednum
+        78,   // doomednum
         S_HANGTNOBRAIN,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4532,22 +4532,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         16.0f,   // radius
         64.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_SOLID|MF_SPAWNCEILING|MF_NOGRAVITY,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC84
-        79.0f,   // doomednum
+        79,   // doomednum
         S_COLONGIBS,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4557,22 +4557,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC85
-        80.0f,   // doomednum
+        80,   // doomednum
         S_SMALLPOOL,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4582,22 +4582,22 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP,   // flags
         S_NULL   // raisestate
     },
     {   // MT_MISC86
-        81.0f,   // doomednum
+        81,   // doomednum
         S_BRAINSTEM,   // spawnstate
-        1000.0f,   // spawnhealth
+        1000,   // spawnhealth
         S_NULL,   // seestate
         0,   // seesound
-        8.0f,   // reactiontime
+        8,   // reactiontime
         0,   // attacksound
         S_NULL,   // painstate
-        0.0f,   // painchance
+        0,   // painchance
         0,   // painsound
         S_NULL,   // meleestate
         S_NULL,   // missilestate
@@ -4607,8 +4607,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
         0.0f,   // speed
         20.0f,   // radius
         16.0f,   // height
-        100.0f,   // mass
-        0.0f,   // damage
+        100,   // mass
+        0,   // damage
         0,   // activesound
         MF_NOBLOCKMAP,   // flags
         S_NULL   // raisestate

@@ -105,8 +105,19 @@ int nnodes = 0;
 node_t *nodes = NULL;
 int nsegs = 0;
 seg_t *segs = NULL;
+object_t *mobjs = NULL;
 
-int level_nodeside(node_t* node, int x, int y)
+void level_placemobj(object_t* mobj)
+{
+    mobj->ssector = level_getpointssector(mobj->x, mobj->y);
+    mobj->sprev = NULL;
+    mobj->snext = mobj->ssector->sector->mobjs;
+    mobj->ssector->sector->mobjs = mobj;
+    if(mobj->snext)
+        mobj->snext->sprev = mobj;
+}
+
+int level_nodeside(node_t* node, float x, float y)
 {
     float dx, dy, det;
 
@@ -117,9 +128,67 @@ int level_nodeside(node_t* node, int x, int y)
     return det < 0;
 }
 
+ssector_t* level_getpointssector(float x, float y)
+{
+    int nodenum;
+
+    while(!(nodenum & 0x8000))
+        nodenum = nodes[nodenum].children[level_nodeside(&nodes[nodenum], x, y)];
+
+    return &ssectors[nodenum & 0x7FFF];
+}
+
 void level_loadthings(lumpinfo_t* header)
 {
+    int i;
 
+    lumpinfo_t *lump;
+    int nthings;
+    mapthing_t *mapthings;
+    object_t *mobj;
+    ssector_t *ssector;
+    mobjtype_t type;
+
+    lump = header + LUMPOFFS_THINGS;
+    wad_cache(lump);
+
+    nthings = lump->size / sizeof(mapthing_t);
+
+    mapthings = lump->cache;
+
+    for(i=0; i<nthings; i++)
+    {
+        // TODO: player starts
+        if(mapthings[i].type <= 4 || mapthings[i].type == 11)
+            continue;
+
+        for(type=0; type<NUMMOBJTYPES; type++)
+            if(mobjinfo[type].doomednum == mapthings[i].type)
+                break;
+
+        if(type >= NUMMOBJTYPES)
+        {
+            fprintf(stderr, "level_loadthings: unrecognized doomed id %d\n", mapthings[i].type);
+            continue;
+        }
+
+        mobj = calloc(1, sizeof(object_t));
+        mobj->type = type;
+        mobj->x = mapthings[i].x;
+        mobj->y = mapthings[i].y;
+        mobj->spawnflags = mapthings[i].flags;
+        mobj->angle = mapthings[i].angle * ANG1;
+
+        mobj->state = mobjinfo[mobj->type].spawnstate;
+        
+        mobj->next = mobjs;
+        mobjs = mobj;
+
+        level_placemobj(mobj);
+        mobj->z = mobj->ssector->sector->floorheight;
+    }
+
+    wad_decache(lump);
 }
 
 void level_linksectors(void)
@@ -186,6 +255,8 @@ void level_loadsectors(lumpinfo_t* header)
         sectors[i].light = mapsectors[i].light;
         sectors[i].special = mapsectors[i].special;
         sectors[i].tag = mapsectors[i].tag;
+        sectors[i].frameindex = -1;
+        sectors[i].mobjs = NULL;
     }
 
     wad_decache(lump);
@@ -381,6 +452,7 @@ void level_load(int episode, int map)
     level_loadsegs(lump);
 
     level_linksectors();
+    level_loadthings(lump);
 
     printf("loaded %s\n", levelname);
 }

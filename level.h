@@ -1,6 +1,7 @@
 #ifndef _LEVEL_H
 #define _LEVEL_H
 
+#include "info.h"
 #include "math.h"
 #include "tex.h"
 #include "wad.h"
@@ -21,22 +22,27 @@
 #define LINEDEF_NOMAP         0x0080
 #define LINEDEF_MAPPED        0x0100
 
+typedef struct object_s object_t;
 typedef struct sector_s sector_t;
+typedef struct ssector_s ssector_t;
 typedef struct sidedef_s sidedef_t;
 typedef struct vertex_s vertex_t;
 
-typedef enum
+struct object_s
 {
-    OBJECT_PLAYER=0,
-    OBJECT_TECHPILLAR,
-} object_e;
-
-typedef struct
-{
-    float x, y;
+    float x, y, z;
     angle_t angle;
-    object_e type;
-} object_t;
+    mobjtype_t type;
+    int spawnflags;
+    statenum_t state;
+    
+    float timeinstate; // if this * 35 > state's tick duration, go to next state
+
+    ssector_t *ssector;
+
+    object_t *next, *prev; // global list
+    object_t *snext, *sprev; // sector list
+};
 
 typedef struct
 {
@@ -73,13 +79,13 @@ typedef struct
     sidedef_t *frontside, *backside;
 } seg_t;
 
-typedef struct
+struct ssector_s
 {
     int nsegs;
     int firstseg;
     
     sector_t *sector;
-} ssector_t;
+};
 
 typedef struct
 {
@@ -98,6 +104,9 @@ struct sector_s
     int light;
     int special;
     int tag;
+
+    int frameindex;
+    object_t *mobjs;
 };
 
 extern int nverts;
@@ -114,8 +123,11 @@ extern int nnodes;
 extern node_t *nodes;
 extern int nsegs;
 extern seg_t *segs;
+extern object_t *mobjs;
 
-int level_nodeside(node_t* node, int x, int y);
+void level_placemobj(object_t* mobj);
+int level_nodeside(node_t* node, float x, float y);
+ssector_t* level_getpointssector(float x, float y);
 void level_load(int episode, int map);
 
 #endif

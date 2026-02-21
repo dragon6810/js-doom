@@ -10,15 +10,30 @@
 
 #define MAX_CLIPSPAN 192
 #define MAX_VISPLANE 256
+#define MAX_VISTHING 256
 #define FLAT_RES 64
 
 float viewx = 0, viewy = 0, viewz = 0;
 angle_t viewangle = 0;
 
+int frameindex = 0;
+
 typedef struct
 {
     int16_t x1, x2;
 } clipspan_t;
+
+typedef struct visthing_s
+{
+    lumpinfo_t *patch;
+    float scale;
+    int x1, x2;
+    int y; // bottom y-coordinate
+    int height;
+    float s1, sstep, t1;
+
+    struct visthing_s *next, *prev;
+} visthing_t;
 
 typedef struct
 {
@@ -45,6 +60,10 @@ int16_t *spanstarts = NULL;
 
 int nvisplanes = 0;
 visplane_t visplanes[MAX_VISPLANE];
+
+int nvisthings = 0;
+visthing_t visthings[MAX_VISTHING];
+visthing_t *visthinghead = NULL;
 
 angle_t unclippeda1;
 
@@ -109,6 +128,55 @@ angle_t render_ytoangle(int y)
     return ANGATAN(tangent);
 }
 
+void render_drawthing(visthing_t* thing)
+{
+    int x, y;
+
+    float s, t, invtstep, tmax;
+    int posttop;
+    pic_t *pic;
+    post_t *post;
+    int color;
+
+    pic = thing->patch->cache;
+
+    invtstep = 1.0 / thing->sstep;
+    tmax = thing->height * thing->sstep;
+
+    s = thing->s1;
+    for(x=thing->x1; x<=thing->x2; x++, s+=thing->sstep)
+    {
+        if(s >= pic->w+1)
+            break;
+
+        post = ((uint8_t*) pic) + pic->postoffs[(int) s];
+        while(1)
+        {
+            if(post->ystart == 0xFF)
+                break;
+            if(post->ystart > tmax)
+                break;
+
+            t = 0;
+            posttop = thing->y + t * invtstep;
+            for(y=posttop; t<posttop+1; t+=thing->sstep, y++)
+            {
+                color = post->payload[(int)t];
+                pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
+            }
+            post = ((uint8_t*)post) + sizeof(post_t) + post->len + 1;
+        }
+    }
+}
+
+void render_drawthings(void)
+{
+    visthing_t *visthing;
+
+    for(visthing=visthinghead; visthing; visthing=visthing->next)
+        render_drawthing(visthing);
+}
+
 void render_drawspan(visplane_t* plane, int y, int x1, int x2)
 {
     // how many pixels wide is a unit when it is 1 unit from the camera
@@ -120,7 +188,9 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     float dist;
     float worldx, worldy;
     float dx, dy, step;
+    float adjust;
     int s, t;
+    angle_t a1;
 
 #if 0
     if(y < 0 || y >= screenheight || x1 < 0 || x2 < 0 || x1 >= screenwidth || x2 >= screenwidth)
@@ -135,16 +205,15 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     worldx = viewx;
     worldy = viewy;
 
-    worldx += ANGCOS(viewangle) * dist;
-    worldy += ANGSIN(viewangle) * dist;
+    a1 = viewangle + render_xtoangle(x1);
+    adjust = 1.0 / ANGCOS(a1 - viewangle);
+    worldx += ANGCOS(a1) * dist * adjust;
+    worldy += ANGSIN(a1) * dist * adjust;
 
     step = dist / pixelwidth;
 
     dx = ANGSIN(viewangle) * step;
     dy = -ANGCOS(viewangle) * step;
-
-    worldx += dx * (float) (x1 - screenwidth / 2);
-    worldy += dy * (float) (x1 - screenwidth / 2);
 
     for(x=x1; x<=x2; x++, worldx+=dx, worldy+=dy)
     {
@@ -652,6 +721,91 @@ void render_seg(seg_t* seg)
     render_clipseg(x1, x2, seg);
 }
 
+// returns true if it was culled
+bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
+{
+    // at dist = 1 from camera, how many pixels wide/tall is 1 unit?
+    const float unitpixels = screenwidth / HPLANE;
+
+    float dx, dy, dist, centerx, centery;
+    float w, h;
+    int x1, x2, top;
+    pic_t *pic;
+
+    dx = mobj->x - viewx;
+    dy = mobj->y - viewy;
+
+    dist = dx * ANGCOS(viewangle) + dy * ANGSIN(viewangle);
+    if(dist < 0.05)
+        return true;
+
+    visthing->scale = 1.0 / dist;
+    
+    centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale * unitpixels + screenwidth / 2;
+    centery = -(mobj->z - viewz) * visthing->scale * unitpixels + screenwidth / 2;
+
+    visthing->patch = sprites[states[mobj->state].sprite][states[mobj->state].frame & 0x7FFF];
+    if(!visthing->patch)
+        return true;
+    wad_cache(visthing->patch);
+    pic = visthing->patch->cache;
+
+    w = (float) pic->w * visthing->scale * unitpixels;
+    h = (float) pic->h * visthing->scale * unitpixels;
+
+    x1 = centerx - w / 2.0 - pic->xoffs;
+    x2 = x1 + w;
+    top = centery - h / 2.0 - pic->yoffs;
+
+    if(x2 < 0|| x1 >= screenwidth)
+        return true;
+    if(top >= screenheight || top + h < 0)
+        return true;
+
+    visthing->sstep = dist / unitpixels;
+
+    visthing->x1 = MAX(x1, 0);
+    visthing->x2 = MIN(x2, screenwidth - 1);
+    visthing->height = h;
+    visthing->y = top;
+    visthing->s1 = (float) (visthing->x1 - x1) * visthing->sstep;
+    visthing->t1 = (float) (visthing->y - top) * visthing->sstep;
+
+    return false;
+}
+
+void render_sectorthings(sector_t* sector)
+{
+    object_t *mobj;
+    visthing_t *visthing;
+
+    if(sector->frameindex == frameindex)
+        return;
+    sector->frameindex = frameindex;
+
+    for(mobj=sector->mobjs; mobj; mobj=mobj->snext)
+    {
+        if(nvisthings >= MAX_VISTHING)
+            break;
+        visthing = &visthings[nvisthings++];
+        if(render_visthinginfo(mobj, visthing))
+        {
+            nvisthings--;
+            continue;
+        }
+
+        visthing->prev = visthing->next = NULL;
+        if(!visthinghead)
+            visthinghead = visthing;
+
+        if(nvisthings >= 2)
+        {
+            visthings[nvisthings-2].next = visthing;
+            visthing->prev = &visthings[nvisthings-2];
+        }
+    }
+}
+
 void render_subsector(int issector)
 {
     int i;
@@ -659,6 +813,9 @@ void render_subsector(int issector)
     ssector_t *ssector;
 
     ssector = &ssectors[issector];
+    
+    render_sectorthings(ssector->sector);
+
     for(i=ssector->firstseg; i<ssector->firstseg+ssector->nsegs; i++)
         render_seg(&segs[i]);
 }
@@ -700,6 +857,9 @@ void render_setup(void)
         for(x=0; x<screenwidth; x++)
             visplanes[i].bottoms[x] = visplanes[i].tops[x] = -1;
     }
+
+    nvisthings = 0;
+    visthinghead = NULL;
 }
 
 void render(void)
@@ -707,4 +867,7 @@ void render(void)
     render_setup();
     render_node(nnodes-1);   
     render_drawplanes();
+    render_drawthings();
+
+    frameindex++;
 }

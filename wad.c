@@ -10,7 +10,27 @@ lumpinfo_t *lumps = NULL;
 int nwads = 0;
 FILE *wads[MAX_WAD];
 
+lumpinfo_t *sprites[NUMSPRITES][256 - 'A'];
 color_t *palette = NULL;
+
+void wad_findsprites(void)
+{
+    int i, f;
+
+    char name[7];
+
+    for(i=0; i<NUMSPRITES; i++)
+    {
+        for(f='A'; f<256; f++)
+        {
+            memcpy(name, sprnames[i], 4);
+            name[4] = f;
+            name[5] = '0';
+            name[6] = 0;
+            sprites[i][f - 'A'] = wad_findlump(name, false);
+        }
+    }
+}
 
 void wad_loadlumpinfos(int32_t nlump, int32_t loc)
 {
@@ -77,6 +97,7 @@ void wad_load(const char* filename)
     wad_loadlumpinfos(nlump, lumpinfoloc);
 
     tex_dowad();
+    wad_findsprites();
 }
 
 lumpinfo_t* wad_findlump(const char* name, bool cache)
