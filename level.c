@@ -132,6 +132,7 @@ ssector_t* level_getpointssector(float x, float y)
 {
     int nodenum;
 
+    nodenum = nnodes - 1;
     while(!(nodenum & 0x8000))
         nodenum = nodes[nodenum].children[level_nodeside(&nodes[nodenum], x, y)];
 

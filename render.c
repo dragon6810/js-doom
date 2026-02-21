@@ -63,7 +63,7 @@ visplane_t visplanes[MAX_VISPLANE];
 
 int nvisthings = 0;
 visthing_t visthings[MAX_VISTHING];
-visthing_t *visthinghead = NULL;
+visthing_t *visthinghead = NULL, *visthingtail = NULL;
 
 angle_t unclippeda1;
 
@@ -141,39 +141,98 @@ void render_drawthing(visthing_t* thing)
     pic = thing->patch->cache;
 
     invtstep = 1.0 / thing->sstep;
-    tmax = thing->height * thing->sstep;
+    tmax = thing->height * invtstep;
 
     s = thing->s1;
     for(x=thing->x1; x<=thing->x2; x++, s+=thing->sstep)
     {
-        if(s >= pic->w+1)
+        if(s >= pic->w)
             break;
 
         post = ((uint8_t*) pic) + pic->postoffs[(int) s];
-        while(1)
+        while(post->ystart != 0xFF)
         {
-            if(post->ystart == 0xFF)
-                break;
-            if(post->ystart > tmax)
-                break;
-
-            t = 0;
-            posttop = thing->y + t * invtstep;
-            for(y=posttop; t<posttop+1; t+=thing->sstep, y++)
+            posttop = thing->y + post->ystart * invtstep;
+            for(y=posttop, t=0; t<post->len+1; t+=thing->sstep, y++)
             {
+                if(y < 0)
+                    continue;
+                if(y >= screenheight)
+                    break;
+
                 color = post->payload[(int)t];
                 pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
             }
-            post = ((uint8_t*)post) + sizeof(post_t) + post->len + 1;
+            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
         }
     }
+}
+
+void render_sortthings(void)
+{
+    int i;
+
+    static visthing_t unsorted;
+    static visthing_t sorted;
+
+    visthing_t *vt, *best, *it;
+
+    if(nvisthings <= 0)
+    {
+        visthinghead = visthingtail = NULL;
+        return;
+    }
+
+    unsorted.next = &visthings[0];
+    unsorted.prev = &visthings[nvisthings - 1];
+
+    for(i = 0; i < nvisthings; i++)
+    {
+        visthings[i].prev = (i == 0) ? &unsorted : &visthings[i - 1];
+        visthings[i].next = (i == nvisthings - 1) ? &unsorted : &visthings[i + 1];
+    }
+
+    sorted.next = sorted.prev = &sorted;
+
+    if(nvisthings < 2)
+    {
+        visthinghead = &visthings[0];
+        visthingtail = &visthings[0];
+        visthings[0].prev = NULL;
+        visthings[0].next = NULL;
+        return;
+    }
+
+    for(i = 0; i < nvisthings; i++)
+    {
+        best = unsorted.next;
+
+        for(it = unsorted.next; it != &unsorted; it = it->next)
+            if(it->scale > best->scale)
+                best = it;
+
+        best->prev->next = best->next;
+        best->next->prev = best->prev;
+
+        best->prev = sorted.prev;
+        best->next = &sorted;
+        sorted.prev->next = best;
+        sorted.prev = best;
+    }
+
+    visthinghead = sorted.next;
+    visthingtail = sorted.prev;
+
+    visthinghead->prev = NULL;
+    visthingtail->next = NULL;
 }
 
 void render_drawthings(void)
 {
     visthing_t *visthing;
 
-    for(visthing=visthinghead; visthing; visthing=visthing->next)
+    render_sortthings();
+    for(visthing=visthingtail; visthing; visthing=visthing->prev)
         render_drawthing(visthing);
 }
 
@@ -191,14 +250,6 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     float adjust;
     int s, t;
     angle_t a1;
-
-#if 0
-    if(y < 0 || y >= screenheight || x1 < 0 || x2 < 0 || x1 >= screenwidth || x2 >= screenwidth)
-    {
-        fprintf(stderr, "render_drawspan: out of bounds span y=%d (%d, %d)\n", y, x1, x2);
-        return;
-    }
-#endif
 
     dist = plane->z / ANGTAN(render_ytoangle(y));
 
@@ -742,7 +793,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     visthing->scale = 1.0 / dist;
     
     centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale * unitpixels + screenwidth / 2;
-    centery = -(mobj->z - viewz) * visthing->scale * unitpixels + screenwidth / 2;
+    centery = -(mobj->z - viewz) * visthing->scale * unitpixels + screenheight / 2;
 
     visthing->patch = sprites[states[mobj->state].sprite][states[mobj->state].frame & 0x7FFF];
     if(!visthing->patch)
@@ -753,9 +804,9 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     w = (float) pic->w * visthing->scale * unitpixels;
     h = (float) pic->h * visthing->scale * unitpixels;
 
-    x1 = centerx - w / 2.0 - pic->xoffs;
+    x1 = centerx - pic->xoffs * visthing->scale * unitpixels;
     x2 = x1 + w;
-    top = centery - h / 2.0 - pic->yoffs;
+    top = centery - pic->yoffs * visthing->scale * unitpixels;
 
     if(x2 < 0|| x1 >= screenwidth)
         return true;
@@ -766,8 +817,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 
     visthing->x1 = MAX(x1, 0);
     visthing->x2 = MIN(x2, screenwidth - 1);
-    visthing->height = h;
     visthing->y = top;
+    visthing->height = h;
     visthing->s1 = (float) (visthing->x1 - x1) * visthing->sstep;
     visthing->t1 = (float) (visthing->y - top) * visthing->sstep;
 
@@ -795,14 +846,6 @@ void render_sectorthings(sector_t* sector)
         }
 
         visthing->prev = visthing->next = NULL;
-        if(!visthinghead)
-            visthinghead = visthing;
-
-        if(nvisthings >= 2)
-        {
-            visthings[nvisthings-2].next = visthing;
-            visthing->prev = &visthings[nvisthings-2];
-        }
     }
 }
 

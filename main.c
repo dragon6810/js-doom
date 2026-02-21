@@ -58,10 +58,11 @@ void loop(void)
 
     gatherinput();
     player_docmd(&player, &inputcmd);
+    player.z = level_getpointssector(player.x, player.y)->sector->floorheight;
 
     viewx = player.x;
     viewy = player.y;
-    viewz = player.z = 41;
+    viewz = player.z + 41;
     viewangle = player.angle;
     render();
 
