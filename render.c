@@ -495,15 +495,13 @@ void render_segrange(int x1, int x2, seg_t* seg)
     float sbase, s;
     angle_t normal, a1, a2, a;
     int pxtop, pxbottom;
-    float t, tstep;
+    float ttop, t, tstep;
     int mods, modt;
     int16_t topclip, bottomclip;
     bool drawceil, drawfloor, drawtop, drawbottom;
     visplane_t *floorplane, *ceilplane;
     int pxmax, pxmin;
     drawseg_t *drawseg;
-
-    color = pastelcolors[(seg - segs) % npastelcolors];
     
     a1 = render_xtoangle(x1) + viewangle;
     a2 = render_xtoangle(x2) + viewangle;
@@ -590,9 +588,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
         a = render_xtoangle(x);
         s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
 
-        t = tstep * (pxtop - top);
-        color = (int) s % 256;
-
         pxmin = pxmax = -1;
 
         // middle
@@ -611,19 +606,22 @@ void render_segrange(int x1, int x2, seg_t* seg)
         pxtop = MAX(pxtop, topclips[x] + 1);
         pxbottom = MIN(pxbottom, bottomclips[x] - 1);
         
-        if(seg->frontside->mid && pxtop <= pxbottom)
+        if(!seg->backside && seg->frontside->mid && pxtop <= pxbottom)
         {
-            if (seg->line->flags & LINEDEF_LOWERUNPEG)
-                t = tstep * (pxtop - (top + height)) + seg->frontside->mid->h + seg->frontside->yoffs;
+            if(seg->line->flags & LINEDEF_LOWERUNPEG)
+                ttop = seg->frontside->mid->h - (portaltop - portalbottom) + seg->frontside->yoffs;
             else
-                t = tstep * (pxtop - top) + seg->frontside->yoffs;
+                ttop = seg->frontside->yoffs;
+
+            t = tstep * (pxtop - top) + ttop;
+            while(t < 0)
+                t += seg->frontside->mid->h;
+
             mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
             for(y=pxtop; y<=pxbottom; y++, t+=tstep)
             {
-                color = (int) (s + t) % 256;
-                modt = ((int) t % seg->frontside->mid->h + seg->frontside->mid->h) % seg->frontside->mid->h;
+                modt = (int) t % seg->frontside->mid->h;
                 color = seg->frontside->mid->stitch[mods * seg->frontside->mid->h + modt];
-                
                 pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
             }
         }
@@ -642,16 +640,19 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                 if(seg->frontside->upper && pxtop <= pxbottom)
                 {
-                    t = tstep * (pxtop - top) + seg->frontside->yoffs;
-                    if(!(seg->line->flags & LINEDEF_UPPERUNPEG))
-                        t += seg->frontside->upper->h - (worldtop - portaltop);
+                    if(seg->line->flags & LINEDEF_UPPERUNPEG)
+                        ttop = seg->frontside->yoffs;
+                    else
+                        ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
+
+                    t = tstep * (pxtop - (top - tsil)) + ttop;
+                    while(t < 0)
+                        t += seg->frontside->upper->h;
                     mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
                     for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                     {
-                        color = (int) (s + t) % 256;
-                        modt = ((int) t % seg->frontside->upper->h + seg->frontside->upper->h) % seg->frontside->upper->h;
-                        color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];
-                        
+                        modt = (int) t % seg->frontside->upper->h;
+                        color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];   
                         pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
                     }
                 }
@@ -672,18 +673,19 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                 if(seg->frontside->lower && pxtop <= pxbottom)
                 {
-                    t = tstep * (pxtop - top);
                     if(seg->line->flags & LINEDEF_LOWERUNPEG)
-                        t -= (portaltop - worldbottom);
+                        ttop = worldtop - portalbottom + seg->frontside->yoffs;
                     else
-                        t -= (portaltop - portalbottom);
+                        ttop = seg->frontside->yoffs;
+                    t = tstep * (pxtop - (top + height + 1)) + ttop;
+                    while(t < 0)
+                        t += seg->frontside->lower->h;
+
                     mods = ((int) s % seg->frontside->lower->w + seg->frontside->lower->w) % seg->frontside->lower->w;
                     for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                     {
-                        color = (int) (s + t) % 256;
-                        modt = ((int) t % seg->frontside->lower->h + seg->frontside->lower->h) % seg->frontside->lower->h;
+                        modt = (int) t % seg->frontside->lower->h;
                         color = seg->frontside->lower->stitch[mods * seg->frontside->lower->h + modt];
-                        
                         pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
                     }
                 }
