@@ -10,6 +10,7 @@
 
 #define MAX_CLIPSPAN 192
 #define MAX_VISPLANE 256
+#define MAX_DRAWSEG  512
 #define MAX_VISTHING 256
 #define FLAT_RES 64
 
@@ -37,20 +38,20 @@ typedef struct visthing_s
 
 typedef struct
 {
+    int16_t *bottom, *top; // both NULL, solid wall. one null, top or bottom wall. neither null, masked texture.
+    float scale1, scale2;
+    float scalestep;
+    int x1, x2;
+} drawseg_t;
+
+typedef struct
+{
     int16_t x1, x2;
     int16_t *tops;
     int16_t *bottoms;
     float z; // relative to viewz
     lumpinfo_t *flat;
 } visplane_t;
-
-typedef struct
-{
-    int x1, x2;
-    float scale1, scale2;
-    int16_t *topclip, *bottomclip;
-    lumpinfo_t *masktex;
-} drawseg_t;
 
 int nclipspans = 0;
 clipspan_t clipspans[MAX_CLIPSPAN];
@@ -61,11 +62,19 @@ int16_t *spanstarts = NULL;
 int nvisplanes = 0;
 visplane_t visplanes[MAX_VISPLANE];
 
+int clipbuffsize = 0;
+int16_t *clipbuff = NULL, *clipend = NULL;
+
+int ndrawsegs = 0;
+drawseg_t drawsegs[MAX_DRAWSEG];
+
 int nvisthings = 0;
 visthing_t visthings[MAX_VISTHING];
 visthing_t *visthinghead = NULL, *visthingtail = NULL;
 
 angle_t unclippeda1;
+int16_t *visthingtop;
+int16_t *visthingbottom;
 
 const int npastelcolors = 10;
 const int pastelcolors[npastelcolors] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
@@ -84,6 +93,12 @@ void render_init(void)
     }
 
     spanstarts = malloc(screenheight * sizeof(int16_t));
+
+    clipbuffsize = 64 * screenwidth;
+    clipbuff = malloc(clipbuffsize * sizeof(int16_t));
+
+    visthingtop = malloc(screenwidth * sizeof(int16_t));
+    visthingbottom = malloc(screenwidth * sizeof(int16_t));
 }
 
 int render_angletox(angle_t angle)
@@ -128,6 +143,45 @@ angle_t render_ytoangle(int y)
     return ANGATAN(tangent);
 }
 
+void render_clipthing(visthing_t* visthing)
+{
+    int x;
+    drawseg_t *drawseg;
+
+    float farthest, closest;
+    int x1, x2;
+
+    for(drawseg=&drawsegs[ndrawsegs-1]; drawseg>=drawsegs; drawseg--)
+    {
+        farthest = MIN(drawseg->scale1, drawseg->scale2);
+        closest = MAX(drawseg->scale1, drawseg->scale2);
+
+        if(closest <= visthing->scale)
+            continue;
+
+        x1 = MAX(drawseg->x1, visthing->x1);
+        x2 = MIN(drawseg->x2, visthing->x2);
+
+        if(x1 > x2)
+            continue;
+
+        for(x=x1; x<=x2; x++)
+        {
+            if(!drawseg->top && !drawseg->bottom)
+            {
+                visthingtop[x] = screenheight;
+                visthingbottom[x] = -1;
+                continue;
+            }
+            if(drawseg->top)
+                visthingtop[x] = MAX(visthingtop[x], drawseg->top[x - drawseg->x1] + 1);
+
+            if(drawseg->bottom)
+                visthingbottom[x] = MIN(visthingbottom[x], drawseg->bottom[x - drawseg->x1] - 1);
+        }
+    }
+}
+
 void render_drawthing(visthing_t* thing)
 {
     int x, y;
@@ -137,6 +191,14 @@ void render_drawthing(visthing_t* thing)
     pic_t *pic;
     post_t *post;
     int color;
+
+    for(x=thing->x1; x<=thing->x2; x++)
+    {
+        visthingtop[x] = MAX(thing->y, 0);
+        visthingbottom[x] = MIN(thing->y + thing->height - 1, screenheight - 1);
+    }
+
+    render_clipthing(thing);
 
     pic = thing->patch->cache;
 
@@ -148,6 +210,8 @@ void render_drawthing(visthing_t* thing)
     {
         if(s >= pic->w)
             break;
+        if(visthingtop[x] + 1 >= visthingbottom[x])
+            continue;
 
         post = ((uint8_t*) pic) + pic->postoffs[(int) s];
         while(post->ystart != 0xFF)
@@ -155,9 +219,9 @@ void render_drawthing(visthing_t* thing)
             posttop = thing->y + post->ystart * invtstep;
             for(y=posttop, t=0; t<post->len+1; t+=thing->sstep, y++)
             {
-                if(y < 0)
+                if(y < visthingtop[x])
                     continue;
-                if(y >= screenheight)
+                if(y >= visthingbottom[x])
                     break;
 
                 color = post->payload[(int)t];
@@ -430,9 +494,10 @@ void render_segrange(int x1, int x2, seg_t* seg)
     float t, tstep;
     int mods, modt;
     int16_t topclip, bottomclip;
-    bool drawceil, drawfloor;
+    bool drawceil, drawfloor, drawtop, drawbottom;
     visplane_t *floorplane, *ceilplane;
     int pxmax, pxmin;
+    drawseg_t *drawseg;
 
     color = pastelcolors[(seg - segs) % npastelcolors];
     
@@ -510,6 +575,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
     sbase = seg->frontside->xoffs + seg->offset;
 
+    drawtop = drawbottom = false;
     for(x=x1, scale=scale1, top=top1, height=h1, tsil=tsil1, bsil=bsil1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep, tsil+=tsilstep, bsil+=bsilstep)
     {
         topclip = topclips[x];
@@ -643,9 +709,72 @@ void render_segrange(int x1, int x2, seg_t* seg)
         }
 
         if(drawceil || worldtop - portaltop > 0)
+        {
             topclips[x] = topclip;
+            drawtop = true;
+        }
         if(drawfloor || portalbottom - worldbottom > 0)
+        {
             bottomclips[x] = bottomclip;
+            drawbottom = true;
+        }
+    }
+
+    if(!seg->backside)
+    {
+        if(ndrawsegs >= MAX_DRAWSEG)
+            return;
+
+        drawseg = &drawsegs[ndrawsegs++];
+
+        drawseg->x1 = x1;
+        drawseg->x2 = x2;
+        drawseg->scale1 = scale1;
+        drawseg->scale2 = scale2;
+        drawseg->scalestep = scalestep;
+        drawseg->top = drawseg->bottom = NULL;
+    }
+
+    if(drawtop)
+    {
+        if(ndrawsegs >= MAX_DRAWSEG)
+            return;
+        if(clipend + (x2 + 1 - x1) >= clipbuff + clipbuffsize)
+            return;
+
+        drawseg = &drawsegs[ndrawsegs++];
+
+        drawseg->x1 = x1;
+        drawseg->x2 = x2;
+        drawseg->scale1 = scale1;
+        drawseg->scale2 = scale2;
+        drawseg->scalestep = scalestep;
+        drawseg->bottom = NULL;
+        drawseg->top = clipend;
+        clipend += x2 + 1 - x1;
+
+        memcpy(drawseg->top, topclips + x1, (x2 + 1 - x1) * sizeof(int16_t));
+    }
+
+    if(drawbottom)
+    {
+        if(ndrawsegs >= MAX_DRAWSEG)
+            return;
+        if(clipend + (x2 + 1 - x1) >= clipbuff + clipbuffsize)
+            return;
+
+        drawseg = &drawsegs[ndrawsegs++];
+
+        drawseg->x1 = x1;
+        drawseg->x2 = x2;
+        drawseg->scale1 = scale1;
+        drawseg->scale2 = scale2;
+        drawseg->scalestep = scalestep;
+        drawseg->top = NULL;
+        drawseg->bottom = clipend;
+        clipend += x2 + 1 - x1;
+
+        memcpy(drawseg->bottom, bottomclips + x1, (x2 + 1 - x1) * sizeof(int16_t));
     }
 }
 
@@ -903,6 +1032,9 @@ void render_setup(void)
 
     nvisthings = 0;
     visthinghead = NULL;
+
+    ndrawsegs = 0;
+    clipend = clipbuff;
 }
 
 void render(void)
