@@ -496,6 +496,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     float sbase, s;
     angle_t normal, a1, a2, a;
     int pxtop, pxbottom;
+    float ftop, fbottom;
     float ttop, t, tstep;
     int mods, modt;
     int16_t topclip, bottomclip;
@@ -597,8 +598,11 @@ void render_segrange(int x1, int x2, seg_t* seg)
         // middle
         if(portaltop > portalbottom)
         {   
-            pxtop = top + tsilheight;
-            pxbottom = top + tsilheight + portalheight;
+            ftop = top + tsilheight;
+            fbottom = top + tsilheight + portalheight;
+
+            pxtop = ceilf(ftop);
+            pxbottom = fbottom;
 
             pxtop = MAX(pxtop, topclips[x] + 1);
             pxbottom = MIN(pxbottom, bottomclips[x] - 1);
@@ -618,7 +622,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
                     else
                         ttop = seg->frontside->yoffs;
 
-                    t = tstep * (pxtop - (int) (top + tsilheight)) + ttop;
+                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
                     while(t < 0)
                         t += seg->frontside->mid->h;
 
@@ -635,8 +639,11 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         if(drawtop)
         {
-            pxtop = top;
-            pxbottom = top + tsilheight - 1;
+            ftop = top;
+            fbottom = top + tsilheight;
+
+            pxtop = ceilf(ftop);
+            pxbottom = fbottom;
 
             pxtop = MAX(pxtop, topclips[x] + 1);
             pxbottom = MIN(pxbottom, bottomclips[x] - 1);
@@ -653,7 +660,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
                     else
                         ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
 
-                    t = tstep * (pxtop - (int) top) + ttop;
+                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
                     while(t < 0)
                         t += seg->frontside->upper->h;
 
@@ -671,8 +678,11 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         if(drawbottom)
         {
-            pxtop = top + tsilheight + portalheight + 1;
-            pxbottom = top + height;
+            ftop = top + tsilheight + portalheight;
+            fbottom = top + height;
+
+            pxtop = ceilf(ftop);
+            pxbottom = fbottom;
 
             pxtop = MAX(pxtop, topclips[x] + 1);
             pxbottom = MIN(pxbottom, bottomclips[x] - 1);
@@ -688,7 +698,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
                         ttop = worldtop - portalbottom + seg->frontside->yoffs;
                     else
                         ttop = seg->frontside->yoffs;
-                    t = tstep * (pxtop - (int) (top + tsilheight + portalheight + 1)) + ttop;
+
+                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
                     while(t < 0)
                         t += seg->frontside->lower->h;
 
