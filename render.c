@@ -148,7 +148,7 @@ void render_clipthing(visthing_t* visthing)
     int x;
     drawseg_t *drawseg;
 
-    float farthest, closest;
+    float farthest, closest, scale;
     int x1, x2;
 
     for(drawseg=&drawsegs[ndrawsegs-1]; drawseg>=drawsegs; drawseg--)
@@ -165,8 +165,12 @@ void render_clipthing(visthing_t* visthing)
         if(x1 > x2)
             continue;
 
-        for(x=x1; x<=x2; x++)
+        scale = drawseg->scale1 + (x1 - drawseg->x1) * drawseg->scalestep;
+        for(x=x1; x<=x2; x++, scale+=drawseg->scalestep)
         {
+            if(scale <= visthing->scale)
+                continue;
+
             if(!drawseg->top && !drawseg->bottom)
             {
                 visthingtop[x] = screenheight;
@@ -210,7 +214,7 @@ void render_drawthing(visthing_t* thing)
     {
         if(s >= pic->w)
             break;
-        if(visthingtop[x] + 1 >= visthingbottom[x])
+        if(visthingtop[x] > visthingbottom[x])
             continue;
 
         post = ((uint8_t*) pic) + pic->postoffs[(int) s];
@@ -221,7 +225,7 @@ void render_drawthing(visthing_t* thing)
             {
                 if(y < visthingtop[x])
                     continue;
-                if(y >= visthingbottom[x])
+                if(y > visthingbottom[x])
                     break;
 
                 color = post->payload[(int)t];
@@ -711,12 +715,12 @@ void render_segrange(int x1, int x2, seg_t* seg)
         if(drawceil || worldtop - portaltop > 0)
         {
             topclips[x] = topclip;
-            drawtop = true;
+            drawtop = seg->backside != NULL;
         }
         if(drawfloor || portalbottom - worldbottom > 0)
         {
             bottomclips[x] = bottomclip;
-            drawbottom = true;
+            drawbottom = seg->backside != NULL;
         }
     }
 
