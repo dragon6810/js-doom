@@ -156,27 +156,32 @@ void render_postcolumn(post_t* post, int x, int y1, int y2, float t, float tstep
 {
     int y;
 
-    float tstart;
-    int posttop;
+    fixed_t tstart, scalefrac, tfrac, tsfrac, startfrac, lenfrac, posttop;
+    int dst;
     color_t color;
 
-    tstart = t;
+    tstart = FLOATTOFIXED(t);
+    scalefrac = FLOATTOFIXED(scale);
+    tsfrac = FLOATTOFIXED(tstep);
+
     while(post->ystart != 0xFF)
     {
-        posttop = y1 + ((float) post->ystart - tstart) * scale;
-        t = tstart - post->ystart;
+        startfrac = (fixed_t) post->ystart << FIXEDSHIFT;
+        lenfrac = (fixed_t) post->len << FIXEDSHIFT;
 
-        for(y=posttop, t=0; t<post->len; t+=tstep, y++)
+        posttop = (y1 << FIXEDSHIFT) + fixedmul(startfrac - tstart, scalefrac);
+
+        for(y=posttop>>FIXEDSHIFT, tfrac=0, dst=y*screenwidth+x; tfrac<lenfrac; tfrac+=tsfrac, y++, dst+=screenwidth)
         {
-            if(t + post->ystart < tstart)
+            if(tfrac + startfrac < tstart)
                 continue;
             if(y > y2)
                 break;
             if(y < y1)
                 continue;
 
-            color = palette[post->payload[(int)t]];
-            pixels[y * screenwidth + x] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+            color = palette[post->payload[tfrac >> FIXEDSHIFT]];
+            pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
         }
         post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
     }
