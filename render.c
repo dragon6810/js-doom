@@ -53,6 +53,9 @@ typedef struct
     lumpinfo_t *flat;
 } visplane_t;
 
+float projectconst = 0;
+float halfx = 0, halfy = 0;
+
 int nclipspans = 0;
 clipspan_t clipspans[MAX_CLIPSPAN];
 int16_t *topclips = NULL;
@@ -99,6 +102,10 @@ void render_init(void)
 
     visthingtop = malloc(screenwidth * sizeof(int16_t));
     visthingbottom = malloc(screenwidth * sizeof(int16_t));
+
+    projectconst = (float) screenwidth / HPLANE;
+    halfx = (float) screenwidth / 2.0;
+    halfy = (float) screenheight / 2.0;
 }
 
 int render_angletox(angle_t angle)
@@ -137,7 +144,7 @@ angle_t render_ytoangle(int y)
 {
     const float halfplane = VPLANE / 2.0f;
 
-    float alpha = (float)(screenheight / 2 - y) / (float)(screenheight / 2);
+    float alpha = (halfy - y) / halfy;
     float tangent = alpha * halfplane;
     
     return ANGATAN(tangent);
@@ -306,9 +313,6 @@ void render_drawthings(void)
 
 void render_drawspan(visplane_t* plane, int y, int x1, int x2)
 {
-    // how many pixels wide is a unit when it is 1 unit from the camera
-    const float pixelwidth = (float) screenwidth / (float) HPLANE;
-
     int x;
 
     int color;
@@ -329,7 +333,7 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     worldx += ANGCOS(a1) * dist * adjust;
     worldy += ANGSIN(a1) * dist * adjust;
 
-    step = dist / pixelwidth;
+    step = dist / projectconst;
 
     dx = ANGSIN(viewangle) * step;
     dy = -ANGCOS(viewangle) * step;
@@ -422,11 +426,20 @@ visplane_t* render_splitplane(visplane_t* plane, int x1, int x2)
     {
         plane->x1 = x1;
         plane->x2 = x2;
+        for(x=x1; x<=x2; x++)
+            plane->tops[x] = plane->bottoms[x] = -1;
         return plane;
     }
 
     if(x2 < plane->x1 || x1 > plane->x2)
     {
+        if(x2 < plane->x1 - 1)
+            for(x=x2+1; x<plane->x1; x++)
+                plane->tops[x] = plane->bottoms[x] = -1;
+        if(x1 > plane->x2 + 1)
+            for(x=plane->x2+1; x<x1; x++)
+                plane->tops[x] = plane->bottoms[x] = -1;
+
         plane->x1 = MIN(x1, plane->x1);
         plane->x2 = MAX(x2, plane->x2);
         return plane;
@@ -480,29 +493,22 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat)
 
 void render_segrange(int x1, int x2, seg_t* seg)
 {
-    // at dist = 1 from camera, how many pixels wide/tall is 1 unit?
-    const float unitpixels = screenwidth / HPLANE;
-
     int x, y;
 
     int color;
-    int dx;
     float portaltop, portalbottom, worldtop, worldbottom;
     float dist, scale, scale1, scale2, scalestep;
-    float top1, top2, topstep, h1, h2, hstep;
-    float top, height;
-    float tsilheight, portalheight, bsilheight;
-    int ctop, cbot;
+    float top, topstep, height, hstep;
+    float tsilheight, portalheight, bsilheight, tsilstep, bsilstep;
+    int pltop, plbot;
     float sbase, s;
     angle_t normal, a1, a2, a;
     int pxtop, pxbottom;
     float ftop, fbottom;
     float ttop, t, tstep;
     int mods, modt;
-    int16_t topclip, bottomclip;
     bool drawceil, drawfloor, drawtop, drawbottom, drewtop, drewbottom;
     visplane_t *floorplane, *ceilplane;
-    int pxmax, pxmin;
     drawseg_t *drawseg;
     
     a1 = render_xtoangle(x1) + viewangle;
@@ -512,11 +518,10 @@ void render_segrange(int x1, int x2, seg_t* seg)
     // perpendicular distance from line to camera
     dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
 
-    scale1 = ANGCOS(a1 - normal) / (dist * ANGCOS(a1 - viewangle));
-    scale2 = ANGCOS(a2 - normal) / (dist * ANGCOS(a2 - viewangle));
+    scale = scale1 = ANGCOS(a1 - normal) / (dist * ANGCOS(a1 - viewangle)) * projectconst;
+    scale2 = ANGCOS(a2 - normal) / (dist * ANGCOS(a2 - viewangle)) * projectconst;
 
-    dx = x2 - x1;
-    scalestep = (scale2 - scale1) / (float) dx;
+    scalestep = (scale2 - scale1) / (float) (x2 - x1);
 
     worldtop = portaltop = seg->frontside->sector->ceilheight;
     worldbottom = portalbottom = seg->frontside->sector->floorheight;
@@ -537,13 +542,23 @@ void render_segrange(int x1, int x2, seg_t* seg)
     if(drawbottom && seg->frontside->lower)
         tex_stitch(seg->frontside->lower);
 
-    top1 = -(worldtop - viewz) * scale1 * unitpixels + screenheight / 2;
-    top2 = -(worldtop - viewz) * scale2 * unitpixels + screenheight / 2;
-    topstep = (top2 - top1) / (float) dx;
+    top = -(worldtop - viewz) * scale1 + halfy;
+    topstep = -(worldtop - viewz) * scalestep;
 
-    h1 = (worldtop - worldbottom) * scale1 * unitpixels;
-    h2 = (worldtop - worldbottom) * scale2 * unitpixels;
-    hstep = (h2 - h1) / (float) dx;
+    height = (worldtop - worldbottom) * scale1;
+    hstep = (worldtop - worldbottom) * scalestep;
+
+    tsilheight = bsilheight = 0;
+    if(drawtop)
+    {
+        tsilheight = (worldtop - portaltop) * scale1;
+        tsilstep = (worldtop - portaltop) * scalestep;
+    }
+    if(drawbottom)
+    {
+        bsilheight = (portalbottom - worldbottom) * scale1;
+        bsilstep = (portalbottom - worldbottom) * scalestep;
+    }
 
     drawceil = true;
     if(seg->frontside->sector->ceilheight <= viewz)
@@ -578,44 +593,81 @@ void render_segrange(int x1, int x2, seg_t* seg)
     sbase = seg->frontside->xoffs + seg->offset;
 
     drewtop = drewbottom = false;
-    for(x=x1, scale=scale1, top=top1, height=h1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
+    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
     {
-        topclip = topclips[x];
-        bottomclip = bottomclips[x];
-
-        tstep = 1.0 / (unitpixels * scale);
+        tstep = 1.0 / scale;
 
         a = render_xtoangle(x);
         s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
 
-        pxmax = -1;
-        pxmin = screenheight;
+        if(ceilplane)
+        {
+            pltop = topclips[x] + 1;
+            plbot = top;
 
-        tsilheight = (worldtop - portaltop) * unitpixels * scale;
-        portalheight = (portaltop - portalbottom) * unitpixels * scale;
-        bsilheight = (portalbottom - worldbottom) * unitpixels * scale;
+            if(plbot >= bottomclips[x])
+                plbot = bottomclips[x] - 1;
+
+            if(pltop <= plbot)
+            {
+                ceilplane->tops[x] = CLAMP(pltop, 0, screenheight - 1);
+                ceilplane->bottoms[x] = CLAMP(plbot, 0, screenheight - 1);
+            }
+            else
+                ceilplane->tops[x] = ceilplane->bottoms[x] = -1;
+        }
+
+        if(floorplane)
+        {
+            pltop = top + height + 1;
+            plbot = bottomclips[x] - 1;
+
+            if(pltop <= topclips[x])
+                pltop = topclips[x] + 1;
+
+            if(pltop <= plbot)
+            {
+                floorplane->tops[x] = CLAMP(pltop, 0, screenheight - 1);
+                floorplane->bottoms[x] = CLAMP(plbot, 0, screenheight - 1);
+            }
+            else
+                floorplane->tops[x] = floorplane->bottoms[x] = -1;
+        }
 
         // middle
         if(portaltop > portalbottom)
         {   
             ftop = top + tsilheight;
-            fbottom = top + tsilheight + portalheight;
+            fbottom = top + height - bsilheight;
 
-            pxtop = ceilf(ftop);
+            pxtop = ftop + 1;
             pxbottom = fbottom;
 
-            pxtop = MAX(pxtop, topclips[x] + 1);
-            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
-            
-            if(pxtop <= pxbottom && pxtop < bottomclips[x] && pxbottom > topclips[x])
+            if(pxtop <= topclips[x])
+                pxtop = topclips[x] + 1;
+            if(pxbottom >= bottomclips[x])
+                pxbottom = bottomclips[x] - 1;
+
+            if(!drawtop)
             {
-                topclip = pxtop - 1;
-                bottomclip = pxbottom + 1;
+                if(drawceil)
+                    topclips[x] = pxtop - 1;
+                drewtop = seg->backside != NULL;
+            }
 
-                pxmax = MAX(pxmax, pxbottom);
-                pxmin = MIN(pxmin, pxtop);
+            if(!drawbottom) 
+            {
+                if(drawfloor)
+                    bottomclips[x] = pxbottom + 1;
+                drewbottom = seg->backside != NULL;
+            }
 
-                if(!seg->backside && seg->frontside->mid)
+            if(!seg->backside)
+            {
+                topclips[x] = screenheight;
+                bottomclips[x] = -1;
+
+                if(pxtop <= pxbottom && seg->frontside->mid)
                 {
                     if(seg->line->flags & LINEDEF_LOWERUNPEG)
                         ttop = seg->frontside->mid->h - (portaltop - portalbottom) + seg->frontside->yoffs;
@@ -641,57 +693,66 @@ void render_segrange(int x1, int x2, seg_t* seg)
         {
             ftop = top;
             fbottom = top + tsilheight;
+            tsilheight += tsilstep;
 
-            pxtop = ceilf(ftop);
+            pxtop = ftop + 1;
             pxbottom = fbottom;
 
-            pxtop = MAX(pxtop, topclips[x] + 1);
-            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
+            if(pxtop <= topclips[x])
+                pxtop = topclips[x] + 1;
+            if(pxbottom >= bottomclips[x])
+                pxbottom = bottomclips[x] - 1;
 
-            if(pxtop <= pxbottom && pxtop < bottomclips[x] && pxbottom > topclips[x])
+            if(pxbottom > topclips[x])
             {
-                pxmax = MAX(pxmax, pxbottom);
-                pxmin = MIN(pxmin, pxtop);
+                topclips[x] = pxbottom;
+                drewtop = true;
+            }
 
-                if(seg->frontside->upper)
+            if(pxtop <= pxbottom && seg->frontside->upper)
+            {
+                if(seg->line->flags & LINEDEF_UPPERUNPEG)
+                    ttop = seg->frontside->yoffs;
+                else
+                    ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
+
+                t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
+                while(t < 0)
+                    t += seg->frontside->upper->h;
+
+                mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
+
+                for(y=pxtop; y<=pxbottom; y++, t+=tstep)
                 {
-                    if(seg->line->flags & LINEDEF_UPPERUNPEG)
-                        ttop = seg->frontside->yoffs;
-                    else
-                        ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
-
-                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
-                    while(t < 0)
-                        t += seg->frontside->upper->h;
-
-                    mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
-
-                    for(y=pxtop; y<=pxbottom; y++, t+=tstep)
-                    {
-                        modt = (int) t % seg->frontside->upper->h;
-                        color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];   
-                        pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
-                    }
+                    modt = (int) t % seg->frontside->upper->h;
+                    color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];   
+                    pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
                 }
             }
         }
 
         if(drawbottom)
         {
-            ftop = top + tsilheight + portalheight;
+            ftop = top + height - bsilheight;
             fbottom = top + height;
+            bsilheight += bsilstep;
 
-            pxtop = ceilf(ftop);
+            pxtop = ftop + 1;
             pxbottom = fbottom;
 
-            pxtop = MAX(pxtop, topclips[x] + 1);
-            pxbottom = MIN(pxbottom, bottomclips[x] - 1);
-
-            if(pxtop <= pxbottom && pxtop < bottomclips[x] && pxbottom > topclips[x])
+            if(pxtop <= topclips[x])
+                pxtop = topclips[x] + 1;
+            if(pxbottom >= bottomclips[x])
+                pxbottom = bottomclips[x] - 1;
+            
+            if(pxtop < bottomclips[x])
             {
-                pxmax = MAX(pxmax, pxbottom);
-                pxmin = MIN(pxmin, pxtop);
+                bottomclips[x] = pxtop;
+                drewbottom = true;
+            }
 
+            if(pxtop <= pxbottom)
+            {
                 if(seg->frontside->lower)
                 {
                     if(seg->line->flags & LINEDEF_LOWERUNPEG)
@@ -712,39 +773,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
                     }
                 }
             }
-        }
-
-        if(ceilplane && pxmin != screenheight)
-        {
-            ctop = topclips[x] + 1;
-            cbot = pxmin - 1;
-
-            ceilplane->tops[x] = CLAMP(ctop, 0, screenheight - 1);
-            ceilplane->bottoms[x] = CLAMP(cbot, 0, screenheight - 1);
-            if(ctop > cbot || cbot < 0 || ctop >= screenheight)
-                ceilplane->tops[x] = ceilplane->bottoms[x] = -1;
-        }
-        if(floorplane && pxmax != -1)
-        {
-            ctop = pxmax + 1;
-            cbot = bottomclips[x] - 1;
-
-            floorplane->tops[x] = CLAMP(ctop, 0, screenheight - 1);
-            floorplane->bottoms[x] = CLAMP(cbot, 0, screenheight - 1);
-
-            if(ctop > cbot || cbot < 0 || ctop >= screenheight)
-                floorplane->tops[x] = floorplane->bottoms[x] = -1;
-        }
-
-        if(drawceil || drawtop)
-        {
-            topclips[x] = topclip;
-            drewtop = seg->backside != NULL;
-        }
-        if(drawfloor || drawbottom)
-        {
-            bottomclips[x] = bottomclip;
-            drewbottom = seg->backside != NULL;
         }
     }
 
@@ -932,9 +960,6 @@ void render_seg(seg_t* seg)
 // returns true if it was culled
 bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 {
-    // at dist = 1 from camera, how many pixels wide/tall is 1 unit?
-    const float unitpixels = screenwidth / HPLANE;
-
     float dx, dy, dist, centerx, centery;
     float w, h;
     int x1, x2, top;
@@ -947,10 +972,10 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     if(dist < 0.05)
         return true;
 
-    visthing->scale = 1.0 / dist;
+    visthing->scale = projectconst / dist;
     
-    centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale * unitpixels + screenwidth / 2;
-    centery = -(mobj->z - viewz) * visthing->scale * unitpixels + screenheight / 2;
+    centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale + halfx;
+    centery = -(mobj->z - viewz) * visthing->scale + halfy;
 
     visthing->patch = sprites[states[mobj->state].sprite][states[mobj->state].frame & 0x7FFF];
     if(!visthing->patch)
@@ -958,19 +983,19 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     wad_cache(visthing->patch);
     pic = visthing->patch->cache;
 
-    w = (float) pic->w * visthing->scale * unitpixels;
-    h = (float) pic->h * visthing->scale * unitpixels;
+    w = (float) pic->w * visthing->scale;
+    h = (float) pic->h * visthing->scale;
 
-    x1 = centerx - pic->xoffs * visthing->scale * unitpixels;
+    x1 = centerx - pic->xoffs * visthing->scale;
     x2 = x1 + w;
-    top = centery - pic->yoffs * visthing->scale * unitpixels;
+    top = centery - pic->yoffs * visthing->scale;
 
     if(x2 < 0|| x1 >= screenwidth)
         return true;
     if(top >= screenheight || top + h < 0)
         return true;
 
-    visthing->sstep = dist / unitpixels;
+    visthing->sstep = dist / projectconst;
 
     visthing->x1 = MAX(x1, 0);
     visthing->x2 = MIN(x2, screenwidth - 1);
@@ -1052,11 +1077,6 @@ void render_setup(void)
     }
 
     nvisplanes = 0;
-    for(i=0; i<MAX_VISPLANE; i++)
-    {
-        for(x=0; x<screenwidth; x++)
-            visplanes[i].bottoms[x] = visplanes[i].tops[x] = -1;
-    }
 
     nvisthings = 0;
     visthinghead = NULL;
