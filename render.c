@@ -491,6 +491,22 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat)
     return &visplanes[nvisplanes++];
 }
 
+void render_solidcol(uint8_t* col, int texheight, int x, int y1, int y2, float t, float tstep)
+{
+    int y, dst;
+
+    color_t color;
+
+    while(t<0)
+        t += texheight;
+
+    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, t+=tstep, dst+=screenwidth)
+    {
+        color = palette[col[(int) t % texheight]];
+        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+    }
+}
+
 void render_segrange(int x1, int x2, seg_t* seg)
 {
     int x, y;
@@ -510,6 +526,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     bool drawceil, drawfloor, drawtop, drawbottom, drewtop, drewbottom;
     visplane_t *floorplane, *ceilplane;
     drawseg_t *drawseg;
+    uint8_t *column;
     
     a1 = render_xtoangle(x1) + viewangle;
     a2 = render_xtoangle(x2) + viewangle;
@@ -675,16 +692,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
                         ttop = seg->frontside->yoffs;
 
                     t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
-                    while(t < 0)
-                        t += seg->frontside->mid->h;
-
-                    mods = ((int) s % seg->frontside->mid->w + seg->frontside->mid->w) % seg->frontside->mid->w;
-                    for(y=pxtop; y<=pxbottom; y++, t+=tstep)
-                    {
-                        modt = (int) t % seg->frontside->mid->h;
-                        color = seg->frontside->mid->stitch[mods * seg->frontside->mid->h + modt];
-                        pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
-                    }
+                    column = tex_getcolumn(seg->frontside->mid, s);
+                    render_solidcol(column, seg->frontside->mid->h, x, pxtop, pxbottom, t, tstep);
                 }
             }
         }
@@ -703,12 +712,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
             if(pxbottom >= bottomclips[x])
                 pxbottom = bottomclips[x] - 1;
 
-            if(pxbottom > topclips[x])
-            {
-                topclips[x] = pxbottom;
-                drewtop = true;
-            }
-
             if(pxtop <= pxbottom && seg->frontside->upper)
             {
                 if(seg->line->flags & LINEDEF_UPPERUNPEG)
@@ -716,18 +719,9 @@ void render_segrange(int x1, int x2, seg_t* seg)
                 else
                     ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
 
-                t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
-                while(t < 0)
-                    t += seg->frontside->upper->h;
-
-                mods = ((int) s % seg->frontside->upper->w + seg->frontside->upper->w) % seg->frontside->upper->w;
-
-                for(y=pxtop; y<=pxbottom; y++, t+=tstep)
-                {
-                    modt = (int) t % seg->frontside->upper->h;
-                    color = seg->frontside->upper->stitch[mods * seg->frontside->upper->h + modt];   
-                    pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
-                }
+                t = tstep * (MAX(ftop, topclips[x]+1) - ftop) + ttop;
+                column = tex_getcolumn(seg->frontside->upper, s);
+                render_solidcol(column, seg->frontside->upper->h, x, pxtop, pxbottom, t, tstep);
             }
         }
 
@@ -761,16 +755,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
                         ttop = seg->frontside->yoffs;
 
                     t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
-                    while(t < 0)
-                        t += seg->frontside->lower->h;
-
-                    mods = ((int) s % seg->frontside->lower->w + seg->frontside->lower->w) % seg->frontside->lower->w;
-                    for(y=pxtop; y<=pxbottom; y++, t+=tstep)
-                    {
-                        modt = (int) t % seg->frontside->lower->h;
-                        color = seg->frontside->lower->stitch[mods * seg->frontside->lower->h + modt];
-                        pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
-                    }
+                    column = tex_getcolumn(seg->frontside->lower, s);
+                    render_solidcol(column, seg->frontside->lower->h, x, pxtop, pxbottom, t, tstep);
                 }
             }
         }

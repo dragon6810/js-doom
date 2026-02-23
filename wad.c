@@ -136,6 +136,7 @@ void wad_decache(lumpinfo_t* lump)
     if(!lump->cache)
         return;
     free(lump->cache);
+    lump->cache = NULL;
 }
 
 void wad_clearcache(void)
