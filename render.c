@@ -182,7 +182,7 @@ void render_postcolumn(post_t* post, int x, int y1, int y2, float t, float tstep
     }
 }
 
-void render_maskedseg(drawseg_t* seg, int x1, int x2)
+void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
 {
     int x;
 
@@ -215,6 +215,8 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2)
     {
         if(seg->maskeds[x - seg->x1] == INT16_MAX)
             continue;
+        if(maxscale > 0 && scale >= maxscale)
+            continue;
 
         tstep = 1.0 / scale;
 
@@ -232,7 +234,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2)
         if(pxtop > pxbottom)
             continue;
 
-        t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
+        t = tstep * ((float) pxtop - ftop) + ttop;
         column = tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3;
         render_postcolumn(column, x, pxtop, pxbottom, t, tstep, scale);
         seg->maskeds[x - seg->x1] = INT16_MAX;
@@ -258,8 +260,8 @@ void render_clipthing(visthing_t* visthing)
         if(x1 > x2)
             continue;
 
-        if(closest < visthing->scale && drawseg->maskeds)
-            render_maskedseg(drawseg, x1, x2);
+        if(farthest < visthing->scale && drawseg->maskeds)
+            render_maskedseg(drawseg, x1, x2, visthing->scale);
 
         if(closest <= visthing->scale || drawseg->maskeds)
             continue;
@@ -396,7 +398,7 @@ void render_drawthings(void)
     {
         if(!drawseg->maskeds)
             continue;
-        render_maskedseg(drawseg, drawseg->x1, drawseg->x2);
+        render_maskedseg(drawseg, drawseg->x1, drawseg->x2, 0);
     }
 }
 

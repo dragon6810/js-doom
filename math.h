@@ -25,11 +25,15 @@
 #define ANGATAN(val) RADTOANG(atan(val))
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
+#define FLOATTOFIXED(f) (f * (float) UINT16_MAX)
+#define FIXEDSHIFT 16
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define CLAMP(x, min, max) MAX(MIN(x, max), min)
 
 typedef uint32_t angle_t;
 typedef int32_t sangle_t;
+typedef int32_t fixed_t;
 
 float magnitude(float x, float y);
