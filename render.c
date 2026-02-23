@@ -587,13 +587,16 @@ void render_solidcol(uint8_t* col, int texheight, int x, int y1, int y2, float t
     int y, dst;
 
     color_t color;
+    fixed_t tfrac, tsfrac;
 
-    while(t<0)
-        t += texheight;
+    tfrac = FLOATTOFIXED(t);
+    while(tfrac<0)
+        tfrac += texheight << FIXEDSHIFT;
+    tsfrac = FLOATTOFIXED(tstep);
 
-    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, t+=tstep, dst+=screenwidth)
+    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, tfrac+=tsfrac, dst+=screenwidth)
     {
-        color = palette[col[(int) t % texheight]];
+        color = palette[col[(tfrac >> FIXEDSHIFT) % texheight]];
         pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
     }
 }
