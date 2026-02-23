@@ -38,7 +38,9 @@ typedef struct visthing_s
 
 typedef struct
 {
-    int16_t *bottom, *top; // both NULL, solid wall. one null, top or bottom wall. neither null, masked texture.
+    seg_t *seg;
+    int16_t *bottom, *top; // both NULL, solid wall. one null, top or bottom wall
+    int16_t *maskeds;
     float scale1, scale2;
     float scalestep;
     int x1, x2;
@@ -150,6 +152,93 @@ angle_t render_ytoangle(int y)
     return ANGATAN(tangent);
 }
 
+void render_postcolumn(post_t* post, int x, int y1, int y2, float t, float tstep, float scale)
+{
+    int y;
+
+    float tstart;
+    int posttop;
+    color_t color;
+
+    tstart = t;
+    while(post->ystart != 0xFF)
+    {
+        posttop = y1 + ((float) post->ystart - tstart) * scale;
+        t = tstart - post->ystart;
+
+        for(y=posttop, t=0; t<post->len; t+=tstep, y++)
+        {
+            if(t + post->ystart < tstart)
+                continue;
+            if(y > y2)
+                break;
+            if(y < y1)
+                continue;
+
+            color = palette[post->payload[(int)t]];
+            pixels[y * screenwidth + x] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+        }
+        post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
+    }
+}
+
+void render_maskedseg(drawseg_t* seg, int x1, int x2)
+{
+    int x;
+
+    float ttop, portaltop, portalbottom, top, topstep, height, hstep, scale, tstep;
+    float ftop, fbottom;
+    int pxtop, pxbottom;
+    float t;
+    post_t *column;
+
+    portaltop = seg->seg->frontside->sector->ceilheight;
+    portalbottom = seg->seg->frontside->sector->floorheight;
+    if(seg->seg->backside)
+    {
+        portaltop = MIN(seg->seg->frontside->sector->ceilheight, seg->seg->backside->sector->ceilheight);
+        portalbottom = MAX(seg->seg->frontside->sector->floorheight, seg->seg->backside->sector->floorheight);
+    }
+
+    if(seg->seg->line->flags & LINEDEF_LOWERUNPEG)
+        ttop = seg->seg->frontside->mid->h - (portaltop - portalbottom) + seg->seg->frontside->yoffs;
+    else
+        ttop = seg->seg->frontside->yoffs;
+
+    scale = seg->scale1 + (x1 - seg->x1) * seg->scalestep;
+    top = -(portaltop - viewz) * scale + halfy;
+    topstep = -(portaltop - viewz) * seg->scalestep;
+    height = (portaltop - portalbottom) * scale;
+    hstep = (portaltop - portalbottom) * seg->scalestep;
+
+    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=seg->scalestep)
+    {
+        if(seg->maskeds[x - seg->x1] == INT16_MAX)
+            continue;
+
+        tstep = 1.0 / scale;
+
+        ftop = top;
+        fbottom = top + height;
+
+        pxtop = ftop + 1;
+        pxbottom = fbottom;
+
+        if(pxtop <= seg->top[x - seg->x1])
+            pxtop = seg->top[x - seg->x1] + 1;
+        if(pxbottom >= seg->bottom[x - seg->x1])
+            pxbottom = seg->bottom[x - seg->x1] - 1;
+
+        if(pxtop > pxbottom)
+            continue;
+
+        t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
+        column = tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3;
+        render_postcolumn(column, x, pxtop, pxbottom, t, tstep, scale);
+        seg->maskeds[x - seg->x1] = INT16_MAX;
+    }
+}
+
 void render_clipthing(visthing_t* visthing)
 {
     int x;
@@ -163,13 +252,16 @@ void render_clipthing(visthing_t* visthing)
         farthest = MIN(drawseg->scale1, drawseg->scale2);
         closest = MAX(drawseg->scale1, drawseg->scale2);
 
-        if(closest <= visthing->scale)
-            continue;
-
         x1 = MAX(drawseg->x1, visthing->x1);
         x2 = MIN(drawseg->x2, visthing->x2);
 
         if(x1 > x2)
+            continue;
+
+        if(closest < visthing->scale && drawseg->maskeds)
+            render_maskedseg(drawseg, x1, x2);
+
+        if(closest <= visthing->scale || drawseg->maskeds)
             continue;
 
         scale = drawseg->scale1 + (x1 - drawseg->x1) * drawseg->scalestep;
@@ -197,11 +289,14 @@ void render_drawthing(visthing_t* thing)
 {
     int x, y;
 
-    float s, t, invtstep, tmax;
+    float s, t;
     int posttop;
     pic_t *pic;
     post_t *post;
     int color;
+
+    if(!thing->height)
+        return;
 
     for(x=thing->x1; x<=thing->x2; x++)
     {
@@ -213,9 +308,6 @@ void render_drawthing(visthing_t* thing)
 
     pic = thing->patch->cache;
 
-    invtstep = 1.0 / thing->sstep;
-    tmax = thing->height * invtstep;
-
     s = thing->s1;
     for(x=thing->x1; x<=thing->x2; x++, s+=thing->sstep)
     {
@@ -224,22 +316,10 @@ void render_drawthing(visthing_t* thing)
         if(visthingtop[x] > visthingbottom[x])
             continue;
 
-        post = ((uint8_t*) pic) + pic->postoffs[(int) s];
-        while(post->ystart != 0xFF)
-        {
-            posttop = thing->y + post->ystart * invtstep;
-            for(y=posttop, t=0; t<post->len; t+=thing->sstep, y++)
-            {
-                if(y < visthingtop[x])
-                    continue;
-                if(y > visthingbottom[x])
-                    break;
+        t = (visthingtop[x] - thing->y) * thing->sstep;
 
-                color = post->payload[(int)t];
-                pixels[y * screenwidth + x] = (int) palette[color].r << 16 | (int) palette[color].g << 8 | (int) palette[color].b;
-            }
-            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
-        }
+        post = ((uint8_t*) pic) + pic->postoffs[(int) s];
+        render_postcolumn(post, x, visthingtop[x], visthingbottom[x], t, thing->sstep, thing->scale);
     }
 }
 
@@ -304,11 +384,20 @@ void render_sortthings(void)
 
 void render_drawthings(void)
 {
+    int i;
+    drawseg_t *drawseg;
     visthing_t *visthing;
 
     render_sortthings();
     for(visthing=visthingtail; visthing; visthing=visthing->prev)
         render_drawthing(visthing);
+
+    for(drawseg=&drawsegs[ndrawsegs-1]; drawseg>=drawsegs; drawseg--)
+    {
+        if(!drawseg->maskeds)
+            continue;
+        render_maskedseg(drawseg, drawseg->x1, drawseg->x2);
+    }
 }
 
 void render_drawspan(visplane_t* plane, int y, int x1, int x2)
@@ -525,7 +614,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     int mods, modt;
     bool drawceil, drawfloor, drawtop, drawbottom, drewtop, drewbottom;
     visplane_t *floorplane, *ceilplane;
-    drawseg_t *drawseg;
+    drawseg_t *drawseg, *maskedseg;
     uint8_t *column;
     
     a1 = render_xtoangle(x1) + viewangle;
@@ -605,6 +694,31 @@ void render_segrange(int x1, int x2, seg_t* seg)
     {
         floorplane = render_getvisplane(seg->frontside->sector->floorheight - viewz, seg->frontside->sector->floortex);
         floorplane = render_splitplane(floorplane, x1, x2);
+    }
+
+    maskedseg = NULL;
+    if(seg->backside && seg->frontside->mid)
+    {
+        if(ndrawsegs >= MAX_DRAWSEG)
+            return;
+        if(clipend + (x2 + 1 - x1) * 3 >= clipbuff + clipbuffsize)
+            return;
+
+        maskedseg = &drawsegs[ndrawsegs++];
+
+        maskedseg->seg = seg;
+        maskedseg->x1 = x1;
+        maskedseg->x2 = x2;
+
+        maskedseg->scale1 = scale1;
+        maskedseg->scale2 = scale2;
+        maskedseg->scalestep = scalestep;
+        maskedseg->top = clipend;
+        clipend += x2 + 1 - x1;
+        maskedseg->bottom = clipend;
+        clipend += x2 + 1 - x1;
+        maskedseg->maskeds = clipend;
+        clipend += x2 + 1 - x1;
     }
 
     sbase = seg->frontside->xoffs + seg->offset;
@@ -691,11 +805,13 @@ void render_segrange(int x1, int x2, seg_t* seg)
                     else
                         ttop = seg->frontside->yoffs;
 
-                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
+                    t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->mid, s);
                     render_solidcol(column, seg->frontside->mid->h, x, pxtop, pxbottom, t, tstep);
                 }
             }
+            else if(pxtop <= pxbottom && seg->frontside->mid)
+                maskedseg->maskeds[x - x1] = s;
         }
 
         if(drawtop)
@@ -712,6 +828,12 @@ void render_segrange(int x1, int x2, seg_t* seg)
             if(pxbottom >= bottomclips[x])
                 pxbottom = bottomclips[x] - 1;
 
+            if(pxbottom > topclips[x])
+            {
+                topclips[x] = pxbottom;
+                drewtop = true;
+            }
+
             if(pxtop <= pxbottom && seg->frontside->upper)
             {
                 if(seg->line->flags & LINEDEF_UPPERUNPEG)
@@ -719,7 +841,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
                 else
                     ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
 
-                t = tstep * (MAX(ftop, topclips[x]+1) - ftop) + ttop;
+                t = tstep * ((float) pxtop - ftop) + ttop;
                 column = tex_getcolumn(seg->frontside->upper, s);
                 render_solidcol(column, seg->frontside->upper->h, x, pxtop, pxbottom, t, tstep);
             }
@@ -754,7 +876,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
                     else
                         ttop = seg->frontside->yoffs;
 
-                    t = tstep * ((float) pxtop + 0.5 - ftop) + ttop;
+                    t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->lower, s);
                     render_solidcol(column, seg->frontside->lower->h, x, pxtop, pxbottom, t, tstep);
                 }
@@ -769,12 +891,13 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         drawseg = &drawsegs[ndrawsegs++];
 
+        drawseg->seg = seg;
         drawseg->x1 = x1;
         drawseg->x2 = x2;
         drawseg->scale1 = scale1;
         drawseg->scale2 = scale2;
         drawseg->scalestep = scalestep;
-        drawseg->top = drawseg->bottom = NULL;
+        drawseg->top = drawseg->bottom = drawseg->maskeds = NULL;
     }
 
     if(drewtop)
@@ -786,12 +909,13 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         drawseg = &drawsegs[ndrawsegs++];
 
+        drawseg->seg = seg;
         drawseg->x1 = x1;
         drawseg->x2 = x2;
         drawseg->scale1 = scale1;
         drawseg->scale2 = scale2;
         drawseg->scalestep = scalestep;
-        drawseg->bottom = NULL;
+        drawseg->bottom = drawseg->maskeds = NULL;
         drawseg->top = clipend;
         clipend += x2 + 1 - x1;
 
@@ -807,16 +931,23 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         drawseg = &drawsegs[ndrawsegs++];
 
+        drawseg->seg = seg;
         drawseg->x1 = x1;
         drawseg->x2 = x2;
         drawseg->scale1 = scale1;
         drawseg->scale2 = scale2;
         drawseg->scalestep = scalestep;
-        drawseg->top = NULL;
+        drawseg->top = drawseg->maskeds = NULL;
         drawseg->bottom = clipend;
         clipend += x2 + 1 - x1;
 
         memcpy(drawseg->bottom, bottomclips + x1, (x2 + 1 - x1) * sizeof(int16_t));
+    }
+
+    if(maskedseg)
+    {
+        memcpy(maskedseg->top, topclips + x1, (x2 + 1 - x1) * sizeof(int16_t));
+        memcpy(maskedseg->bottom, bottomclips + x1, (x2 + 1 - x1) * sizeof(int16_t));
     }
 }
 
@@ -932,7 +1063,8 @@ void render_seg(seg_t* seg)
         return render_clipandaddseg(x1, x2, seg);
 
     // no new visplanes or walls need to be drawn, skip
-    if(seg->frontside->sector->ceilheight == seg->backside->sector->ceilheight
+    if(!seg->frontside->mid
+    && seg->frontside->sector->ceilheight == seg->backside->sector->ceilheight
     && seg->frontside->sector->floorheight == seg->backside->sector->floorheight
     && seg->frontside->sector->ceiltex == seg->backside->sector->ceiltex
     && seg->frontside->sector->floortex == seg->backside->sector->floortex
