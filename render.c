@@ -1129,8 +1129,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     if(frame->rotational)
     {
         a = ANGATAN2(dy, dx);
-        theta = mobj->angle - a;
-        rotframe = (-theta + ANG180) / ANG45;
+        theta = a - mobj->angle + ANG45 / 2;
+        rotframe = (theta + ANG180) / ANG45;
     }
 
     visthing->patch = &lumps[frame->rotlumps[rotframe]];
