@@ -99,7 +99,8 @@ void render_init(void)
 {
     int i, j;
 
-    int baselevel;
+    int baselevel, level;
+    float scale;
 
     topclips = malloc(screenwidth * sizeof(int16_t));
     bottomclips = malloc(screenwidth * sizeof(int16_t));
@@ -124,15 +125,20 @@ void render_init(void)
 
     for(i=0; i<LIGHTLEVELS; i++)
     {
-        baselevel = (LIGHTLEVELS - 1 - i) * (LIGHTMAP / LIGHTLEVELS);
-        baselevel = CLAMP(baselevel, 0, LIGHTMAP - 1);
+        baselevel = ((LIGHTLEVELS - 1 - i) * 2) * LIGHTMAP / LIGHTLEVELS;
         for(j=0; j<SCALEBANDS; j++)
         {
-            scalemap[i][j] = colormap->maps[baselevel];
+            level = baselevel - j / 2;
+            level = CLAMP(level, 0, LIGHTMAP - 1);
+            scalemap[i][j] = colormap->maps[level];
         }
+
         for(j=0; j<ZBANDS; j++)
         {
-            zmap[i][j] = colormap->maps[baselevel];
+            scale = halfx / (float) (j + 1);
+            level = baselevel - scale / 2;
+            level = CLAMP(level, 0, LIGHTMAP - 1);
+            zmap[i][j] = colormap->maps[level];
         }
     }
 }
@@ -223,6 +229,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
     int pxtop, pxbottom;
     float t;
     int baselight;
+    int lightindex;
     uint8_t *map;
     post_t *column;
 
@@ -232,7 +239,6 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
     else if(seg->seg->v1->x == seg->seg->v2->x)
         baselight++;
     baselight = CLAMP(baselight, 0, LIGHTLEVELS - 1);
-    map = scalemap[baselight][0];
 
     portaltop = seg->seg->frontside->sector->ceilheight;
     portalbottom = seg->seg->frontside->sector->floorheight;
@@ -259,6 +265,9 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
             continue;
         if(maxscale > 0 && scale >= maxscale)
             continue;
+        
+        lightindex = CLAMP(scale * 16, 0, SCALEBANDS - 1);
+        map = scalemap[baselight][lightindex];
 
         tstep = 1.0 / scale;
 
@@ -463,11 +472,14 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     float adjust;
     int s, t;
     angle_t a1;
+    int lightindex;
     uint8_t *map;
 
-    map = zmap[plane->baselight][0];
-
     dist = plane->z / ANGTAN(render_ytoangle(y));
+
+    lightindex = dist / 16.0;
+    lightindex = CLAMP(lightindex, 0, ZBANDS - 1);
+    map = zmap[plane->baselight][lightindex];
 
     worldx = viewx;
     worldy = viewy;
@@ -676,7 +688,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     visplane_t *floorplane, *ceilplane;
     drawseg_t *drawseg, *maskedseg;
     uint8_t *column;
-    int sectorlight, baselight;
+    int sectorlight, baselight, lightindex;
     uint8_t *map;
     
     a1 = render_xtoangle(x1) + viewangle;
@@ -735,7 +747,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
         baselight++;
     sectorlight = CLAMP(sectorlight, 0, LIGHTLEVELS - 1);
     baselight = CLAMP(baselight, 0, LIGHTLEVELS - 1);
-    map = scalemap[baselight][0];
 
     drawceil = true;
     if(seg->frontside->sector->ceilheight <= viewz)
@@ -803,6 +814,9 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         a = render_xtoangle(x);
         s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
+        
+        lightindex = CLAMP(scale * 16, 0, SCALEBANDS - 1);
+        map = scalemap[baselight][lightindex];
 
         if(ceilplane)
         {
@@ -1158,6 +1172,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     sprframe_t *frame;
     angle_t a, theta;
     int rotframe;
+    int lightindex;
 
     dx = mobj->x - viewx;
     dy = mobj->y - viewy;
@@ -1177,7 +1192,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     }
     else
     {
-        visthing->colormap = scalemap[mobj->ssector->sector->light >> LIGHTSHIFT][0];
+        lightindex = CLAMP(visthing->scale * 16, 0, SCALEBANDS - 1);
+        visthing->colormap = scalemap[mobj->ssector->sector->light >> LIGHTSHIFT][lightindex];
     }
 
     sprite = &sprites[states[mobj->state].sprite];
