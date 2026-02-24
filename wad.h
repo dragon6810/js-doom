@@ -9,6 +9,9 @@
 
 #define MAX_WAD 16
 
+#define TOTAL_COLORMAP 34
+#define LIGHTMAP 32
+
 typedef struct
 {
     char name[9];
@@ -45,13 +48,32 @@ typedef struct __attribute__((packed))
     uint8_t b;
 } color_t;
 
+typedef struct __attribute((packed))
+{
+    uint8_t maps[TOTAL_COLORMAP][256];
+} colormap_t;
+
+typedef struct
+{
+    bool rotational;
+    int rotlumps[8]; // only use [0] if !rotational
+    bool mirror[8];
+} sprframe_t;
+
+typedef struct
+{
+    int nframes;
+    sprframe_t *frames; // starts at 'A'
+} sprite_t;
+
 extern int nlumps;
 extern lumpinfo_t *lumps;
 extern int nwads;
 extern FILE *wads[MAX_WAD];
 
-extern lumpinfo_t *sprites[NUMSPRITES][256 - 'A'];
+extern sprite_t sprites[NUMSPRITES];
 extern color_t *palette;
+extern colormap_t *colormap;
 
 void wad_load(const char* filename);
 lumpinfo_t* wad_findlump(const char* name, bool cache);

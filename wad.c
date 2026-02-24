@@ -10,26 +10,114 @@ lumpinfo_t *lumps = NULL;
 int nwads = 0;
 FILE *wads[MAX_WAD];
 
-lumpinfo_t *sprites[NUMSPRITES][256 - 'A'];
+sprite_t sprites[NUMSPRITES];
 color_t *palette = NULL;
+colormap_t *colormap = NULL;
+
+int sprstart, sprend;
+
+void wad_loadcolormap(void)
+{
+    lumpinfo_t *lump;
+
+    lump = wad_findlump("COLORMAP", true);
+    if(!lump)
+    {
+        colormap = NULL;
+        return;   
+    }
+
+    colormap = lump->cache;
+}
+
+sprframe_t tempframes[256 - 'A'];
+
+void wad_findsprite(sprite_t* spr, const char* name)
+{
+    int i, l;
+    lumpinfo_t *lump;
+
+    int maxframe, frame, rot;
+    sprframe_t *pframe;
+
+    memset(tempframes, 0, sizeof(tempframes));
+
+    maxframe = -1;
+    for(l=sprstart+1; l<sprend; l++)
+    {
+        lump = &lumps[l];
+
+        if(strncasecmp(name, lump->name, 4))
+            continue;
+        
+        frame = lump->name[4] - 'A';
+        if(frame > maxframe)
+            maxframe = frame;
+        rot = lump->name[5] - '0';
+
+        if(frame >= 0 && rot >= 0 && rot <= 8)
+        {
+            pframe = &tempframes[frame];
+            pframe->rotational = rot != 0;
+            if(rot == 0)
+            {
+                pframe->rotational = false;
+                pframe->rotlumps[0] = l;
+                pframe->mirror[0] = false;
+            }
+            else
+            {
+                pframe->rotational = true;
+                pframe->rotlumps[rot - 1] = l;
+                pframe->mirror[rot - 1] = false;
+            }
+        }
+
+        if(!lump->name[6])
+            continue;
+        
+        frame = lump->name[6] - 'A';
+        if(frame > maxframe)
+            maxframe = frame;
+        rot = lump->name[7] - '0';
+
+        if(frame >= 0 && rot >= 0 && rot <= 8)
+        {
+            pframe = &tempframes[frame];
+            pframe->rotational = rot != 0;
+            if(rot == 0)
+            {
+                pframe->rotational = false;
+                pframe->rotlumps[0] = l;
+                pframe->mirror[0] = true;
+            }
+            else
+            {
+                pframe->rotational = true;
+                pframe->rotlumps[rot - 1] = l;
+                pframe->mirror[rot - 1] = true;
+            }
+        }
+    }
+
+    if(maxframe < 0)
+    {
+        spr->nframes = 0;
+        spr->frames = NULL;
+        return;
+    }
+
+    spr->nframes = maxframe + 1;
+    spr->frames = malloc(spr->nframes * sizeof(sprframe_t));
+    memcpy(spr->frames, tempframes, spr->nframes * sizeof(sprframe_t));
+}
 
 void wad_findsprites(void)
 {
-    int i, f;
-
-    char name[7];
+    int i;
 
     for(i=0; i<NUMSPRITES; i++)
-    {
-        for(f='A'; f<256; f++)
-        {
-            memcpy(name, sprnames[i], 4);
-            name[4] = f;
-            name[5] = '0';
-            name[6] = 0;
-            sprites[i][f - 'A'] = wad_findlump(name, false);
-        }
-    }
+        wad_findsprite(&sprites[i], sprnames[i]);
 }
 
 void wad_loadlumpinfos(int32_t nlump, int32_t loc)
@@ -55,6 +143,11 @@ void wad_loadlumpinfos(int32_t nlump, int32_t loc)
         plump->name[8] = 0;
         plump->wad = nwads-1;
         plump->cache = NULL;
+
+        if(!strcmp(plump->name, "S_START") || !strcmp(plump->name, "SS_START"))
+            sprstart = i;
+        else if(!strcmp(plump->name, "S_END") || !strcmp(plump->name, "SS_END"))
+            sprend = i;
     }
 }
 
@@ -62,6 +155,8 @@ void wad_load(const char* filename)
 {
     char magic[5];
     int32_t nlump, lumpinfoloc;
+
+    sprstart = sprend = -1;
 
     if(nwads >= MAX_WAD)
     {
@@ -98,6 +193,7 @@ void wad_load(const char* filename)
 
     tex_dowad();
     wad_findsprites();
+    wad_loadcolormap();
 }
 
 lumpinfo_t* wad_findlump(const char* name, bool cache)

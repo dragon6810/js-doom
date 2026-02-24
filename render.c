@@ -26,6 +26,7 @@ typedef struct
 
 typedef struct visthing_s
 {
+    bool mirror;
     lumpinfo_t *patch;
     float scale;
     int x1, x2;
@@ -296,7 +297,7 @@ void render_drawthing(visthing_t* thing)
 {
     int x, y;
 
-    float s, t;
+    float s, t, sstep;
     int posttop;
     pic_t *pic;
     post_t *post;
@@ -316,6 +317,14 @@ void render_drawthing(visthing_t* thing)
     pic = thing->patch->cache;
 
     s = thing->s1;
+    sstep = thing->sstep;
+
+    if(thing->mirror)
+    {
+        s = pic->w - s;
+        sstep = -sstep;
+    }
+
     for(x=thing->x1; x<=thing->x2; x++, s+=thing->sstep)
     {
         if(s >= pic->w)
@@ -365,11 +374,11 @@ void render_sortthings(void)
         return;
     }
 
-    for(i = 0; i < nvisthings; i++)
+    for(i=0; i<nvisthings; i++)
     {
         best = unsorted.next;
 
-        for(it = unsorted.next; it != &unsorted; it = it->next)
+        for(it=unsorted.next; it!=&unsorted; it=it->next)
             if(it->scale > best->scale)
                 best = it;
 
@@ -587,7 +596,7 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat)
     return &visplanes[nvisplanes++];
 }
 
-void render_solidcol(uint8_t* col, int texheight, int x, int y1, int y2, float t, float tstep)
+void render_solidcol(uint8_t* col, int colmap, int texheight, int x, int y1, int y2, float t, float tstep)
 {
     int y, dst;
 
@@ -601,7 +610,7 @@ void render_solidcol(uint8_t* col, int texheight, int x, int y1, int y2, float t
 
     for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, tfrac+=tsfrac, dst+=screenwidth)
     {
-        color = palette[col[(tfrac >> FIXEDSHIFT) % texheight]];
+        color = palette[colormap->maps[colmap][col[(tfrac >> FIXEDSHIFT) % texheight]]];
         pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
     }
 }
@@ -626,6 +635,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     visplane_t *floorplane, *ceilplane;
     drawseg_t *drawseg, *maskedseg;
     uint8_t *column;
+    int colormap;
     
     a1 = render_xtoangle(x1) + viewangle;
     a2 = render_xtoangle(x2) + viewangle;
@@ -731,6 +741,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
         clipend += x2 + 1 - x1;
     }
 
+    colormap = 0;
+
     sbase = seg->frontside->xoffs + seg->offset;
 
     drewtop = drewbottom = false;
@@ -775,7 +787,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
                 floorplane->tops[x] = floorplane->bottoms[x] = -1;
         }
 
-        // middle
         if(portaltop > portalbottom)
         {   
             ftop = top + tsilheight;
@@ -817,7 +828,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                     t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->mid, s);
-                    render_solidcol(column, seg->frontside->mid->h, x, pxtop, pxbottom, t, tstep);
+                    render_solidcol(column, colormap, seg->frontside->mid->h, x, pxtop, pxbottom, t, tstep);
                 }
             }
             else if(pxtop <= pxbottom && seg->frontside->mid)
@@ -853,7 +864,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                 t = tstep * ((float) pxtop - ftop) + ttop;
                 column = tex_getcolumn(seg->frontside->upper, s);
-                render_solidcol(column, seg->frontside->upper->h, x, pxtop, pxbottom, t, tstep);
+                render_solidcol(column, colormap, seg->frontside->upper->h, x, pxtop, pxbottom, t, tstep);
             }
         }
 
@@ -888,7 +899,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                     t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->lower, s);
-                    render_solidcol(column, seg->frontside->lower->h, x, pxtop, pxbottom, t, tstep);
+                    render_solidcol(column, colormap, seg->frontside->lower->h, x, pxtop, pxbottom, t, tstep);
                 }
             }
         }
@@ -1092,6 +1103,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     float w, h;
     int x1, x2, top;
     pic_t *pic;
+    sprite_t *sprite;
+    sprframe_t *frame;
 
     dx = mobj->x - viewx;
     dy = mobj->y - viewy;
@@ -1105,9 +1118,17 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale + halfx;
     centery = -(mobj->z - viewz) * visthing->scale + halfy;
 
-    visthing->patch = sprites[states[mobj->state].sprite][states[mobj->state].frame & 0x7FFF];
-    if(!visthing->patch)
+    sprite = &sprites[states[mobj->state].sprite];
+    if((states[mobj->state].frame & 0x7FFF) >= sprite->nframes)
         return true;
+    frame = &sprite->frames[states[mobj->state].frame & 0x7FFF];
+
+    visthing->patch = &lumps[frame->rotlumps[0]];
+    visthing->mirror = frame->mirror[0];
+
+    if(frame->rotlumps[0] < 0)
+        return true;
+
     wad_cache(visthing->patch);
     pic = visthing->patch->cache;
 
