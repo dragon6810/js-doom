@@ -269,7 +269,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
         if(maxscale > 0 && scale >= maxscale)
             continue;
         
-        lightindex = CLAMP(scale * 16, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
         tstep = 1.0 / scale;
@@ -862,7 +862,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
         a = render_xtoangle(x);
         s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
         
-        lightindex = CLAMP(scale * 16, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
         if(ceilplane)
@@ -1239,7 +1239,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     }
     else
     {
-        lightindex = CLAMP(visthing->scale * 16, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(visthing->scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         visthing->colormap = scalemap[mobj->ssector->sector->light >> LIGHTSHIFT][lightindex];
     }
 
