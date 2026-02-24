@@ -537,7 +537,7 @@ void render_drawskyplane(visplane_t* plane)
 
     tex_stitch(levelskytex);
 
-    tstep = (float) SKYH / halfy;
+    tstep = 320.0 / screenheight / 2;
     for(x=plane->x1; x<=plane->x2; x++)
     {
         if((plane->tops[x] == -1 && plane->bottoms[x] == -1) || plane->tops[x] > plane->bottoms[x])
@@ -550,7 +550,7 @@ void render_drawskyplane(visplane_t* plane)
         s = (float) a / (float) ANG90 * (float) SKYW;
 
         col = tex_getcolumn(levelskytex, s);
-        render_solidcol(col, colormap->maps[0], SKYH, x, top, bottom, top * tstep, tstep);
+        render_solidcol(col, colormap->maps[0], SKYH, x, top, bottom, halfy + (top - halfy) * tstep, tstep);
     }
 }
 
