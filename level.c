@@ -107,6 +107,12 @@ int nsegs = 0;
 seg_t *segs = NULL;
 object_t *mobjs = NULL;
 
+texture_t* levelskytex = NULL;
+const char *episodeskies[] =
+{
+    "SKY1", "SKY2", "SKY3", "SKY1", "SKY3"
+};
+
 void level_placemobj(object_t* mobj)
 {
     mobj->ssector = level_getpointssector(mobj->x, mobj->y);
@@ -454,6 +460,8 @@ void level_load(int episode, int map)
 
     level_linksectors();
     level_loadthings(lump);
+
+    levelskytex = tex_find(episodeskies[episode - 1]);
 
     printf("loaded %s\n", levelname);
 }

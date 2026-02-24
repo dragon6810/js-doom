@@ -74,6 +74,7 @@ extern FILE *wads[MAX_WAD];
 extern sprite_t sprites[NUMSPRITES];
 extern color_t *palette;
 extern colormap_t *colormap;
+extern lumpinfo_t *skylump;
 
 void wad_load(const char* filename);
 lumpinfo_t* wad_findlump(const char* name, bool cache);

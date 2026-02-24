@@ -13,6 +13,7 @@ FILE *wads[MAX_WAD];
 sprite_t sprites[NUMSPRITES];
 color_t *palette = NULL;
 colormap_t *colormap = NULL;
+lumpinfo_t *skylump = NULL;
 
 int sprstart, sprend;
 
@@ -194,6 +195,8 @@ void wad_load(const char* filename)
     tex_dowad();
     wad_findsprites();
     wad_loadcolormap();
+
+    skylump = wad_findlump("F_SKY1", false);
 }
 
 lumpinfo_t* wad_findlump(const char* name, bool cache)

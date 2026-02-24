@@ -102,7 +102,7 @@ int main()
     
     render_init();
 
-    level_load(1, 2);
+    level_load(1, 1);
 
     keystates = SDL_GetKeyboardState(NULL);
 

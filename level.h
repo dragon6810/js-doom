@@ -125,6 +125,8 @@ extern int nsegs;
 extern seg_t *segs;
 extern object_t *mobjs;
 
+extern texture_t* levelskytex;
+
 void level_placemobj(object_t* mobj);
 int level_nodeside(node_t* node, float x, float y);
 ssector_t* level_getpointssector(float x, float y);

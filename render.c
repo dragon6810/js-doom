@@ -19,6 +19,9 @@
 #define SCALEBANDS 48
 #define ZBANDS 128
 
+#define SKYW 256
+#define SKYH 128
+
 float viewx = 0, viewy = 0, viewz = 0;
 angle_t viewangle = 0;
 
@@ -503,9 +506,63 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     }
 }
 
+void render_solidcol(uint8_t* col, uint8_t* colmap, int texheight, int x, int y1, int y2, float t, float tstep)
+{
+    int y, dst;
+
+    color_t color;
+    fixed_t tfrac, tsfrac;
+
+    tfrac = FLOATTOFIXED(t);
+    while(tfrac<0)
+        tfrac += texheight << FIXEDSHIFT;
+    tsfrac = FLOATTOFIXED(tstep);
+
+    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, tfrac+=tsfrac, dst+=screenwidth)
+    {
+        color = palette[colmap[col[(tfrac >> FIXEDSHIFT) % texheight]]];
+        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+    }
+}
+
+void render_drawskyplane(visplane_t* plane)
+{
+    int x;
+
+    int top, bottom;
+    angle_t a;
+    int s;
+    uint8_t *col;
+    float tstep;
+
+    tex_stitch(levelskytex);
+
+    tstep = (float) SKYH / halfy;
+    for(x=plane->x1; x<=plane->x2; x++)
+    {
+        if((plane->tops[x] == -1 && plane->bottoms[x] == -1) || plane->tops[x] > plane->bottoms[x])
+            continue;
+
+        top = CLAMP(plane->tops[x], 0, screenheight - 1);
+        bottom = CLAMP(plane->bottoms[x], 0, screenheight - 1);
+
+        a = render_xtoangle(x) + viewangle;
+        s = (float) a / (float) ANG90 * (float) SKYW;
+
+        col = tex_getcolumn(levelskytex, s);
+        render_solidcol(col, colormap->maps[0], SKYH, x, top, bottom, top * tstep, tstep);
+    }
+}
+
 void render_drawplane(visplane_t* plane)
 {
     int x, y;
+
+    if(plane->flat == skylump)
+    {
+        render_drawskyplane(plane);
+        return;
+    }
 
     wad_cache(plane->flat);
 
@@ -632,6 +689,10 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat, int light)
 {
     int i;
 
+    // these aren't a concern for merging sky planes
+    if(flat == skylump)
+        z = light = 0;
+
     for(i=nvisplanes-1; i>=0; i--)
         if(visplanes[i].z == z && visplanes[i].flat == flat && visplanes[i].baselight == light)
             return &visplanes[i];
@@ -647,25 +708,6 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat, int light)
     visplanes[nvisplanes].flat = flat;
     visplanes[nvisplanes].baselight = light;
     return &visplanes[nvisplanes++];
-}
-
-void render_solidcol(uint8_t* col, uint8_t* colmap, int texheight, int x, int y1, int y2, float t, float tstep)
-{
-    int y, dst;
-
-    color_t color;
-    fixed_t tfrac, tsfrac;
-
-    tfrac = FLOATTOFIXED(t);
-    while(tfrac<0)
-        tfrac += texheight << FIXEDSHIFT;
-    tsfrac = FLOATTOFIXED(tstep);
-
-    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, tfrac+=tsfrac, dst+=screenwidth)
-    {
-        color = palette[colmap[col[(tfrac >> FIXEDSHIFT) % texheight]]];
-        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
-    }
 }
 
 void render_segrange(int x1, int x2, seg_t* seg)
@@ -698,8 +740,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
     // perpendicular distance from line to camera
     dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
 
-    scale = scale1 = ANGCOS(a1 - normal) / (dist * ANGCOS(a1 - viewangle)) * projectconst;
-    scale2 = ANGCOS(a2 - normal) / (dist * ANGCOS(a2 - viewangle)) * projectconst;
+    scale = scale1 = ANGCOS(a1 - normal) / MAX(dist * ANGCOS(a1 - viewangle), 0.05) * projectconst;
+    scale2 = ANGCOS(a2 - normal) / MAX(dist * ANGCOS(a2 - viewangle), 0.05) * projectconst;
 
     scalestep = (scale2 - scale1) / (float) (x2 - x1);
 
@@ -710,6 +752,11 @@ void render_segrange(int x1, int x2, seg_t* seg)
     {
         portaltop = MIN(portaltop, seg->backside->sector->ceilheight);
         portalbottom = MAX(portalbottom, seg->backside->sector->floorheight);
+    }
+
+    if(seg->frontside->sector->ceiltex == skylump && seg->backside->sector->ceiltex == skylump)
+    {
+        worldtop = portaltop;
     }
 
     drawtop = worldtop > portaltop;
@@ -749,7 +796,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     baselight = CLAMP(baselight, 0, LIGHTLEVELS - 1);
 
     drawceil = true;
-    if(seg->frontside->sector->ceilheight <= viewz)
+    if(seg->frontside->sector->ceilheight <= viewz && seg->frontside->sector->ceiltex != skylump)
         drawceil = false;
     if(seg->backside 
     && seg->backside->sector->ceilheight == seg->frontside->sector->ceilheight
