@@ -321,13 +321,13 @@ void render_drawthing(visthing_t* thing)
 
     if(thing->mirror)
     {
-        s = pic->w - s;
+        s = pic->w - 1 - s;
         sstep = -sstep;
     }
 
-    for(x=thing->x1; x<=thing->x2; x++, s+=thing->sstep)
+    for(x=thing->x1; x<=thing->x2; x++, s+=sstep)
     {
-        if(s >= pic->w)
+        if(s >= pic->w || s < 0)
             break;
         if(visthingtop[x] > visthingbottom[x])
             continue;
@@ -1105,6 +1105,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     pic_t *pic;
     sprite_t *sprite;
     sprframe_t *frame;
+    angle_t a, theta;
+    int rotframe;
 
     dx = mobj->x - viewx;
     dy = mobj->y - viewy;
@@ -1123,10 +1125,18 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
         return true;
     frame = &sprite->frames[states[mobj->state].frame & 0x7FFF];
 
-    visthing->patch = &lumps[frame->rotlumps[0]];
-    visthing->mirror = frame->mirror[0];
+    rotframe = 0;
+    if(frame->rotational)
+    {
+        a = ANGATAN2(dy, dx);
+        theta = mobj->angle - a;
+        rotframe = (-theta + ANG180) / ANG45;
+    }
 
-    if(frame->rotlumps[0] < 0)
+    visthing->patch = &lumps[frame->rotlumps[rotframe]];
+    visthing->mirror = frame->mirror[rotframe];
+
+    if(frame->rotlumps[rotframe] < 0)
         return true;
 
     wad_cache(visthing->patch);
