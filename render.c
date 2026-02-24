@@ -1117,7 +1117,7 @@ void render_seg(seg_t* seg)
     a2 = ANGATAN2(seg->v2->y - viewy, seg->v2->x - viewx);
 
     theta = a1 - a2;
-    if(theta > ANG180)
+    if(theta >= ANG180-1)
         return;
 
     a1 -= viewangle;

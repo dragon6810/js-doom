@@ -186,7 +186,7 @@ int tex_stitchcolumn(texture_t* tex, int bufwritten, int x)
     tex->collumps[x] = -1;
     tex->coloffs[x] = bufwritten;
 
-    for(i=npatch=0, texpatch=tex->patches; i<tex->npatch; i++, texpatch++)
+    for(i=0, texpatch=tex->patches; i<tex->npatch; i++, texpatch++)
     {
         if(tex->patches[i].lumpnum < 0)
             continue;

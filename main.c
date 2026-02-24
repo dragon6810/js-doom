@@ -96,13 +96,13 @@ void screen_init(int width, int height)
 int main()
 {
     SDL_Init(SDL_INIT_VIDEO);
-        
+
     wad_load("doom.wad");
     wad_setpalette(0);
     
     render_init();
 
-    level_load(1, 1);
+    level_load(1, 2);
 
     keystates = SDL_GetKeyboardState(NULL);
 
