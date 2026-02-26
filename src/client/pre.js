@@ -47,7 +47,10 @@ async function connectToGame(ip, port) {
             maxRetransmits: 0
         });
 
-        dataChannel.onopen = () => console.log("WebRTC channel open");
+        dataChannel.onopen = () => {
+            console.log("WebRTC channel open");
+            Module._netDataChannel = dataChannel;
+        };
         dataChannel.onmessage = (event) => console.log("sever says:", event.data);
 
         // 4. Create and send the Offer
