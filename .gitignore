@@ -5,6 +5,7 @@ main.data
 *.map
 doom_server
 doom_server.dSYM
+.claude
 
 # Logs
 logs

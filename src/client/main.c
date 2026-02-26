@@ -1,9 +1,12 @@
-#include <stdio.h>
+#include <arpa/inet.h>
 #include <emscripten.h>
 #include <SDL.h>
-#include <stdint.h> 
+#include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "level.h"
+#include "net.h"
 #include "player.h"
 #include "render.h"
 #include "screen.h"
@@ -44,6 +47,8 @@ void loop(void)
 {
     int i;
 
+    int num;
+
     double curtime, frametime;
 
     curtime = emscripten_get_now();
@@ -55,6 +60,17 @@ void loop(void)
         fpsframes = 0;
         lastfpscheck = curtime;
     }
+
+    // Process every packet that arrived from the server this frame
+    uint8_t netbuf[NET_MAX_PACKET_SIZE];
+    int pkt_size;
+    while ((pkt_size = net_recv(netbuf, sizeof(netbuf))) > 0) {
+        // TODO: handle incoming server packet
+        (void)pkt_size;
+    }
+
+    num = htonl(42);
+    net_send(&num, sizeof(num));
 
     gatherinput();
     player_docmd(&player, &inputcmd);
@@ -96,6 +112,8 @@ void screen_init(int width, int height)
 int main()
 {
     SDL_Init(SDL_INIT_VIDEO);
+
+    net_init();
 
     wad_load("doom.wad");
     wad_setpalette(0);
