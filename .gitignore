@@ -3,8 +3,8 @@ main.wasm
 main.js
 main.data
 *.map
-dserver
-dserver.dSYM
+doom_server
+doom_server.dSYM
 
 # Logs
 logs
