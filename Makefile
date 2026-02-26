@@ -1,26 +1,49 @@
-# Target for WebAssembly build
-WASM_TARGET = main.js
+# --- Targets ---
+CLIENT_TARGET = main.js
+SERVER_TARGET = dserver
 
-# Emscripten compiler
+# --- Compilers ---
 EMCC = emcc
+CC = clang
 
-# Compiler flags
-# -O3 for optimization
-# -s USE_SDL=2 to include SDL2 support
-# --pre-js to specify the canvas
-EMCC_FLAGS = -O3 -s USE_SDL=2 --pre-js pre.js --preload-file doom.wad
+# --- Compiler Flags ---
+# Client flags (WebAssembly/SDL)
+EMCC_FLAGS = -g4 -O0 -Isrc -s USE_SDL=2 --pre-js src/client/pre.js --preload-file doom.wad
 
-# Source files
-SOURCES = main.c wad.c player.c level.c tex.c render.c math.c info.c temp.c
+# Server flags (Native)
+CFLAGS = -g -O0 -Wall
 
-all: $(WASM_TARGET)
+# --- Source Files ---
+# Shared sources in the root src/ directory (e.g., wad.c, player.c, etc.)
+SHARED_SOURCES = $(wildcard src/*.c)
 
-$(WASM_TARGET): $(SOURCES) pre.js
-	@echo "Compiling to WebAssembly..."
-	$(EMCC) $(EMCC_FLAGS) $(SOURCES) -o $(WASM_TARGET)
+# Environment-specific sources
+CLIENT_SOURCES = $(wildcard src/client/*.c)
+SERVER_SOURCES = $(wildcard src/server/*.c)
+
+# Combined sources for each build
+CLIENT_ALL_SOURCES = $(SHARED_SOURCES) $(CLIENT_SOURCES)
+SERVER_ALL_SOURCES = $(SHARED_SOURCES) $(SERVER_SOURCES)
+
+# --- Rules ---
+all: client server
+
+client: $(CLIENT_TARGET)
+
+server: $(SERVER_TARGET)
+
+# Build WebAssembly Client
+$(CLIENT_TARGET): $(CLIENT_ALL_SOURCES) src/client/pre.js
+	@echo "Compiling client to WebAssembly..."
+	$(EMCC) $(EMCC_FLAGS) $(CLIENT_ALL_SOURCES) -o $(CLIENT_TARGET)
+
+# Build Native Server
+$(SERVER_TARGET): $(SERVER_ALL_SOURCES)
+	@echo "Compiling server natively..."
+	$(CC) $(CFLAGS) $(SERVER_ALL_SOURCES) -o $(SERVER_TARGET)
 
 clean:
 	@echo "Cleaning build files..."
-	@rm -f main.js main.wasm
+	@rm -f $(CLIENT_TARGET) main.wasm $(SERVER_TARGET)
 
-.PHONY: all clean
+.PHONY: all client server clean

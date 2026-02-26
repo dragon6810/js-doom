@@ -1,3 +1,6 @@
+#ifndef _DOOMMATH_H
+#define _DOOMMATH_H
+
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -25,8 +28,9 @@
 #define ANGATAN(val) RADTOANG(atan(val))
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
-#define FLOATTOFIXED(f) ((f) * (float) UINT16_MAX)
 #define FIXEDSHIFT 16
+#define FLOATTOFIXED(f) ((fixed_t) ((f) * (float) ((fixed_t) 1 << FIXEDSHIFT)))
+#define FIXEDTOFLOAT(fixed) ((float) (fixed) / (float) ((fixed_t) 1 << FIXEDSHIFT))
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -38,3 +42,6 @@ typedef int32_t fixed_t;
 
 float magnitude(float x, float y);
 fixed_t fixedmul(fixed_t a, fixed_t b);
+fixed_t fixeddiv(fixed_t a, fixed_t b);
+
+#endif

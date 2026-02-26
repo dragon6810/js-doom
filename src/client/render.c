@@ -39,12 +39,10 @@ typedef struct visthing_s
 {
     uint8_t *colormap;
     bool mirror;
-    lumpinfo_t *patch;
-    float scale;
-    int x1, x2;
-    int y; // bottom y-coordinate
-    int height;
-    float s1, sstep, t1;
+    pic_t *patch;
+    fixed_t scale;
+    int x;
+    int y;
 
     struct visthing_s *next, *prev;
 } visthing_t;
@@ -70,6 +68,7 @@ typedef struct
 } visplane_t;
 
 float projectconst = 0;
+fixed_t projectfrac = 0;
 float halfx = 0, halfy = 0;
 
 int nclipspans = 0;
@@ -123,6 +122,7 @@ void render_init(void)
     visthingbottom = malloc(screenwidth * sizeof(int16_t));
 
     projectconst = (float) screenwidth / HPLANE;
+    projectfrac = FLOATTOFIXED(projectconst);
     halfx = (float) screenwidth / 2.0;
     halfy = (float) screenheight / 2.0;
 
@@ -188,33 +188,44 @@ angle_t render_ytoangle(int y)
     return ANGATAN(tangent);
 }
 
-void render_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, float t, float tstep, float scale)
+void render_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t texmid, fixed_t iscale, fixed_t scale)
 {
     int y;
 
-    fixed_t tstart, scalefrac, tfrac, tsfrac, startfrac, lenfrac, posttop;
+    fixed_t tfrac, startfrac, lenfrac, posttop, halfyfrac;
+    fixed_t y1frac, y2frac;
     int dst;
     color_t color;
 
-    tstart = FLOATTOFIXED(t);
-    scalefrac = FLOATTOFIXED(scale);
-    tsfrac = FLOATTOFIXED(tstep);
+    y1frac = y1 << FIXEDSHIFT;
+    y2frac = y2 << FIXEDSHIFT;
+
+    halfyfrac = FLOATTOFIXED(halfy);
 
     while(post->ystart != 0xFF)
     {
         startfrac = (fixed_t) post->ystart << FIXEDSHIFT;
         lenfrac = (fixed_t) post->len << FIXEDSHIFT;
 
-        posttop = (y1 << FIXEDSHIFT) + fixedmul(startfrac - tstart, scalefrac);
-
-        for(y=posttop>>FIXEDSHIFT, tfrac=0, dst=y*screenwidth+x; tfrac<lenfrac; tfrac+=tsfrac, y++, dst+=screenwidth)
+        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac;
+        if(posttop > y2frac)
         {
-            if(tfrac + startfrac < tstart)
-                continue;
-            if(y > y2)
+            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
+            continue;
+        }
+
+        if(posttop < y1frac)
+        {
+            tfrac = fixedmul(y1frac - posttop, iscale);
+            posttop = y1frac;
+        }
+        else
+            tfrac = 0;
+
+        for(y=posttop>>FIXEDSHIFT, dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
+        {
+            if(tfrac >= lenfrac || y > y2)
                 break;
-            if(y < y1)
-                continue;
 
             color = palette[map[post->payload[tfrac >> FIXEDSHIFT]]];
             pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
@@ -223,18 +234,21 @@ void render_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, float 
     }
 }
 
-void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
+void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
 {
     int x;
 
-    float ttop, portaltop, portalbottom, top, topstep, height, hstep, scale, tstep;
-    float ftop, fbottom;
+    fixed_t halfyfrac;
+    fixed_t scalefrac, startx, scalestepfrac, top, topstep, height, hstep, iscale;
+    fixed_t ttop, portaltop, portalbottom;
     int pxtop, pxbottom;
-    float t;
     int baselight;
     int lightindex;
+    fixed_t texmid, texmidstep;
     uint8_t *map;
     post_t *column;
+
+    halfyfrac = FLOATTOFIXED(halfy);
 
     baselight = seg->seg->frontside->sector->light >> LIGHTSHIFT;
     if(seg->seg->v1->y == seg->seg->v2->y)
@@ -243,42 +257,46 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
         baselight++;
     baselight = CLAMP(baselight, 0, LIGHTLEVELS - 1);
 
-    portaltop = seg->seg->frontside->sector->ceilheight;
-    portalbottom = seg->seg->frontside->sector->floorheight;
+    portaltop = FLOATTOFIXED(seg->seg->frontside->sector->ceilheight);
+    portalbottom = FLOATTOFIXED(seg->seg->frontside->sector->floorheight);
     if(seg->seg->backside)
     {
-        portaltop = MIN(seg->seg->frontside->sector->ceilheight, seg->seg->backside->sector->ceilheight);
-        portalbottom = MAX(seg->seg->frontside->sector->floorheight, seg->seg->backside->sector->floorheight);
+        portaltop = FLOATTOFIXED(MIN(seg->seg->frontside->sector->ceilheight, seg->seg->backside->sector->ceilheight));
+        portalbottom = FLOATTOFIXED(MAX(seg->seg->frontside->sector->floorheight, seg->seg->backside->sector->floorheight));
     }
 
     if(seg->seg->line->flags & LINEDEF_LOWERUNPEG)
-        ttop = seg->seg->frontside->mid->h - (portaltop - portalbottom) + seg->seg->frontside->yoffs;
+        ttop = (seg->seg->frontside->mid->h << FIXEDSHIFT) - (portaltop - portalbottom) + FLOATTOFIXED(seg->seg->frontside->yoffs);
     else
-        ttop = seg->seg->frontside->yoffs;
+        ttop = FLOATTOFIXED(seg->seg->frontside->yoffs);
 
-    scale = seg->scale1 + (x1 - seg->x1) * seg->scalestep;
-    top = -(portaltop - viewz) * scale + halfy;
-    topstep = -(portaltop - viewz) * seg->scalestep;
-    height = (portaltop - portalbottom) * scale;
-    hstep = (portaltop - portalbottom) * seg->scalestep;
+    scalestepfrac = FLOATTOFIXED(seg->scalestep);
+    startx = (x1 - seg->x1) << FIXEDSHIFT;
+    scalefrac = FLOATTOFIXED(seg->scale1) + fixedmul(startx, scalestepfrac);
 
-    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=seg->scalestep)
+    top = fixedmul(FLOATTOFIXED(viewz) - portaltop, scalefrac) + halfyfrac;
+    topstep = fixedmul(FLOATTOFIXED(viewz) - portaltop, scalestepfrac);
+
+    height = fixedmul(portaltop - portalbottom, scalefrac);
+    hstep = fixedmul(portaltop - portalbottom, scalestepfrac);
+
+    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scalefrac+=scalestepfrac)
     {
         if(seg->maskeds[x - seg->x1] == INT16_MAX)
             continue;
-        if(maxscale > 0 && scale >= maxscale)
+        if(maxscale > 0 && scalefrac >= maxscale)
             continue;
         
-        lightindex = CLAMP(scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(FIXEDTOFLOAT(scalefrac) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
-        tstep = 1.0 / scale;
+        //iscale = fixeddiv((fixed_t) 1 << FIXEDSHIFT, scalefrac);
+        iscale = 0xFFFFFFFFu / (uint32_t) scalefrac;
+        texmid = ttop + fixedmul(halfyfrac - top, iscale);
+        top = halfyfrac - fixedmul(texmid, scalefrac);
 
-        ftop = top;
-        fbottom = top + height;
-
-        pxtop = ftop + 1;
-        pxbottom = fbottom;
+        pxtop = (top >> FIXEDSHIFT) + 1;
+        pxbottom = (top + height) >> FIXEDSHIFT;
 
         if(pxtop <= seg->top[x - seg->x1])
             pxtop = seg->top[x - seg->x1] + 1;
@@ -288,28 +306,27 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, float maxscale)
         if(pxtop > pxbottom)
             continue;
 
-        t = tstep * ((float) pxtop - ftop) + ttop;
         column = tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3;
-        render_postcolumn(column, map, x, pxtop, pxbottom, t, tstep, scale);
+        render_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scalefrac);
         seg->maskeds[x - seg->x1] = INT16_MAX;
     }
 }
 
-void render_clipthing(visthing_t* visthing)
+void render_clipthing(visthing_t* visthing, int w)
 {
     int x;
     drawseg_t *drawseg;
 
-    float farthest, closest, scale;
+    fixed_t farthest, closest, scale;
     int x1, x2;
 
     for(drawseg=&drawsegs[ndrawsegs-1]; drawseg>=drawsegs; drawseg--)
     {
-        farthest = MIN(drawseg->scale1, drawseg->scale2);
-        closest = MAX(drawseg->scale1, drawseg->scale2);
+        farthest = FLOATTOFIXED(MIN(drawseg->scale1, drawseg->scale2));
+        closest = FLOATTOFIXED(MAX(drawseg->scale1, drawseg->scale2));
 
-        x1 = MAX(drawseg->x1, visthing->x1);
-        x2 = MIN(drawseg->x2, visthing->x2);
+        x1 = MAX(drawseg->x1, visthing->x);
+        x2 = MIN(drawseg->x2, visthing->x + w - 1);
 
         if(x1 > x2)
             continue;
@@ -320,8 +337,8 @@ void render_clipthing(visthing_t* visthing)
         if(closest <= visthing->scale || drawseg->maskeds)
             continue;
 
-        scale = drawseg->scale1 + (x1 - drawseg->x1) * drawseg->scalestep;
-        for(x=x1; x<=x2; x++, scale+=drawseg->scalestep)
+        scale = FLOATTOFIXED(drawseg->scale1) + fixedmul((x1 - drawseg->x1) << FIXEDSHIFT, FLOATTOFIXED(drawseg->scalestep));
+        for(x=x1; x<=x2; x++, scale+=FLOATTOFIXED(drawseg->scalestep))
         {
             if(scale <= visthing->scale)
                 continue;
@@ -343,47 +360,58 @@ void render_clipthing(visthing_t* visthing)
 
 void render_drawthing(visthing_t* thing)
 {
-    int x, y;
+    int x;
 
-    float s, t, sstep;
-    int posttop;
-    pic_t *pic;
+    int w, h;
+    fixed_t iscale, texmid;
+    fixed_t s, sstep;
+    int y1, y2;
     post_t *post;
-    int color;
 
-    if(!thing->height)
+    w = fixedmul((fixed_t) thing->patch->w << FIXEDSHIFT, thing->scale) >> FIXEDSHIFT;
+    h = fixedmul((fixed_t) thing->patch->h << FIXEDSHIFT, thing->scale) >> FIXEDSHIFT;
+
+    if(w <= 0 || h <= 0)
         return;
 
-    for(x=thing->x1; x<=thing->x2; x++)
+    iscale = fixeddiv((fixed_t) 1 << FIXEDSHIFT, thing->scale);
+    texmid = fixedmul(FLOATTOFIXED(halfy) - (thing->y << FIXEDSHIFT), iscale);
+
+    for(x=MAX(thing->x, 0); x<thing->x+w&&x<screenwidth; x++)
     {
-        visthingtop[x] = MAX(thing->y, 0);
-        visthingbottom[x] = MIN(thing->y + thing->height, screenheight - 1);
+        visthingtop[x] = -1;
+        visthingbottom[x] = screenheight;
     }
 
-    render_clipthing(thing);
-
-    pic = thing->patch->cache;
-
-    s = thing->s1;
-    sstep = thing->sstep;
+    render_clipthing(thing, w);
 
     if(thing->mirror)
     {
-        s = pic->w - 1 - s;
-        sstep = -sstep;
+        s = ((fixed_t) thing->patch->w << FIXEDSHIFT) - 1;
+        sstep = -iscale;
+    }
+    else
+    {
+        s = 0;
+        sstep = iscale;
     }
 
-    for(x=thing->x1; x<=thing->x2; x++, s+=sstep)
+    x = thing->x;
+    if(x < 0)
     {
-        if(s >= pic->w || s < 0)
-            break;
-        if(visthingtop[x] > visthingbottom[x])
+        s += fixedmul(sstep, (fixed_t) (-x) << FIXEDSHIFT);
+        x = 0;
+    }
+
+    for(; x<thing->x+w&&x<screenwidth; x++, s+=sstep)
+    {
+        y1 = MAX(thing->y, visthingtop[x] + 1);
+        y2 = MIN(thing->y + h - 1, visthingbottom[x] - 1);
+        if(y1 > y2)
             continue;
-
-        t = (visthingtop[x] - thing->y) * thing->sstep;
-
-        post = ((uint8_t*) pic) + pic->postoffs[(int) s];
-        render_postcolumn(post, thing->colormap, x, visthingtop[x], visthingbottom[x], t, thing->sstep, thing->scale);
+        
+        post = ((uint8_t*) thing->patch) + thing->patch->postoffs[s >> FIXEDSHIFT];
+        render_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
     }
 }
 
@@ -1211,27 +1239,32 @@ void render_seg(seg_t* seg)
 // returns true if it was culled
 bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 {
-    float dx, dy, dist, centerx, centery;
-    float w, h;
-    int x1, x2, top;
+    fixed_t sinview, cosview;
+    fixed_t dx, dy, dz, dist, centerx, centery;
+    int x, y, w, h;
     pic_t *pic;
     sprite_t *sprite;
     sprframe_t *frame;
+    lumpinfo_t *patch;
     angle_t a, theta;
     int rotframe;
     int lightindex;
 
-    dx = mobj->x - viewx;
-    dy = mobj->y - viewy;
+    sinview = FLOATTOFIXED(ANGSIN(viewangle));
+    cosview = FLOATTOFIXED(ANGCOS(viewangle));
 
-    dist = dx * ANGCOS(viewangle) + dy * ANGSIN(viewangle);
-    if(dist < 0.05)
+    dx = FLOATTOFIXED(mobj->x - viewx);
+    dy = FLOATTOFIXED(mobj->y - viewy);
+    dz = FLOATTOFIXED(mobj->z - viewz);
+
+    dist = fixedmul(dx, cosview) + fixedmul(dy, sinview);
+    if(dist < 1 << FIXEDSHIFT)
         return true;
 
-    visthing->scale = projectconst / dist;
+    visthing->scale = fixeddiv(projectfrac, dist);
     
-    centerx = (dx * ANGSIN(viewangle) + dy * -ANGCOS(viewangle)) * visthing->scale + halfx;
-    centery = -(mobj->z - viewz) * visthing->scale + halfy;
+    centerx = FLOATTOFIXED(halfx) + fixedmul(fixedmul(dx, sinview) - fixedmul(dy, cosview), visthing->scale);
+    centery = FLOATTOFIXED(halfy) - fixedmul(dz, visthing->scale);
 
     if(states[mobj->state].frame & 0x8000)
     {
@@ -1239,7 +1272,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     }
     else
     {
-        lightindex = CLAMP(visthing->scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(FIXEDTOFLOAT(visthing->scale * 16) * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         visthing->colormap = scalemap[mobj->ssector->sector->light >> LIGHTSHIFT][lightindex];
     }
 
@@ -1256,35 +1289,29 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
         rotframe = (theta + ANG180) / ANG45;
     }
 
-    visthing->patch = &lumps[frame->rotlumps[rotframe]];
-    visthing->mirror = frame->mirror[rotframe];
-
     if(frame->rotlumps[rotframe] < 0)
         return true;
 
-    wad_cache(visthing->patch);
-    pic = visthing->patch->cache;
+    patch = &lumps[frame->rotlumps[rotframe]];
+    visthing->mirror = frame->mirror[rotframe];
 
-    w = (float) pic->w * visthing->scale;
-    h = (float) pic->h * visthing->scale;
+    wad_cache(patch);
+    visthing->patch = pic = patch->cache;
 
-    x1 = centerx - pic->xoffs * visthing->scale;
-    x2 = x1 + w;
-    top = centery - pic->yoffs * visthing->scale;
+    x = (centerx - fixedmul((fixed_t) pic->xoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
+    y = (centery - fixedmul((fixed_t) pic->yoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
 
-    if(x2 < 0|| x1 >= screenwidth)
-        return true;
-    if(top >= screenheight || top + h < 0)
+    if(x >= screenwidth || y >= screenheight)
         return true;
 
-    visthing->sstep = dist / projectconst;
+    w = fixedmul((fixed_t) pic->w << FIXEDSHIFT, visthing->scale) >> FIXEDSHIFT;
+    h = fixedmul((fixed_t) pic->h << FIXEDSHIFT, visthing->scale) >> FIXEDSHIFT;
 
-    visthing->x1 = MAX(x1, 0);
-    visthing->x2 = MIN(x2, screenwidth - 1);
-    visthing->y = top;
-    visthing->height = h;
-    visthing->s1 = (float) (visthing->x1 - x1) * visthing->sstep;
-    visthing->t1 = (float) (visthing->y - top) * visthing->sstep;
+    if(x + w < 0 || y + h < 0)
+        return true;
+
+    visthing->x = x;
+    visthing->y = y;
 
     return false;
 }

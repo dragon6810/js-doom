@@ -2,7 +2,7 @@
 #define _LEVEL_H
 
 #include "info.h"
-#include "math.h"
+#include "doommath.h"
 #include "tex.h"
 #include "wad.h"
 

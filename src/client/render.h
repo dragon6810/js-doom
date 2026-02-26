@@ -1,7 +1,7 @@
 #ifndef _RENDER_H
 #define _RENDER_H
 
-#include "math.h"
+#include "doommath.h"
 #include "screen.h"
 
 #define HFOV ANG90

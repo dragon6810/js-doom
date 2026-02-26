@@ -1,7 +1,7 @@
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
-#include "math.h"
+#include "doommath.h"
 
 #define CMD_FORWARD 0x01
 #define CMD_BACK 0x02
