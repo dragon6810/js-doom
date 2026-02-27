@@ -1,4 +1,5 @@
 #include "net.h"
+#include "client.h"
 #include <rtc/rtc.h>
 #include <cJSON.h>
 #include <stdio.h>
@@ -17,6 +18,7 @@ typedef struct
 {
     uint8_t data[NET_MAX_PACKET_SIZE];
     int size;
+    int dc_id;
 } net_packet_t;
 
 static net_packet_t    recv_queue[NET_QUEUE_LEN];
@@ -27,12 +29,10 @@ static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int pc_id       = 0;
 static int ws_id       = 0;
-static int dc_id       = 0;
-static int is_connected = 0;
 
 // ---- Internal helpers ----
 
-static void queue_push(const void *data, int size)
+static void queue_push(int dc, const void *data, int size)
 {
     if (size <= 0 || size > NET_MAX_PACKET_SIZE) return;
 
@@ -41,6 +41,7 @@ static void queue_push(const void *data, int size)
         net_packet_t *slot = &recv_queue[queue_tail];
         memcpy(slot->data, data, size);
         slot->size  = size;
+        slot->dc_id = dc;
         queue_tail  = (queue_tail + 1) % NET_QUEUE_LEN;
         queue_count++;
     } else {
@@ -85,15 +86,14 @@ static void data_channel_msg_cb(int dc, const char *msg, int size, void *ptr)
 {
     // size >= 0 means binary; size < 0 means text (length = -size - 1)
     if (size >= 0)
-        queue_push(msg, size);
+        queue_push(dc, msg, size);
 }
 
 static void data_channel_cb(int pc, int dc, void *ptr)
 {
-    printf("[net] peer connected\n");
-    dc_id        = dc;
-    is_connected = 1;
+    printf("[net] peer connected on dc %d\n", dc);
     rtcSetMessageCallback(dc, data_channel_msg_cb);
+    addclient(dc);
 }
 
 static void ws_message_cb(int ws, const char *message, int size, void *ptr)
@@ -144,10 +144,11 @@ void net_init(void)
     printf("[net] initialized, waiting for peer...\n");
 }
 
-int net_send(const void *data, int size)
+int net_send(int dc, const void *data, int size)
 {
-    if (!is_connected || dc_id == 0) return -1;
-    return rtcSendMessage(dc_id, (const char *)data, size);
+    if(!dc)
+        return -1;
+    return rtcSendMessage(dc, (const char *)data, size);
 }
 
 int net_recv_pending(void)
@@ -158,7 +159,7 @@ int net_recv_pending(void)
     return count;
 }
 
-int net_recv(void *buf, int buf_size)
+int net_recv(void *buf, int buf_size, int *dc_out)
 {
     pthread_mutex_lock(&queue_mutex);
     if (queue_count == 0) {
@@ -168,6 +169,7 @@ int net_recv(void *buf, int buf_size)
     net_packet_t *slot = &recv_queue[queue_head];
     int copy = slot->size < buf_size ? slot->size : buf_size;
     memcpy(buf, slot->data, copy);
+    if (dc_out) *dc_out = slot->dc_id;
     queue_head  = (queue_head + 1) % NET_QUEUE_LEN;
     queue_count--;
     pthread_mutex_unlock(&queue_mutex);
@@ -176,5 +178,5 @@ int net_recv(void *buf, int buf_size)
 
 int net_connected(void)
 {
-    return is_connected;
+    return true;
 }

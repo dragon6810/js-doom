@@ -1,30 +1,48 @@
 #include <arpa/inet.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdint.h>
+#include <sys/time.h>
+#include <unistd.h>
 
+#include "client.h"
 #include "net.h"
+
+#define TICRATE         35
+#define TICMICROSECONDS (1000000 / TICRATE)
+
+static uint64_t nowmicro(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000 + (uint64_t)tv.tv_usec;
+}
+
+static void tic(void)
+{
+    printf("tic\n");
+}
 
 int main()
 {
+    uint64_t nexttic, now;
+
     net_init();
 
-    uint8_t buf[NET_MAX_PACKET_SIZE];
-    int pkt_size;
+    nexttic = nowmicro();
 
-    while (1) {
-        // Drain every packet that arrived since last tick
-        while ((pkt_size = net_recv(buf, sizeof(buf))) > 0) {
-            printf("[game] received %d byte packet\n", pkt_size);
-            printf("number: %d\n", ntohl(*((int*)buf)));
-            // TODO: handle game packet (e.g. parse player command)
+    while (1)
+    {
+        now = nowmicro();
+
+        while (now >= nexttic)
+        {
+            tic();
+            nexttic += TICMICROSECONDS;
         }
 
-        // TODO: run game tick, then send state back:
-        //   if (net_connected())
-        //       net_send(&gamestate, sizeof(gamestate));
-
-        usleep(50000); // ~20 ticks/sec
+        now = nowmicro();
+        if (nexttic > now)
+            usleep(nexttic - now);
     }
 
     return 0;

@@ -49,9 +49,12 @@ async function connectToGame(ip, port) {
 
         dataChannel.onopen = () => {
             console.log("WebRTC channel open");
-            Module._netDataChannel = dataChannel;
+            const DC_ID = 1; // server is always dc 1 on the client
+            if (!Module._netDataChannels) Module._netDataChannels = {};
+            Module._netDataChannels[DC_ID] = dataChannel;
+            Module._net_set_dc(DC_ID);
         };
-        dataChannel.onmessage = (event) => console.log("sever says:", event.data);
+        dataChannel.onmessage = (event) => console.log("server says:", event.data);
 
         // 4. Create and send the Offer
         const offer = await peerConnection.createOffer();

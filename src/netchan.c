@@ -38,3 +38,8 @@ void* netchan_recv(netchan_t* state, void* data, int datalen)
     
     return curpos;
 }
+
+void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
+{
+    
+}

@@ -61,17 +61,6 @@ void loop(void)
         lastfpscheck = curtime;
     }
 
-    // Process every packet that arrived from the server this frame
-    uint8_t netbuf[NET_MAX_PACKET_SIZE];
-    int pkt_size;
-    while ((pkt_size = net_recv(netbuf, sizeof(netbuf))) > 0) {
-        // TODO: handle incoming server packet
-        (void)pkt_size;
-    }
-
-    num = htonl(42);
-    net_send(&num, sizeof(num));
-
     gatherinput();
     player_docmd(&player, &inputcmd);
     player.z = level_getpointssector(player.x, player.y)->sector->floorheight;

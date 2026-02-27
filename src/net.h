@@ -6,6 +6,22 @@
 
 #define NET_MAX_PACKET_SIZE 1400
 
+#if __BIG_ENDIAN__
+    #ifndef htonll
+    #define htonll(x)   (x)
+    #endif
+    #ifndef ntohll
+    #define ntohll(x)   (x)
+    #endif
+#else
+    #ifndef htonll
+    #define htonll(x)   ((((uint64_t)htonl(x&0xFFFFFFFF)) << 32) + htonl(x >> 32))
+    #endif
+    #ifndef ntohll
+    #define ntohll(x)   ((((uint64_t)ntohl(x&0xFFFFFFFF)) << 32) + ntohl(x >> 32))
+    #endif
+#endif
+
 typedef struct
 {
     uint8_t* data;
@@ -39,16 +55,16 @@ int64_t net_readi64(void* data, void* pos, int datalen);
 // Client: sets up the receive queue (call connectToGame() from JS to actually connect).
 void net_init(void);
 
-// Send a packet to the connected peer.
 // Returns the number of bytes sent, or -1 if not connected.
-int net_send(const void *data, int size);
+int net_send(int dc, const void *data, int size);
 
 // Returns the number of packets sitting in the receive queue.
 int net_recv_pending(void);
 
 // Copies the next queued packet into buf (up to buf_size bytes).
+// Sets *dc_out to the data channel id the packet arrived on (if dc_out is non-NULL).
 // Returns the packet size, or 0 if the queue is empty.
-int net_recv(void *buf, int buf_size);
+int net_recv(void *buf, int buf_size, int *dc_out);
 
 // Returns 1 if the WebRTC data channel is open and ready, 0 otherwise.
 int net_connected(void);

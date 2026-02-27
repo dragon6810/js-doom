@@ -21,12 +21,13 @@ typedef struct
     addr_t addr;
     netchan_t chan;
     clstate_e state;
+    int dc_id;
 } client_t;
 
 extern client_t clients[MAX_CLIENT];
 
 void sendtoclients(void);
 void recvfromclients(void);
-bool addclient(addr_t addr);
+bool addclient(int dc_id);
 
 #endif
