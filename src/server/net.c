@@ -13,9 +13,10 @@
 
 #define NET_QUEUE_LEN 64
 
-typedef struct {
+typedef struct
+{
     uint8_t data[NET_MAX_PACKET_SIZE];
-    int     size;
+    int size;
 } net_packet_t;
 
 static net_packet_t    recv_queue[NET_QUEUE_LEN];
