@@ -18,6 +18,7 @@ typedef enum
     SVC_HANDSHAKE, // int32_t clientid, int32_t edictid, int16_t nwads, char[13][nwads] wadnames (in order)
     SVC_CHANGELEVEL, // int8_t episode, int8_t map
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF
+    CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
 } packet_e;
 
 #endif

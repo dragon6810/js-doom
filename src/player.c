@@ -27,4 +27,8 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
     player->mobj->info.y += forwardmove * sinangle + leftmove * cosangle;
 
     player->mobj->info.angle = cmd->angle;
+
+    level_unplacemobj(player->mobj);
+    level_placemobj(player->mobj);
+    player->mobj->info.z = player->mobj->ssector->sector->floorheight;
 }

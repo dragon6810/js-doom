@@ -5,4 +5,7 @@
 
 extern player_t player;
 
+extern bool sendinputs;
+extern playercmd_t inputcmd;
+
 #endif

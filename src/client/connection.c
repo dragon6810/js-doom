@@ -29,6 +29,76 @@ static void connect(void)
     netbuf_free(&buf);
 }
 
+static void* recventdeltas(void* buf, void* curpos, int len)
+{
+    int edict;
+    int fields;
+    objinfo_t *info;
+
+    while(1)
+    {
+        edict = net_readu16(buf, curpos, len);
+        curpos += 2;
+        if(edict == 0xFFFF || netpacketfull)
+            break;
+
+        fields = net_readu16(buf, curpos, len);
+        curpos += 2;
+        if(netpacketfull)
+            break;
+
+        info = &mobjs[edict].info;
+        if(fields & FIELD_EXISTS)
+        {
+            info->exists = net_readu8(buf, curpos, len);
+            curpos += 1;
+        }
+        if(fields & FIELD_X)
+        {
+            info->x = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_Y)
+        {
+            info->y = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_Z)
+        {
+            info->z = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_ANGLE)
+        {
+            info->angle = net_readu32(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_STATE)
+        {
+            info->state = net_readi16(buf, curpos, len);
+            curpos += 2;
+        }
+        if(fields & FIELD_TYPE)
+        {
+            info->type = net_readi16(buf, curpos, len);
+            curpos += 2;
+        }
+
+        if(!info->exists)
+            memset(info, 0, sizeof(*info));
+        else
+        {
+            level_unplacemobj(&mobjs[edict]);
+            level_placemobj(&mobjs[edict]);
+        }
+    }
+
+    if(netpacketfull)
+        return NULL;
+
+    return curpos;
+}
+
 static void* recvclev(void* buf, void* curpos, int len)
 {
     int8_t e, m;
@@ -89,7 +159,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     mobjs[serverconn.edict].info.exists = true;
 
     serverconn.state = CLSTATE_CONNECTED;
-    printf("[net] handshake ack, player id %d\n", serverconn.clientid);
+    printf("[net] handshake ack, client id %d, edict id %d\n", serverconn.clientid, serverconn.edict);
 
     return curpos;
 }
@@ -122,6 +192,10 @@ static void recvpacket(void *buf, int len)
             if(!(curpos = recvclev(buf, curpos, len)))
                 return;
             break;
+        case SVC_ENTDELTAS:
+            if(!(curpos = recventdeltas(buf, curpos, len)))
+                return;
+            break;
         default:
             fprintf(stderr, "[net] bad packet id %d from server\n", packid);
             return;
@@ -138,8 +212,20 @@ void recvfromserver(void)
         recvpacket(buf, len);
 }
 
+void buildunreliable(netbuf_t* buf)
+{
+    if(!sendinputs)
+        return;
+    netbuf_writeu8(buf, CSV_INPUT);
+    netbuf_writeu8(buf, inputcmd.flags);
+    netbuf_writeu32(buf, inputcmd.angle);
+    netbuf_writefloat(buf, inputcmd.frametime);
+}
+
 void sendtoserver(void)
 {
+    netbuf_t buf;
+
     if(!net_connected())
     {
         serverconn.state = CLSTATE_DC;
@@ -153,5 +239,10 @@ void sendtoserver(void)
     }
 
     if(serverconn.state != CLSTATE_DC)
-        netchan_send(&serverconn.chan, net_server_dc(), NULL);
+    {
+        netbuf_init(&buf);
+        buildunreliable(&buf);
+        netchan_send(&serverconn.chan, net_server_dc(), &buf);
+        netbuf_free(&buf);
+    }
 }

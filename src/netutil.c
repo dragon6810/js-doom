@@ -124,7 +124,7 @@ uint8_t net_readu8(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(uint8_t) >= datalen)
+    if(pos - data + sizeof(uint8_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -137,7 +137,7 @@ int8_t net_readi8(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(int8_t) >= datalen)
+    if(pos - data + sizeof(int8_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -150,7 +150,7 @@ uint16_t net_readu16(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(uint16_t) >= datalen)
+    if(pos - data + sizeof(uint16_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -163,7 +163,7 @@ int16_t net_readi16(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(int16_t) >= datalen)
+    if(pos - data + sizeof(int16_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -176,7 +176,7 @@ uint32_t net_readu32(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(uint32_t) >= datalen)
+    if(pos - data + sizeof(uint32_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -189,7 +189,7 @@ int32_t net_readi32(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(int32_t) >= datalen)
+    if(pos - data + sizeof(int32_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -202,7 +202,7 @@ uint64_t net_readu64(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(uint64_t) >= datalen)
+    if(pos - data + sizeof(uint64_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -215,7 +215,7 @@ int64_t net_readi64(void* data, void* pos, int datalen)
 {
     netpacketfull = false;
 
-    if(pos - data + sizeof(int64_t) >= datalen)
+    if(pos - data + sizeof(int64_t) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -230,7 +230,7 @@ float net_readfloat(void* data, void* pos, int datalen)
 
     netpacketfull = false;
 
-    if(pos - data + sizeof(float) >= datalen)
+    if(pos - data + sizeof(float) > datalen)
     {
         netpacketfull = true;
         return 0;
@@ -242,6 +242,8 @@ float net_readfloat(void* data, void* pos, int datalen)
 
 void net_readdata(void* outdata, int len, void* data, void* pos, int datalen)
 {
+    netpacketfull = false;
+    
     if(datalen - (int) (pos - data) < len)
     {
         netpacketfull = true;

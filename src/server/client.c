@@ -8,6 +8,7 @@
 #include "level.h"
 #include "net.h"
 #include "netchan.h"
+#include "player.h"
 #include "wad.h"
 
 objinfo_t dummystate[MAX_MOBJ] = {};
@@ -29,6 +30,7 @@ static void updategamestate(client_t* cl)
 
 static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
 {
+    bool spawned;
     int fieldflags;
     objinfo_t *gs, *compare, *info;
 
@@ -41,26 +43,32 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
 
     compare = &gs[edict];
 
+    if(!info->exists && !compare->exists)
+        return;
+
+    spawned = info->exists && !compare->exists;
+
     fieldflags = 0;
     if(compare->exists != info->exists)
         fieldflags |= FIELD_EXISTS;
-    if(compare->x != info->x)
+    if(info->exists && (spawned || compare->x != info->x))
         fieldflags |= FIELD_X;
-    if(compare->y != info->y)
+    if(info->exists && (spawned || compare->y != info->y))
         fieldflags |= FIELD_Y;
-    if(compare->z != info->z)
+    if(info->exists && (spawned || compare->z != info->z))
         fieldflags |= FIELD_Z;
-    if(compare->angle != info->angle)
+    if(info->exists && (spawned || compare->angle != info->angle))
         fieldflags |= FIELD_ANGLE;
-    if(compare->state != info->state)
+    if(info->exists && (spawned || compare->state != info->state))
         fieldflags |= FIELD_STATE;
-    if(!compare->exists && info->exists)
+    if(info->exists && (spawned || compare->type != info->type))
         fieldflags |= FIELD_TYPE;
 
     // ent is the exact same
     if(!fieldflags)
         return;
 
+    netbuf_writeu16(buf, edict);
     netbuf_writeu16(buf, fieldflags);
     if(fieldflags & FIELD_EXISTS)
         netbuf_writeu8(buf, info->exists);
@@ -86,8 +94,6 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
 
     for(i=0; i<mobjmax; i++)
     {
-        if(!mobjs[i].info.exists)
-            continue;
         addentdeltas(i, cl, buf);
     }
 
@@ -121,6 +127,24 @@ void sendtoclients(void)
     }
 }
 
+void* recvinput(client_t* cl, void* buf, void* curpos, int len)
+{
+    playercmd_t cmd;
+
+    cmd.flags = net_readu8(buf, curpos++, len);
+    cmd.angle = net_readu32(buf, curpos, len);
+    curpos += 4;
+    cmd.frametime = net_readfloat(buf, curpos, len);
+    curpos += 4;
+    
+    if(netpacketfull)
+        return NULL;
+
+    player_docmd(&cl->player, &cmd);
+
+    return curpos;
+}
+
 static void recvpacket(client_t* cl, void* buf, int len)
 {
     uint8_t packettype;
@@ -141,6 +165,10 @@ static void recvpacket(client_t* cl, void* buf, int len)
         {
         case CVS_HANDSHAKE:
             curpos += USERNAME_LEN;
+            break;
+        case CSV_INPUT:
+            if(!(curpos = recvinput(cl, buf, curpos, len)))
+                return;
             break;
         default:
             fprintf(stderr, "recvpacket: bad packet id %d from client %d\n", packettype, (int) (cl - clients));
@@ -265,6 +293,7 @@ void spawnplayer(client_t* client)
     client->player.mobj = &mobjs[edict];
     level_placemobj(client->player.mobj);
 
+    client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 }

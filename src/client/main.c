@@ -25,6 +25,7 @@ const Uint8* keystates;
 double lastframetime, lastfpscheck;
 int fpsframes;
 
+bool sendinputs;
 playercmd_t inputcmd;
 
 player_t player = {};
@@ -33,6 +34,7 @@ void gatherinput(void)
 {
     const angle_t turnspeed = DEGTOANG(180.0 * inputcmd.frametime);
 
+    sendinputs = true;
     inputcmd.flags = 0;
 
     SDL_PumpEvents();
@@ -66,15 +68,10 @@ void loop(void)
 
     recvfromserver();
 
-    sendtoserver();
-
+    sendinputs = false;
     if(level_episode != -1 && level_map != -1)
     {
         gatherinput();
-        player_docmd(&player, &inputcmd);
-        level_unplacemobj(player.mobj);
-        level_placemobj(player.mobj);
-        player.mobj->info.z = level_getpointssector(player.mobj->info.x, player.mobj->info.y)->sector->floorheight;
 
         viewx = player.mobj->info.x;
         viewy = player.mobj->info.y;
@@ -82,6 +79,8 @@ void loop(void)
         viewangle = player.mobj->info.angle;
         render();
     }
+
+    sendtoserver();
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
 
