@@ -29,6 +29,15 @@ static void tic(void)
 
 int ep = -1, map = -1;
 
+static void filldummygs(void)
+{
+    int i;
+
+    memset(dummystate, 0, sizeof(dummystate));
+    for(i=0; i<mobjmax; i++)
+        dummystate[i] = mobjs[i].info;
+}
+
 static void parseargs(int argc, char** argv)
 {
     int i;
@@ -47,6 +56,8 @@ static void parseargs(int argc, char** argv)
             i += 2;
             if(ep < 1 || ep > 4 || map < 1 || map > 9)
                 ep = map = -1;
+
+            filldummygs();
         }
     }
 }

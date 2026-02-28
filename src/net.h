@@ -39,6 +39,7 @@ void netbuf_writeu32(netbuf_t* buf, uint32_t val);
 void netbuf_writei32(netbuf_t* buf, int32_t val);
 void netbuf_writeu64(netbuf_t* buf, uint64_t val);
 void netbuf_writei64(netbuf_t* buf, int64_t val);
+void netbuf_writefloat(netbuf_t* buf, float val);
 void netbuf_writedata(netbuf_t* buf, void* data, int len);
 void netbuf_free(netbuf_t* buf);
 
@@ -50,6 +51,7 @@ uint32_t net_readu32(void* data, void* pos, int datalen);
 int32_t net_readi32(void* data, void* pos, int datalen);
 uint64_t net_readu64(void* data, void* pos, int datalen);
 int64_t net_readi64(void* data, void* pos, int datalen);
+float net_readfloat(void* data, void* pos, int datalen);
 void net_readdata(void* outdata, int len, void* data, void* pos, int datalen);
 
 // Initialize the networking layer. Call once before the game loop.

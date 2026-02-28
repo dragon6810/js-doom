@@ -3,11 +3,13 @@
 
 #include <stdlib.h>
 
+#include "level.h"
 #include "netchan.h"
 #include "packets.h"
 #include "player.h"
 
 #define MAX_CLIENT 16
+#define GAMESTATE_WINDOW 32
 
 typedef int8_t addr_t[4];
 
@@ -20,12 +22,16 @@ typedef enum
 
 typedef struct
 {
+    objinfo_t gamestates[GAMESTATE_WINDOW][MAX_MOBJ];
+
     netchan_t chan;
     clstate_e state;
     player_t player;
     char username[USERNAME_LEN];
     int dc;
 } client_t;
+
+extern objinfo_t dummystate[MAX_MOBJ];
 
 extern client_t clients[MAX_CLIENT];
 

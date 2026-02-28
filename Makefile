@@ -18,10 +18,10 @@ PREJS = src/client/pre.js
 EMCC_FLAGS = -gsource-map -O0 -Isrc -s USE_SDL=2 --pre-js $(PREJS) --preload-file doom.wad
 
 # Server needs the include paths (-I) for both submodules
-CFLAGS = -g -O0 -Wall -Isrc -I$(CJSON_DIR) -I$(LDC_DIR)/include
+CFLAGS = -fsanitize=address -g -O0 -Wall -Isrc -I$(CJSON_DIR) -I$(LDC_DIR)/include
 
 # Server Linker Flags: Point to the libdatachannel build folder
-SERVER_LDFLAGS = -L$(LDC_BUILD_DIR) -Wl,-rpath,$(LDC_BUILD_DIR) -ldatachannel -pthread -lm
+SERVER_LDFLAGS = -fsanitize=address -L$(LDC_BUILD_DIR) -Wl,-rpath,$(LDC_BUILD_DIR) -ldatachannel -pthread -lm
 
 # --- Source Files ---
 SHARED_SOURCES = $(wildcard src/*.c)

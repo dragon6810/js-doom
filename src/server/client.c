@@ -10,11 +10,95 @@
 #include "netchan.h"
 #include "wad.h"
 
+objinfo_t dummystate[MAX_MOBJ] = {};
+
 client_t clients[MAX_CLIENT] = {};
+
+static void updategamestate(client_t* cl)
+{
+    int i;
+
+    int index;
+    objinfo_t *gs;
+
+    index = cl->chan.outseq % GAMESTATE_WINDOW;
+    gs = cl->gamestates[index];
+    for(i=0; i<mobjmax; i++)
+        gs[i] = mobjs[i].info;
+}
+
+static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
+{
+    int fieldflags;
+    objinfo_t *gs, *compare, *info;
+
+    info = &mobjs[edict].info;
+
+    if(!cl->chan.inack)
+        gs = dummystate;
+    else
+        gs = cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
+
+    compare = &gs[edict];
+
+    fieldflags = 0;
+    if(compare->exists != info->exists)
+        fieldflags |= FIELD_EXISTS;
+    if(compare->x != info->x)
+        fieldflags |= FIELD_X;
+    if(compare->y != info->y)
+        fieldflags |= FIELD_Y;
+    if(compare->z != info->z)
+        fieldflags |= FIELD_Z;
+    if(compare->angle != info->angle)
+        fieldflags |= FIELD_ANGLE;
+    if(compare->state != info->state)
+        fieldflags |= FIELD_STATE;
+    if(!compare->exists && info->exists)
+        fieldflags |= FIELD_TYPE;
+
+    // ent is the exact same
+    if(!fieldflags)
+        return;
+
+    netbuf_writeu16(buf, fieldflags);
+    if(fieldflags & FIELD_EXISTS)
+        netbuf_writeu8(buf, info->exists);
+    if(fieldflags & FIELD_X)
+        netbuf_writefloat(buf, info->x);
+    if(fieldflags & FIELD_Y)
+        netbuf_writefloat(buf, info->y);
+    if(fieldflags & FIELD_Z)
+        netbuf_writefloat(buf, info->z);
+    if(fieldflags & FIELD_ANGLE)
+        netbuf_writeu32(buf, info->angle);
+    if(fieldflags & FIELD_STATE)
+        netbuf_writei16(buf, info->state);
+    if(fieldflags & FIELD_TYPE)
+        netbuf_writei16(buf, info->type);
+}
+
+static void buildunreliable(client_t* cl, netbuf_t* buf)
+{
+    int i;
+
+    netbuf_writeu8(buf, SVC_ENTDELTAS);
+
+    for(i=0; i<mobjmax; i++)
+    {
+        if(!mobjs[i].info.exists)
+            continue;
+        addentdeltas(i, cl, buf);
+    }
+
+    netbuf_writeu16(buf, 0xFFFF);
+}
 
 void sendtoclients(void)
 {
     int i;
+
+    netbuf_t unreliable;
 
     for(i=0; i<MAX_CLIENT; i++)
     {
@@ -28,7 +112,12 @@ void sendtoclients(void)
             clients[i].chan.outseq = clients[i].chan.lastseen;
         #endif
 
-        netchan_send(&clients[i].chan, clients[i].dc, NULL);
+        netbuf_init(&unreliable);
+        buildunreliable(&clients[i], &unreliable);
+        netchan_send(&clients[i].chan, clients[i].dc, &unreliable);
+        netbuf_free(&unreliable);
+
+        updategamestate(&clients[i]);
     }
 }
 

@@ -33,6 +33,7 @@ typedef struct vertex_s vertex_t;
 // these fields are sent from server to client
 typedef struct objinfo_s
 {
+    bool exists;
     float x, y, z;
     angle_t angle;
     statenum_t state;
@@ -41,13 +42,11 @@ typedef struct objinfo_s
 
 struct object_s
 {
-    bool exists;
-
     objinfo_t info;
 
-    int spawnflags;
-    
     float timeinstate; // if this * 35 > state's tick duration, go to next state
+
+    int spawnflags;
 
     ssector_t *ssector;
 

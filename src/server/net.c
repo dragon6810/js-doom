@@ -105,17 +105,21 @@ static void ws_message_cb(int ws, const char *message, int size, void *ptr)
 
     if (strcmp(type->valuestring, "offer") == 0) {
         cJSON *sdp_obj  = cJSON_GetObjectItemCaseSensitive(json, "sdp");
-        cJSON *sdp_str  = cJSON_GetObjectItemCaseSensitive(sdp_obj, "sdp");
-        cJSON *sdp_type = cJSON_GetObjectItemCaseSensitive(sdp_obj, "type");
-        if (cJSON_IsString(sdp_str) && cJSON_IsString(sdp_type))
-            rtcSetRemoteDescription(pc_id, sdp_str->valuestring, sdp_type->valuestring);
+		if (sdp_obj) {
+			cJSON *sdp_str  = cJSON_GetObjectItemCaseSensitive(sdp_obj, "sdp");
+			cJSON *sdp_type = cJSON_GetObjectItemCaseSensitive(sdp_obj, "type");
+			if (cJSON_IsString(sdp_str) && cJSON_IsString(sdp_type))
+				rtcSetRemoteDescription(pc_id, sdp_str->valuestring, sdp_type->valuestring);
+		}
 
     } else if (strcmp(type->valuestring, "candidate") == 0) {
         cJSON *cand_obj = cJSON_GetObjectItemCaseSensitive(json, "candidate");
-        cJSON *cand_str = cJSON_GetObjectItemCaseSensitive(cand_obj, "candidate");
-        cJSON *mid_str  = cJSON_GetObjectItemCaseSensitive(cand_obj, "sdpMid");
-        if (cJSON_IsString(cand_str) && cJSON_IsString(mid_str))
-            rtcAddRemoteCandidate(pc_id, cand_str->valuestring, mid_str->valuestring);
+		if (cand_obj) {
+			cJSON *cand_str = cJSON_GetObjectItemCaseSensitive(cand_obj, "candidate");
+			cJSON *mid_str  = cJSON_GetObjectItemCaseSensitive(cand_obj, "sdpMid");
+			if (cJSON_IsString(cand_str) && cJSON_IsString(mid_str))
+				rtcAddRemoteCandidate(pc_id, cand_str->valuestring, mid_str->valuestring);
+		}
     }
 
     cJSON_Delete(json);

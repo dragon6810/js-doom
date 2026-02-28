@@ -86,8 +86,7 @@ static void* recvshake(void* buf, void* curpos, int len)
 
     memset(player.mobj, 0, sizeof(object_t));
     level_placemobj(player.mobj);
-    mobjs[serverconn.edict].exists = true;
-    
+    mobjs[serverconn.edict].info.exists = true;
 
     serverconn.state = CLSTATE_CONNECTED;
     printf("[net] handshake ack, player id %d\n", serverconn.clientid);

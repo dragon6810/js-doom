@@ -108,7 +108,7 @@ void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
     if(sendreliable)
         netbuf_writedata(&buf, state->reliable, state->reliablesize);
 
-    if(unreliable && unreliable->len > 0)
+    if(unreliable && unreliable->len > 0 && MAX_PACKET - buf.len > unreliable->len)
         netbuf_writedata(&buf, unreliable->data, unreliable->len);
 
     net_send(dc, buf.data, buf.len);

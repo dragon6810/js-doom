@@ -158,7 +158,7 @@ int level_findnewedict(void)
     int i;
 
     for(i=0; i<mobjmax; i++)
-        if(!mobjs[i].exists)
+        if(!mobjs[i].info.exists)
             return i;
 
     if(i >= MAX_MOBJ)
@@ -229,7 +229,7 @@ void level_loadthings(lumpinfo_t* header)
         }
 
         mobj = &mobjs[mobjmax++];
-        mobj->exists = true;
+        mobj->info.exists = true;
         mobj->info.type = type;
         mobj->info.x = mapthings[i].x;
         mobj->info.y = mapthings[i].y;

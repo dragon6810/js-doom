@@ -11,7 +11,7 @@ bool netpacketfull;
 static void netbuf_resize(netbuf_t* buf)
 {
     buf->cap *= 2;
-    buf->data = realloc(buf->data, buf->len);
+    buf->data = realloc(buf->data, buf->cap);
 }
 
 void netbuf_init(netbuf_t* buf)
@@ -93,6 +93,15 @@ void netbuf_writei64(netbuf_t* buf, int64_t val)
     buf->len += sizeof(int64_t);
 }
 
+void netbuf_writefloat(netbuf_t* buf, float val)
+{
+    while(buf->len + sizeof(float) >= buf->cap)
+        netbuf_resize(buf);
+    
+    *(int32_t*) (buf->data + buf->len) = htonl(*(int32_t*)&val);
+    buf->len += sizeof(float);
+}
+
 void netbuf_writedata(netbuf_t* buf, void* data, int len)
 {
     while(buf->len + len >= buf->cap)
@@ -110,7 +119,6 @@ void netbuf_free(netbuf_t* buf)
     buf->data = NULL;
     buf->len = buf->cap = 0;
 }
-
 
 uint8_t net_readu8(void* data, void* pos, int datalen)
 {
@@ -214,6 +222,22 @@ int64_t net_readi64(void* data, void* pos, int datalen)
     }
 
     return ntohll(*(int64_t*) pos);
+}
+
+float net_readfloat(void* data, void* pos, int datalen)
+{
+    int32_t bits;
+
+    netpacketfull = false;
+
+    if(pos - data + sizeof(float) >= datalen)
+    {
+        netpacketfull = true;
+        return 0;
+    }
+
+    bits = ntohl(*(int32_t*) pos);
+    return *(float*) &bits;
 }
 
 void net_readdata(void* outdata, int len, void* data, void* pos, int datalen)
