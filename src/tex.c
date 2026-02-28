@@ -197,7 +197,7 @@ int tex_stitchcolumn(texture_t* tex, int bufwritten, int x)
         wad_cache(patchlump);
         patch = patchlump->cache;
         
-        post = (uint8_t*) patch + patch->postoffs[x - texpatch->x];
+        post = (post_t*) ((uint8_t*) patch + patch->postoffs[x - texpatch->x]);
         while(post->ystart != 0xFF)
         {   
             for(y=0; y<post->len; y++)
@@ -209,7 +209,7 @@ int tex_stitchcolumn(texture_t* tex, int bufwritten, int x)
                 tex->stitch[bufwritten + y + post->ystart + texpatch->y] = post->payload[y];
             }
 
-            post = (uint8_t*) post + sizeof(post_t) + post->len + 1;
+            post = (post_t*) ((uint8_t*) post + sizeof(post_t) + post->len + 1);
         }
     }
 
@@ -242,9 +242,7 @@ int tex_countbufsize(texture_t* tex)
 void tex_stitch(texture_t* tex)
 {
     int x;
-
-    lumpinfo_t *patchlump;
-    post_t *post;
+    
     int paddedw, bufwritten;
 
     if(tex->stitch)

@@ -5,6 +5,7 @@
 
 #include "netchan.h"
 #include "packets.h"
+#include "player.h"
 
 #define MAX_CLIENT 16
 
@@ -21,6 +22,7 @@ typedef struct
 {
     netchan_t chan;
     clstate_e state;
+    player_t player;
     char username[USERNAME_LEN];
     int dc;
 } client_t;
@@ -29,5 +31,6 @@ extern client_t clients[MAX_CLIENT];
 
 void recvfromclients(void);
 void sendtoclients(void);
+void spawnplayer(client_t* client);
 
 #endif

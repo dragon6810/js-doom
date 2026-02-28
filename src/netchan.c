@@ -136,4 +136,6 @@ bool netchan_queue(netchan_t* state, const netbuf_t* msg)
         memcpy(&state->msg[state->nmsg], msg->data, msg->len);
         state->nmsg++;
     }
+
+    return true;
 }

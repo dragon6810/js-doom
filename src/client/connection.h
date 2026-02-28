@@ -15,9 +15,10 @@ typedef enum
 
 typedef struct
 {
-    netchan_t   chan;
-    clstate_e   state;
-    int32_t     playerid;
+    netchan_t chan;
+    clstate_e state;
+    int32_t clientid;
+    int32_t edict;
 } conn_t;
 
 extern conn_t serverconn;

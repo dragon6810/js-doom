@@ -22,25 +22,35 @@
 #define LINEDEF_NOMAP         0x0080
 #define LINEDEF_MAPPED        0x0100
 
+#define MAX_MOBJ 1024
+
 typedef struct object_s object_t;
 typedef struct sector_s sector_t;
 typedef struct ssector_s ssector_t;
 typedef struct sidedef_s sidedef_t;
 typedef struct vertex_s vertex_t;
 
-struct object_s
+// these fields are sent from server to client
+typedef struct objinfo_s
 {
     float x, y, z;
     angle_t angle;
-    mobjtype_t type;
-    int spawnflags;
     statenum_t state;
+    mobjtype_t type;
+} objinfo_t;
+
+struct object_s
+{
+    bool exists;
+
+    objinfo_t info;
+
+    int spawnflags;
     
     float timeinstate; // if this * 35 > state's tick duration, go to next state
 
     ssector_t *ssector;
 
-    object_t *next, *prev; // global list
     object_t *snext, *sprev; // sector list
 };
 
@@ -125,11 +135,15 @@ extern int nnodes;
 extern node_t *nodes;
 extern int nsegs;
 extern seg_t *segs;
-extern object_t *mobjs;
+extern int mobjmax;
+extern object_t mobjs[MAX_MOBJ];
 
 extern texture_t* levelskytex;
 
+void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
+// finds an index to put a new mobj. -1 if edict full
+int level_findnewedict(void);
 int level_nodeside(node_t* node, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 void level_load(int episode, int map);

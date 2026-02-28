@@ -3,10 +3,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "client.h"
 #include "level.h"
 #include "net.h"
 #include "netchan.h"
 #include "packets.h"
+#include "render.h"
 #include "wad.h"
 
 conn_t serverconn = {};
@@ -31,6 +33,9 @@ static void* recvclev(void* buf, void* curpos, int len)
 {
     int8_t e, m;
 
+    if(serverconn.state != CLSTATE_CONNECTED)
+        return curpos + 2;
+
     e = net_readi8(buf, curpos++, len);
     m = net_readi8(buf, curpos++, len);
     if(netpacketfull)
@@ -48,7 +53,12 @@ static void* recvshake(void* buf, void* curpos, int len)
     int nwads;
     char wadname[13];
 
-    serverconn.playerid = net_readi32(buf, curpos, len);
+    serverconn.clientid = net_readi32(buf, curpos, len);
+    curpos += 4;
+    if(netpacketfull)
+        return NULL;
+
+    serverconn.edict = net_readi32(buf, curpos, len);
     curpos += 4;
     if(netpacketfull)
         return NULL;
@@ -69,8 +79,18 @@ static void* recvshake(void* buf, void* curpos, int len)
         wad_load(wadname);
     }
 
+    render_init();
+
+    memset(&player, 0, sizeof(player));
+    player.mobj = &mobjs[serverconn.edict];
+
+    memset(player.mobj, 0, sizeof(object_t));
+    level_placemobj(player.mobj);
+    mobjs[serverconn.edict].exists = true;
+    
+
     serverconn.state = CLSTATE_CONNECTED;
-    printf("[net] handshake ack, player id %d\n", serverconn.playerid);
+    printf("[net] handshake ack, player id %d\n", serverconn.clientid);
 
     return curpos;
 }
@@ -113,7 +133,7 @@ static void recvpacket(void *buf, int len)
 void recvfromserver(void)
 {
     uint8_t buf[NET_MAX_PACKET_SIZE];
-    int     len;
+    int len;
 
     while((len = net_recv(buf, sizeof(buf), NULL)) > 0)
         recvpacket(buf, len);

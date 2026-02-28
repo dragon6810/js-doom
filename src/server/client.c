@@ -1,8 +1,10 @@
 #include "client.h"
 
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
+#include "info.h"
 #include "level.h"
 #include "net.h"
 #include "netchan.h"
@@ -73,6 +75,7 @@ static void processhandshake(int dc, void* buf, int len)
     int8_t packid;
     char *username;
     netbuf_t reply;
+    int edict;
     
     curpos = buf;
     seq = net_readi32(buf, curpos, len);
@@ -117,9 +120,14 @@ static void processhandshake(int dc, void* buf, int len)
     memset(&clients[i].chan, 0, sizeof(netchan_t));
     netchan_recv(&clients[i].chan, buf, len);
 
+    spawnplayer(&clients[i]);
+    edict = clients[i].player.mobj - mobjs;
+
     netbuf_init(&reply);
     netbuf_writeu8(&reply, SVC_HANDSHAKE);
     netbuf_writei32(&reply, i);
+    netbuf_writei32(&reply, edict);
+
     netbuf_writei16(&reply, nwads);
     for(j=0; j<nwads; j++)
         netbuf_writedata(&reply, wadnames[j], 13);
@@ -155,4 +163,19 @@ void recvfromclients(void)
 
         recvpacket(&clients[i], buf, len);
     }
+}
+
+void spawnplayer(client_t* client)
+{
+    int edict;
+
+    edict = level_findnewedict();
+    assert(edict != -1);
+
+    memset(&client->player, 0, sizeof(player_t));
+    client->player.mobj = &mobjs[edict];
+    level_placemobj(client->player.mobj);
+
+    client->player.mobj->info.type = MT_PLAYER;
+    client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 }

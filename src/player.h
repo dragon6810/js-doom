@@ -2,6 +2,7 @@
 #define _PLAYER_H
 
 #include "doommath.h"
+#include "level.h"
 
 #define CMD_FORWARD 0x01
 #define CMD_BACK 0x02
@@ -10,15 +11,14 @@
 
 typedef struct
 {
-    float x, y, z;
-    angle_t angle;
+    object_t *mobj;
     float xvel, yvel, zvel;
 } player_t;
 
 typedef struct
 {
     uint8_t flags; // CMD_XX
-    angle_t deltaangle;
+    angle_t angle;
     float frametime;
 } playercmd_t;
 

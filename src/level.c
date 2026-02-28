@@ -107,7 +107,8 @@ int nnodes = 0;
 node_t *nodes = NULL;
 int nsegs = 0;
 seg_t *segs = NULL;
-object_t *mobjs = NULL;
+int mobjmax;
+object_t mobjs[MAX_MOBJ] = {};
 
 texture_t* levelskytex = NULL;
 const char *episodeskies[] =
@@ -115,14 +116,55 @@ const char *episodeskies[] =
     "SKY1", "SKY2", "SKY3", "SKY1", "SKY3"
 };
 
+void level_unplacemobj(object_t* mobj)
+{
+    object_t *cur;
+
+    sector_t *sector;
+    object_t *prev, *next;
+
+    if(mobj->ssector)
+    {
+        sector = mobj->ssector->sector;
+        for(cur=sector->mobjs; cur&&cur!=mobj; cur=cur->snext);
+        if(cur)
+        {
+            prev = cur->sprev;
+            next = cur->snext;
+
+            if(prev)
+                prev->snext = next;
+            else
+                sector->mobjs = next;
+            
+            if(next)
+                next->sprev = prev;
+        }
+    }
+}
+
 void level_placemobj(object_t* mobj)
 {
-    mobj->ssector = level_getpointssector(mobj->x, mobj->y);
+    mobj->ssector = level_getpointssector(mobj->info.x, mobj->info.y);
     mobj->sprev = NULL;
     mobj->snext = mobj->ssector->sector->mobjs;
     mobj->ssector->sector->mobjs = mobj;
     if(mobj->snext)
         mobj->snext->sprev = mobj;
+}
+
+int level_findnewedict(void)
+{
+    int i;
+
+    for(i=0; i<mobjmax; i++)
+        if(!mobjs[i].exists)
+            return i;
+
+    if(i >= MAX_MOBJ)
+        return -1;
+
+    return mobjmax++;
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -155,7 +197,6 @@ void level_loadthings(lumpinfo_t* header)
     int nthings;
     mapthing_t *mapthings;
     object_t *mobj;
-    ssector_t *ssector;
     mobjtype_t type;
 
     lump = header + LUMPOFFS_THINGS;
@@ -181,20 +222,24 @@ void level_loadthings(lumpinfo_t* header)
             continue;
         }
 
-        mobj = calloc(1, sizeof(object_t));
-        mobj->type = type;
-        mobj->x = mapthings[i].x;
-        mobj->y = mapthings[i].y;
-        mobj->spawnflags = mapthings[i].flags;
-        mobj->angle = mapthings[i].angle * ANG1;
+        if(mobjmax >= MAX_MOBJ)
+        {
+            fprintf(stderr, "level_loadthings: level has too many things\n");
+            break;
+        }
 
-        mobj->state = mobjinfo[mobj->type].spawnstate;
-        
-        mobj->next = mobjs;
-        mobjs = mobj;
+        mobj = &mobjs[mobjmax++];
+        mobj->exists = true;
+        mobj->info.type = type;
+        mobj->info.x = mapthings[i].x;
+        mobj->info.y = mapthings[i].y;
+        mobj->info.angle = mapthings[i].angle * ANG1;
+        mobj->spawnflags = mapthings[i].flags;
+
+        mobj->info.state = mobjinfo[mobj->info.type].spawnstate;
 
         level_placemobj(mobj);
-        mobj->z = mobj->ssector->sector->floorheight;
+        mobj->info.z = mobj->ssector->sector->floorheight;
     }
 
     wad_decache(lump);

@@ -1,5 +1,6 @@
 #include "render.h"
 
+#include "client.h"
 #include "level.h"
 #include "screen.h"
 #include "tex.h"
@@ -95,7 +96,7 @@ int16_t *visthingtop;
 int16_t *visthingbottom;
 
 const int npastelcolors = 10;
-const int pastelcolors[npastelcolors] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
+const int pastelcolors[] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
 
 void render_init(void)
 {
@@ -104,19 +105,43 @@ void render_init(void)
     int baselevel, level;
     float scale;
 
+    wad_setpalette(0);
+    wad_loadcolormap();
+
+    if(topclips)
+        free(topclips);
+    if(bottomclips)
+        free(bottomclips);
+
     topclips = malloc(screenwidth * sizeof(int16_t));
     bottomclips = malloc(screenwidth * sizeof(int16_t));
 
     for(i=0; i<MAX_VISPLANE; i++)
     {
+        if(visplanes[i].tops)
+            free(visplanes[i].tops);
+        if(visplanes[i].bottoms)
+            free(visplanes[i].bottoms);
+
         visplanes[i].tops = malloc(screenwidth * sizeof(int16_t));
         visplanes[i].bottoms = malloc(screenwidth * sizeof(int16_t));
     }
 
+    if(spanstarts)
+        free(spanstarts);
+
     spanstarts = malloc(screenheight * sizeof(int16_t));
+
+    if(clipbuff)
+        free(clipbuff);
 
     clipbuffsize = 64 * screenwidth;
     clipbuff = malloc(clipbuffsize * sizeof(int16_t));
+
+    if(visthingtop)
+        free(visthingtop);
+    if(visthingbottom)
+        free(visthingbottom);
 
     visthingtop = malloc(screenwidth * sizeof(int16_t));
     visthingbottom = malloc(screenwidth * sizeof(int16_t));
@@ -306,7 +331,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
         if(pxtop > pxbottom)
             continue;
 
-        column = tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3;
+        column = (post_t*) (tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3);
         render_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scalefrac);
         seg->maskeds[x - seg->x1] = INT16_MAX;
     }
@@ -410,7 +435,7 @@ void render_drawthing(visthing_t* thing)
         if(y1 > y2)
             continue;
         
-        post = ((uint8_t*) thing->patch) + thing->patch->postoffs[s >> FIXEDSHIFT];
+        post = (post_t*) ((uint8_t*) thing->patch + thing->patch->postoffs[s >> FIXEDSHIFT]);
         render_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
     }
 }
@@ -1253,9 +1278,9 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     sinview = FLOATTOFIXED(ANGSIN(viewangle));
     cosview = FLOATTOFIXED(ANGCOS(viewangle));
 
-    dx = FLOATTOFIXED(mobj->x - viewx);
-    dy = FLOATTOFIXED(mobj->y - viewy);
-    dz = FLOATTOFIXED(mobj->z - viewz);
+    dx = FLOATTOFIXED(mobj->info.x - viewx);
+    dy = FLOATTOFIXED(mobj->info.y - viewy);
+    dz = FLOATTOFIXED(mobj->info.z - viewz);
 
     dist = fixedmul(dx, cosview) + fixedmul(dy, sinview);
     if(dist < 1 << FIXEDSHIFT)
@@ -1266,7 +1291,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     centerx = FLOATTOFIXED(halfx) + fixedmul(fixedmul(dx, sinview) - fixedmul(dy, cosview), visthing->scale);
     centery = FLOATTOFIXED(halfy) - fixedmul(dz, visthing->scale);
 
-    if(states[mobj->state].frame & 0x8000)
+    if(states[mobj->info.state].frame & 0x8000)
     {
         visthing->colormap = colormap->maps[0];
     }
@@ -1276,16 +1301,16 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
         visthing->colormap = scalemap[mobj->ssector->sector->light >> LIGHTSHIFT][lightindex];
     }
 
-    sprite = &sprites[states[mobj->state].sprite];
-    if((states[mobj->state].frame & 0x7FFF) >= sprite->nframes)
+    sprite = &sprites[states[mobj->info.state].sprite];
+    if((states[mobj->info.state].frame & 0x7FFF) >= sprite->nframes)
         return true;
-    frame = &sprite->frames[states[mobj->state].frame & 0x7FFF];
+    frame = &sprite->frames[states[mobj->info.state].frame & 0x7FFF];
 
     rotframe = 0;
     if(frame->rotational)
     {
         a = ANGATAN2(dy, dx);
-        theta = a - mobj->angle + ANG45 / 2;
+        theta = a - mobj->info.angle + ANG45 / 2;
         rotframe = (theta + ANG180) / ANG45;
     }
 
@@ -1329,6 +1354,10 @@ void render_sectorthings(sector_t* sector)
     {
         if(nvisthings >= MAX_VISTHING)
             break;
+
+        if(mobj == player.mobj)
+            continue;
+
         visthing = &visthings[nvisthings++];
         if(render_visthinginfo(mobj, visthing))
         {

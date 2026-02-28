@@ -1,7 +1,5 @@
 #include "player.h"
 
-player_t player = {};
-
 void player_docmd(player_t* player, const playercmd_t* cmd)
 {
     const float movespeed = 583;
@@ -12,8 +10,8 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
 
     framespeed = movespeed * cmd->frametime;
 
-    sinangle = ANGSIN(player->angle);
-    cosangle = ANGCOS(player->angle);
+    sinangle = ANGSIN(player->mobj->info.angle);
+    cosangle = ANGCOS(player->mobj->info.angle);
 
     leftmove = forwardmove = 0;
     if(cmd->flags & CMD_FORWARD)
@@ -25,8 +23,8 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
     if(cmd->flags & CMD_RIGHT)
         leftmove -= framespeed;
 
-    player->x += forwardmove * cosangle - leftmove * sinangle;
-    player->y += forwardmove * sinangle + leftmove * cosangle;
+    player->mobj->info.x += forwardmove * cosangle - leftmove * sinangle;
+    player->mobj->info.y += forwardmove * sinangle + leftmove * cosangle;
 
-    player->angle += cmd->deltaangle;
+    player->mobj->info.angle = cmd->angle;
 }

@@ -36,7 +36,7 @@ sprframe_t tempframes[256 - 'A'];
 
 void wad_findsprite(sprite_t* spr, const char* name)
 {
-    int i, l;
+    int l;
     lumpinfo_t *lump;
 
     int maxframe, frame, rot;
@@ -202,9 +202,10 @@ void wad_load(const char* filename)
 
     tex_dowad();
     wad_findsprites();
-    wad_loadcolormap();
 
     skylump = wad_findlump("F_SKY1", false);
+
+    printf("loaded wad %s\n", filename);
 }
 
 lumpinfo_t* wad_findlump(const char* name, bool cache)

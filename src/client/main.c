@@ -27,6 +27,8 @@ int fpsframes;
 
 playercmd_t inputcmd;
 
+player_t player = {};
+
 void gatherinput(void)
 {
     const angle_t turnspeed = DEGTOANG(180.0 * inputcmd.frametime);
@@ -39,9 +41,9 @@ void gatherinput(void)
     if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
     if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
 
-    inputcmd.deltaangle = 0;
-    if(keystates[SDL_SCANCODE_LEFT]) inputcmd.deltaangle += turnspeed;
-    if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.deltaangle -= turnspeed;
+    inputcmd.angle = player.mobj->info.angle;
+    if(keystates[SDL_SCANCODE_LEFT]) inputcmd.angle += turnspeed;
+    if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.angle -= turnspeed;
 }
 
 void loop(void)
@@ -70,12 +72,14 @@ void loop(void)
     {
         gatherinput();
         player_docmd(&player, &inputcmd);
-        player.z = level_getpointssector(player.x, player.y)->sector->floorheight;
-        
-        viewx = player.x;
-        viewy = player.y;
-        viewz = player.z + 41;
-        viewangle = player.angle;
+        level_unplacemobj(player.mobj);
+        level_placemobj(player.mobj);
+        player.mobj->info.z = level_getpointssector(player.mobj->info.x, player.mobj->info.y)->sector->floorheight;
+
+        viewx = player.mobj->info.x;
+        viewy = player.mobj->info.y;
+        viewz = player.mobj->info.z + 41;
+        viewangle = player.mobj->info.angle;
         render();
     }
 
