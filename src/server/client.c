@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "level.h"
 #include "net.h"
 #include "netchan.h"
 #include "wad.h"
@@ -18,10 +19,12 @@ void sendtoclients(void)
         if(clients[i].state == CLSTATE_DC)
             continue;
         
-        if(clients[i].chan.outseq > clients[i].chan.inseq)
+        #if 0
+        if(clients[i].chan.outseq > clients[i].chan.lastseen)
             continue;
         else
-            clients[i].chan.outseq = clients[i].chan.inseq;
+            clients[i].chan.outseq = clients[i].chan.lastseen;
+        #endif
 
         netchan_send(&clients[i].chan, clients[i].dc, NULL);
     }
@@ -98,7 +101,7 @@ static void processhandshake(int dc, void* buf, int len)
     if(i >= MAX_CLIENT)
     {
         netbuf_init(&reply);
-        netbuf_writei32(&reply, 0);
+        netbuf_writei32(&reply, 1);
         netbuf_writei32(&reply, 0);
         netbuf_writei16(&reply, 0);
         netbuf_writeu8(&reply, SVC_SERVERFULL);
@@ -106,8 +109,6 @@ static void processhandshake(int dc, void* buf, int len)
         netbuf_free(&reply);
         return;
     }
-
-    printf("responding to client %d handshake\n", i);
 
     clients[i].state = CLSTATE_SHAKING;
     clients[i].dc = dc;
@@ -119,14 +120,17 @@ static void processhandshake(int dc, void* buf, int len)
     netbuf_init(&reply);
     netbuf_writeu8(&reply, SVC_HANDSHAKE);
     netbuf_writei32(&reply, i);
-
     netbuf_writei16(&reply, nwads);
     for(j=0; j<nwads; j++)
         netbuf_writedata(&reply, wadnames[j], 13);
+    netchan_queue(&clients[i].chan, &reply);
+    netbuf_free(&reply);
 
-    clients[i].chan.reliablesize = reply.len;
-    memcpy(clients[i].chan.reliable, reply.data, reply.len);
-
+    netbuf_init(&reply);
+    netbuf_writeu8(&reply, SVC_CHANGELEVEL);
+    netbuf_writeu8(&reply, level_episode);
+    netbuf_writeu8(&reply, level_map);
+    netchan_queue(&clients[i].chan, &reply);
     netbuf_free(&reply);
 }
 

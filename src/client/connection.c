@@ -3,9 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "level.h"
 #include "net.h"
 #include "netchan.h"
 #include "packets.h"
+#include "wad.h"
 
 conn_t serverconn = {};
 
@@ -21,10 +23,56 @@ static void connect(void)
     netbuf_init(&buf);
     netbuf_writeu8(&buf, CVS_HANDSHAKE);
     netbuf_writedata(&buf, username, USERNAME_LEN);
-
-    serverconn.chan.reliablesize = buf.len;
-    memcpy(serverconn.chan.reliable, buf.data, buf.len);
+    netchan_queue(&serverconn.chan, &buf);
     netbuf_free(&buf);
+}
+
+static void* recvclev(void* buf, void* curpos, int len)
+{
+    int8_t e, m;
+
+    e = net_readi8(buf, curpos++, len);
+    m = net_readi8(buf, curpos++, len);
+    if(netpacketfull)
+        return NULL;
+
+    level_load(e, m);
+
+    return curpos;
+}
+
+static void* recvshake(void* buf, void* curpos, int len)
+{
+    int i;
+
+    int nwads;
+    char wadname[13];
+
+    serverconn.playerid = net_readi32(buf, curpos, len);
+    curpos += 4;
+    if(netpacketfull)
+        return NULL;
+
+    nwads = net_readi16(buf, curpos, len);
+    curpos += 2;
+    if(netpacketfull)
+        return NULL;
+
+    for(i=0; i<nwads; i++)
+    {
+        net_readdata(wadname, 13, buf, curpos, len);
+        curpos += 13;
+        if(netpacketfull)
+            return NULL;
+
+        wadname[12] = 0;
+        wad_load(wadname);
+    }
+
+    serverconn.state = CLSTATE_CONNECTED;
+    printf("[net] handshake ack, player id %d\n", serverconn.playerid);
+
+    return curpos;
 }
 
 static void recvpacket(void *buf, int len)
@@ -45,18 +93,16 @@ static void recvpacket(void *buf, int len)
         switch(packid)
         {
         case SVC_HANDSHAKE:
-            serverconn.playerid = net_readi32(buf, curpos, len);
-            curpos += 4;
-            if(netpacketfull)
+            if(!(curpos = recvshake(buf, curpos, len)))
                 return;
-            serverconn.state = CLSTATE_CONNECTED;
-            printf("[net] handshake ack, player id %d\n", serverconn.playerid);
-            return;
-
+            break;
         case SVC_SERVERFULL:
             printf("[net] server full\n");
-            return;
-
+            break;
+        case SVC_CHANGELEVEL:
+            if(!(curpos = recvclev(buf, curpos, len)))
+                return;
+            break;
         default:
             fprintf(stderr, "[net] bad packet id %d from server\n", packid);
             return;

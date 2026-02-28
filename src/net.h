@@ -50,6 +50,7 @@ uint32_t net_readu32(void* data, void* pos, int datalen);
 int32_t net_readi32(void* data, void* pos, int datalen);
 uint64_t net_readu64(void* data, void* pos, int datalen);
 int64_t net_readi64(void* data, void* pos, int datalen);
+void net_readdata(void* outdata, int len, void* data, void* pos, int datalen);
 
 // Initialize the networking layer. Call once before the game loop.
 // Server: connects to the signaling server and waits for a peer.

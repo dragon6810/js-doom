@@ -91,6 +91,8 @@ typedef struct __attribute__((packed))
     int16_t tag;
 } mapsector_t;
 
+int level_episode = -1, level_map = -1;
+
 int nverts = 0;
 vertex_t *verts = NULL;
 int nsectors = 0;
@@ -426,27 +428,30 @@ void level_loadsegs(lumpinfo_t* header)
     wad_decache(lump);
 }
 
-void level_load(int episode, int map)
+void level_load(int e, int m)
 {
     char levelname[5];
     lumpinfo_t *lump;
 
-    if(episode < 1 || episode > 4 || map < 1 || map > 9)
+    level_episode = e;
+    level_map = m;
+
+    if(level_episode < 1 || level_episode > 4 || level_map < 1 || level_map > 9)
     {
-        fprintf(stderr, "level_load: bad map E%dM%d\n", episode, map);
+        fprintf(stderr, "level_load: bad map E%dM%d\n", level_episode, level_map);
         return;
     }
 
     levelname[0] = 'E';
-    levelname[1] = '0' + episode;
+    levelname[1] = '0' + level_episode;
     levelname[2] = 'M';
-    levelname[3] = '0' + map;
+    levelname[3] = '0' + level_map;
     levelname[4] = 0;
 
     lump = wad_findlump(levelname, false);
     if(!lump)
     {
-        fprintf(stderr, "level_load: wad does not have map E%dM%d\n", episode, map);
+        fprintf(stderr, "level_load: wad does not have map E%dM%d\n", level_episode, level_map);
         return;
     }
 
@@ -461,7 +466,7 @@ void level_load(int episode, int map)
     level_linksectors();
     level_loadthings(lump);
 
-    levelskytex = tex_find(episodeskies[episode - 1]);
+    levelskytex = tex_find(episodeskies[level_episode - 1]);
 
     printf("loaded %s\n", levelname);
 }

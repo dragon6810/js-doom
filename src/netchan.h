@@ -7,14 +7,14 @@
 #include "net.h"
 
 #define MAX_PACKET 1400
+#define MAX_MSGQUE 64
 
 typedef struct
 {
     int32_t outseq;
     int32_t lastseen;
     int32_t lastsentreliable;
-
-    int32_t inseq;
+    
     int32_t inack;
     bool hadreliable;
     bool inackreliable;
@@ -29,8 +29,11 @@ typedef struct
     // on the last recv, a previously unacknowledged reliable was acknowledged
     bool justgotack;
 
-    int32_t msgsize;
-    uint8_t msg[MAX_PACKET];
+    bool msgoverflow;
+
+    int32_t nmsg;
+    int32_t msgsizes[MAX_MSGQUE];
+    uint8_t msg[MAX_MSGQUE][MAX_PACKET];
 
     int32_t reliablesize;
     uint8_t reliable[MAX_PACKET];
@@ -39,5 +42,6 @@ typedef struct
 // returns the location in data[] after reading the header (where the data starts)
 void* netchan_recv(netchan_t* state, void* data, int datalen);
 void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable);
+bool netchan_queue(netchan_t* state, const netbuf_t* msg);
 
 #endif

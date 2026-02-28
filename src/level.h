@@ -109,6 +109,8 @@ struct sector_s
     object_t *mobjs;
 };
 
+extern int level_episode, level_map;
+
 extern int nverts;
 extern vertex_t *verts;
 extern int nsectors;

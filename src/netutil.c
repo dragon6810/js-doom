@@ -215,3 +215,14 @@ int64_t net_readi64(void* data, void* pos, int datalen)
 
     return ntohll(*(int64_t*) pos);
 }
+
+void net_readdata(void* outdata, int len, void* data, void* pos, int datalen)
+{
+    if(datalen - (int) (pos - data) < len)
+    {
+        netpacketfull = true;
+        return;
+    }
+
+    memcpy(outdata, pos, len);
+}

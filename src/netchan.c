@@ -5,6 +5,18 @@
 
 #include "net.h"
 
+static void netchan_trytransfermsg(netchan_t* state)
+{
+    if(!state->reliablesize && state->nmsg && state->msgsizes[0])
+    {
+        state->reliablesize = state->msgsizes[0];
+        memcpy(state->reliable, state->msg[0], state->reliablesize);
+        state->nmsg--;
+
+        memmove(&state->msg[0], &state->msg[1], state->nmsg * MAX_PACKET);
+    }
+}
+
 void* netchan_recv(netchan_t* state, void* data, int datalen)
 {
     int32_t seq, ack;
@@ -47,12 +59,7 @@ void* netchan_recv(netchan_t* state, void* data, int datalen)
         state->reliablesize = state->lastsentreliable = 0;
     }
 
-    if(!state->reliablesize && state->msgsize)
-    {
-        state->reliablesize = state->msgsize;
-        memcpy(state->reliable, state->msg, state->reliablesize);
-        state->msgsize = 0;
-    }
+    netchan_trytransfermsg(state);
 
     if(reliable)
     {
@@ -72,6 +79,8 @@ void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
     netbuf_t buf;
     uint32_t seq, ack;
     bool sendreliable;
+
+    netchan_trytransfermsg(state);
 
     sendreliable = state->reliablesize > 0;
 
@@ -107,4 +116,24 @@ void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
 
     if(sendreliable && !state->lastsentreliable)
         state->lastsentreliable = state->outseq;
+}
+
+bool netchan_queue(netchan_t* state, const netbuf_t* msg)
+{
+    if(state->nmsg && MAX_PACKET - state->msgsizes[state->nmsg-1] <= msg->len)
+    {
+        memcpy(&state->msg[state->nmsg-1][state->msgsizes[state->nmsg-1]], msg->data, msg->len);
+        state->msgsizes[state->nmsg-1] += msg->len;
+    }
+    else if(state->nmsg >= MAX_MSGQUE)
+    {
+        state->msgoverflow = true;
+        return false;
+    }
+    else
+    {
+        state->msgsizes[state->nmsg] = msg->len;
+        memcpy(&state->msg[state->nmsg], msg->data, msg->len);
+        state->nmsg++;
+    }
 }

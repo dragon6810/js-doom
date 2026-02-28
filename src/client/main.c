@@ -64,17 +64,20 @@ void loop(void)
 
     recvfromserver();
 
-    gatherinput();
-    player_docmd(&player, &inputcmd);
-    player.z = level_getpointssector(player.x, player.y)->sector->floorheight;
-
     sendtoserver();
 
-    viewx = player.x;
-    viewy = player.y;
-    viewz = player.z + 41;
-    viewangle = player.angle;
-    render();
+    if(level_episode != -1 && level_map != -1)
+    {
+        gatherinput();
+        player_docmd(&player, &inputcmd);
+        player.z = level_getpointssector(player.x, player.y)->sector->floorheight;
+        
+        viewx = player.x;
+        viewy = player.y;
+        viewz = player.z + 41;
+        viewangle = player.angle;
+        render();
+    }
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
 
@@ -108,13 +111,8 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
 
     net_init();
-
-    wad_load("doom.wad");
-    wad_setpalette(0);
     
     render_init();
-
-    level_load(1, 1);
 
     keystates = SDL_GetKeyboardState(NULL);
 
