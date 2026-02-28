@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "connection.h"
 #include "level.h"
 #include "net.h"
 #include "player.h"
@@ -61,9 +62,13 @@ void loop(void)
         lastfpscheck = curtime;
     }
 
+    recvfromserver();
+
     gatherinput();
     player_docmd(&player, &inputcmd);
     player.z = level_getpointssector(player.x, player.y)->sector->floorheight;
+
+    sendtoserver();
 
     viewx = player.x;
     viewy = player.y;

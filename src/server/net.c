@@ -93,7 +93,6 @@ static void data_channel_cb(int pc, int dc, void *ptr)
 {
     printf("[net] peer connected on dc %d\n", dc);
     rtcSetMessageCallback(dc, data_channel_msg_cb);
-    addclient(dc);
 }
 
 static void ws_message_cb(int ws, const char *message, int size, void *ptr)

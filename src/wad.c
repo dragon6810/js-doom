@@ -9,6 +9,7 @@ int nlumps = 0;
 lumpinfo_t *lumps = NULL;
 int nwads = 0;
 FILE *wads[MAX_WAD];
+char wadnames[MAX_WAD][13];
 
 sprite_t sprites[NUMSPRITES];
 color_t *palette = NULL;
@@ -165,6 +166,12 @@ void wad_load(const char* filename)
         return;
     }
 
+    if(strlen(filename) > 12)
+    {
+        fprintf(stderr, "wad_load: filename too long \"%s\".\n", filename);
+        return;
+    }
+
     FILE *ptr = fopen(filename, "rb");
     if(!ptr)
     {
@@ -189,6 +196,7 @@ void wad_load(const char* filename)
     else
         lumps = realloc(lumps, (nlumps + nlump) * sizeof(lumpinfo_t));
 
+    strcpy(wadnames[nwads], filename);
     wads[nwads++] = ptr;
     wad_loadlumpinfos(nlump, lumpinfoloc);
 

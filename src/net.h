@@ -39,6 +39,7 @@ void netbuf_writeu32(netbuf_t* buf, uint32_t val);
 void netbuf_writei32(netbuf_t* buf, int32_t val);
 void netbuf_writeu64(netbuf_t* buf, uint64_t val);
 void netbuf_writei64(netbuf_t* buf, int64_t val);
+void netbuf_writedata(netbuf_t* buf, void* data, int len);
 void netbuf_free(netbuf_t* buf);
 
 uint8_t net_readu8(void* data, void* pos, int datalen);
@@ -68,5 +69,8 @@ int net_recv(void *buf, int buf_size, int *dc_out);
 
 // Returns 1 if the WebRTC data channel is open and ready, 0 otherwise.
 int net_connected(void);
+
+// Returns the data channel id for the server (client only).
+int net_server_dc(void);
 
 #endif // NET_H

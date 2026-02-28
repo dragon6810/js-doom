@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "netchan.h"
+#include "packets.h"
 
 #define MAX_CLIENT 16
 
@@ -18,16 +19,15 @@ typedef enum
 
 typedef struct
 {
-    addr_t addr;
     netchan_t chan;
     clstate_e state;
-    int dc_id;
+    char username[USERNAME_LEN];
+    int dc;
 } client_t;
 
 extern client_t clients[MAX_CLIENT];
 
-void sendtoclients(void);
 void recvfromclients(void);
-bool addclient(int dc_id);
+void sendtoclients(void);
 
 #endif

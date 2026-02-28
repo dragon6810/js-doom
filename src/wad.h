@@ -70,6 +70,7 @@ extern int nlumps;
 extern lumpinfo_t *lumps;
 extern int nwads;
 extern FILE *wads[MAX_WAD];
+extern char wadnames[MAX_WAD][13];
 
 extern sprite_t sprites[NUMSPRITES];
 extern color_t *palette;

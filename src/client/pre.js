@@ -54,7 +54,14 @@ async function connectToGame(ip, port) {
             Module._netDataChannels[DC_ID] = dataChannel;
             Module._net_set_dc(DC_ID);
         };
-        dataChannel.onmessage = (event) => console.log("server says:", event.data);
+        dataChannel.onmessage = (event) => {
+            const bytes = new Uint8Array(event.data);
+            const sp = stackSave();
+            const ptr = stackAlloc(bytes.length);
+            HEAPU8.set(bytes, ptr);
+            Module._net_push_packet(ptr, bytes.length);
+            stackRestore(sp);
+        };
 
         // 4. Create and send the Offer
         const offer = await peerConnection.createOffer();

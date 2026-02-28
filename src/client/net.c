@@ -98,3 +98,8 @@ int net_connected(void)
 {
     return js_net_connected(server_dc);
 }
+
+int net_server_dc(void)
+{
+    return server_dc;
+}

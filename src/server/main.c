@@ -22,7 +22,9 @@ static uint64_t nowmicro(void)
 
 static void tic(void)
 {
-    
+    recvfromclients();
+
+    sendtoclients();
 }
 
 int ep = -1, map = -1;

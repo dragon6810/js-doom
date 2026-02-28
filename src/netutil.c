@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NETBUF_MINSIZE 32
 
@@ -26,6 +27,7 @@ void netbuf_writeu8(netbuf_t* buf, uint8_t val)
         netbuf_resize(buf);
     
     *(uint8_t*) (buf->data + buf->len) = val;
+    buf->len += sizeof(uint8_t);
 }
 
 void netbuf_writei8(netbuf_t* buf, int8_t val)
@@ -34,6 +36,7 @@ void netbuf_writei8(netbuf_t* buf, int8_t val)
         netbuf_resize(buf);
     
     *(int8_t*) (buf->data + buf->len) = val;
+    buf->len += sizeof(int8_t);
 }
 
 void netbuf_writeu16(netbuf_t* buf, uint16_t val)
@@ -42,6 +45,7 @@ void netbuf_writeu16(netbuf_t* buf, uint16_t val)
         netbuf_resize(buf);
     
     *(uint16_t*) (buf->data + buf->len) = htons(val);
+    buf->len += sizeof(uint16_t);
 }
 
 void netbuf_writei16(netbuf_t* buf, int16_t val)
@@ -50,6 +54,7 @@ void netbuf_writei16(netbuf_t* buf, int16_t val)
         netbuf_resize(buf);
     
     *(int16_t*) (buf->data + buf->len) = htons(val);
+    buf->len += sizeof(int16_t);
 }
 
 void netbuf_writeu32(netbuf_t* buf, uint32_t val)
@@ -58,6 +63,7 @@ void netbuf_writeu32(netbuf_t* buf, uint32_t val)
         netbuf_resize(buf);
     
     *(uint32_t*) (buf->data + buf->len) = htonl(val);
+    buf->len += sizeof(uint32_t);
 }
 
 void netbuf_writei32(netbuf_t* buf, int32_t val)
@@ -66,6 +72,7 @@ void netbuf_writei32(netbuf_t* buf, int32_t val)
         netbuf_resize(buf);
     
     *(int32_t*) (buf->data + buf->len) = htonl(val);
+    buf->len += sizeof(int32_t);
 }
 
 void netbuf_writeu64(netbuf_t* buf, uint64_t val)
@@ -74,6 +81,7 @@ void netbuf_writeu64(netbuf_t* buf, uint64_t val)
         netbuf_resize(buf);
     
     *(uint64_t*) (buf->data + buf->len) = htonll(val);
+    buf->len += sizeof(uint64_t);
 }
 
 void netbuf_writei64(netbuf_t* buf, int64_t val)
@@ -82,6 +90,16 @@ void netbuf_writei64(netbuf_t* buf, int64_t val)
         netbuf_resize(buf);
     
     *(int64_t*) (buf->data + buf->len) = htonll(val);
+    buf->len += sizeof(int64_t);
+}
+
+void netbuf_writedata(netbuf_t* buf, void* data, int len)
+{
+    while(buf->len + len >= buf->cap)
+        netbuf_resize(buf);
+
+    memcpy(buf->data + buf->len, data, len);
+    buf->len += len;
 }
 
 void netbuf_free(netbuf_t* buf)

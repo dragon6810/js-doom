@@ -19,6 +19,15 @@ typedef struct
     bool hadreliable;
     bool inackreliable;
 
+    // toggles with each new outgoing reliable message
+    bool outreliable;
+    // tracks the reliable bit of the last reliable we processed
+    bool inreliable;
+
+    // on the last recv, a new (not retransmitted) reliable was received
+    bool gotnewreliable;
+    // on the last recv, a previously unacknowledged reliable was acknowledged
+    bool justgotack;
 
     int32_t msgsize;
     uint8_t msg[MAX_PACKET];

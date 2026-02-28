@@ -1,15 +1,19 @@
 #include "netchan.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "net.h"
 
 void* netchan_recv(netchan_t* state, void* data, int datalen)
 {
     int32_t seq, ack;
-    bool reliable;
+    bool reliable, whichreliable;
 
     void *curpos;
+
+    state->justgotack = false;
+    state->gotnewreliable = false;
 
     curpos = data;
     seq = net_readi32(data, curpos, datalen);
@@ -22,24 +26,85 @@ void* netchan_recv(netchan_t* state, void* data, int datalen)
 
     if(netpacketfull)
         return NULL;
-    
-    reliable = seq >> 31;
-    seq &= 0x7FFFFFFF;
 
-    // we already have gotten a newer packet
+    reliable = ((uint32_t)seq >> 31) & 1;
+    whichreliable = ((uint32_t)seq >> 30) & 1;
+    seq &= 0x3FFFFFFF;
+
+    // we already got a newer packet
     if(seq <= state->lastseen)
         return NULL;
 
     state->inackreliable = ack >> 31;
     state->inack = ack & 0x7FFFFFFF;
-    
+
     state->lastseen = seq;
     state->hadreliable = reliable;
-    
+
+    if(state->inack >= state->lastsentreliable && state->lastsentreliable)
+    {
+        state->justgotack = true;
+        state->reliablesize = state->lastsentreliable = 0;
+    }
+
+    if(!state->reliablesize && state->msgsize)
+    {
+        state->reliablesize = state->msgsize;
+        memcpy(state->reliable, state->msg, state->reliablesize);
+        state->msgsize = 0;
+    }
+
+    if(reliable)
+    {
+        // same toggle bit as last time = retransmit, drop payload
+        if(whichreliable == state->inreliable)
+            return NULL;
+
+        state->gotnewreliable = true;
+        state->inreliable = whichreliable;
+    }
+
     return curpos;
 }
 
 void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
 {
-    
+    netbuf_t buf;
+    uint32_t seq, ack;
+    bool sendreliable;
+
+    sendreliable = state->reliablesize > 0;
+
+    // toggle the which-reliable bit only when first sending a new reliable
+    if(sendreliable && !state->lastsentreliable)
+        state->outreliable = !state->outreliable;
+
+    state->outseq++;
+    seq = (uint32_t) state->outseq;
+    if(sendreliable)
+    {
+        seq |= 0x80000000U;
+        if(state->outreliable) seq |= 0x40000000U;
+    }
+
+    ack = (uint32_t) state->lastseen;
+    if(state->hadreliable)
+        ack |= 0x80000000U;
+
+    netbuf_init(&buf);
+    netbuf_writeu32(&buf, seq);
+    netbuf_writeu32(&buf, ack);
+    netbuf_writei16(&buf, 0);
+
+    if(sendreliable)
+        netbuf_writedata(&buf, state->reliable, state->reliablesize);
+
+    if(unreliable && unreliable->len > 0)
+        netbuf_writedata(&buf, unreliable->data, unreliable->len);
+
+    net_send(dc, buf.data, buf.len);
+    netbuf_free(&buf);
+
+    if(sendreliable && !state->lastsentreliable)
+        state->lastsentreliable = state->outseq;
 }
