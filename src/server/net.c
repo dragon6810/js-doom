@@ -9,10 +9,9 @@
 #include <pthread.h>
 
 // ---- Receive queue ----
-// libdatachannel fires message callbacks on its own internal threads, so the
-// queue needs a mutex to stay safe when the game loop drains it on the main thread.
 
 #define NET_QUEUE_LEN 64
+#define MAX_PEERS 8
 
 typedef struct
 {
@@ -21,14 +20,21 @@ typedef struct
     int dc_id;
 } net_packet_t;
 
+typedef struct
+{
+    int clientid;
+    int pc;
+} peer_t;
+
 static net_packet_t    recv_queue[NET_QUEUE_LEN];
 static int             queue_head  = 0;
 static int             queue_tail  = 0;
 static int             queue_count = 0;
 static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int pc_id       = 0;
-static int ws_id       = 0;
+static peer_t peers[MAX_PEERS];
+static int    npeers = 0;
+static int    ws_id  = 0;
 
 // ---- Internal helpers ----
 
@@ -50,12 +56,32 @@ static void queue_push(int dc, const void *data, int size)
     pthread_mutex_unlock(&queue_mutex);
 }
 
+static peer_t* findpeer(int clientid)
+{
+    int i;
+    for(i=0; i<npeers; i++)
+        if(peers[i].clientid == clientid)
+            return &peers[i];
+    return NULL;
+}
+
+static peer_t* allocpeer(int clientid)
+{
+    if(npeers >= MAX_PEERS)
+        return NULL;
+    peers[npeers].clientid = clientid;
+    peers[npeers].pc = 0;
+    return &peers[npeers++];
+}
+
 // ---- libdatachannel callbacks ----
 
 static void local_description_cb(int pc, const char *sdp, const char *type, void *ptr)
 {
+    peer_t *peer = (peer_t*) ptr;
     cJSON *json    = cJSON_CreateObject();
     cJSON *sdp_obj = cJSON_CreateObject();
+    cJSON_AddNumberToObject(json,    "clientId", peer->clientid);
     cJSON_AddStringToObject(json,    "type", type);
     cJSON_AddStringToObject(sdp_obj, "type", type);
     cJSON_AddStringToObject(sdp_obj, "sdp",  sdp);
@@ -69,9 +95,11 @@ static void local_description_cb(int pc, const char *sdp, const char *type, void
 
 static void local_candidate_cb(int pc, const char *cand, const char *mid, void *ptr)
 {
+    peer_t *peer = (peer_t*) ptr;
     cJSON *json     = cJSON_CreateObject();
     cJSON *cand_obj = cJSON_CreateObject();
-    cJSON_AddStringToObject(json,     "type",     "candidate");
+    cJSON_AddNumberToObject(json,     "clientId",  peer->clientid);
+    cJSON_AddStringToObject(json,     "type",      "candidate");
     cJSON_AddStringToObject(cand_obj, "candidate", cand);
     cJSON_AddStringToObject(cand_obj, "sdpMid",    mid);
     cJSON_AddItemToObject(json, "candidate", cand_obj);
@@ -84,7 +112,6 @@ static void local_candidate_cb(int pc, const char *cand, const char *mid, void *
 
 static void data_channel_msg_cb(int dc, const char *msg, int size, void *ptr)
 {
-    // size >= 0 means binary; size < 0 means text (length = -size - 1)
     if (size >= 0)
         queue_push(dc, msg, size);
 }
@@ -95,31 +122,87 @@ static void data_channel_cb(int pc, int dc, void *ptr)
     rtcSetMessageCallback(dc, data_channel_msg_cb);
 }
 
+static void ws_open_cb(int ws, void *ptr)
+{
+    rtcSendMessage(ws_id, "{\"type\":\"register-server\"}", -1);
+    printf("[net] registered with signaling server\n");
+}
+
 static void ws_message_cb(int ws, const char *message, int size, void *ptr)
 {
-    cJSON *json = cJSON_Parse(message);
+    rtcConfiguration config;
+    const char *stun;
+    int clientid;
+    peer_t *peer;
+    cJSON *json, *type_item, *clientid_item, *sdp_obj, *cand_obj;
+    cJSON *sdp_str, *sdp_type, *cand_str, *mid_str;
+
+    json = cJSON_Parse(message);
     if (!json) return;
 
-    cJSON *type = cJSON_GetObjectItemCaseSensitive(json, "type");
-    if (!cJSON_IsString(type)) { cJSON_Delete(json); return; }
+    type_item     = cJSON_GetObjectItemCaseSensitive(json, "type");
+    clientid_item = cJSON_GetObjectItemCaseSensitive(json, "clientId");
 
-    if (strcmp(type->valuestring, "offer") == 0) {
-        cJSON *sdp_obj  = cJSON_GetObjectItemCaseSensitive(json, "sdp");
-		if (sdp_obj) {
-			cJSON *sdp_str  = cJSON_GetObjectItemCaseSensitive(sdp_obj, "sdp");
-			cJSON *sdp_type = cJSON_GetObjectItemCaseSensitive(sdp_obj, "type");
-			if (cJSON_IsString(sdp_str) && cJSON_IsString(sdp_type))
-				rtcSetRemoteDescription(pc_id, sdp_str->valuestring, sdp_type->valuestring);
-		}
+    if (!cJSON_IsString(type_item) || !cJSON_IsNumber(clientid_item))
+    {
+        cJSON_Delete(json);
+        return;
+    }
 
-    } else if (strcmp(type->valuestring, "candidate") == 0) {
-        cJSON *cand_obj = cJSON_GetObjectItemCaseSensitive(json, "candidate");
-		if (cand_obj) {
-			cJSON *cand_str = cJSON_GetObjectItemCaseSensitive(cand_obj, "candidate");
-			cJSON *mid_str  = cJSON_GetObjectItemCaseSensitive(cand_obj, "sdpMid");
-			if (cJSON_IsString(cand_str) && cJSON_IsString(mid_str))
-				rtcAddRemoteCandidate(pc_id, cand_str->valuestring, mid_str->valuestring);
-		}
+    clientid = (int) clientid_item->valuedouble;
+
+    if (strcmp(type_item->valuestring, "offer") == 0)
+    {
+        peer = findpeer(clientid);
+        if (!peer)
+            peer = allocpeer(clientid);
+        if (!peer)
+        {
+            printf("[net] too many peers\n");
+            cJSON_Delete(json);
+            return;
+        }
+
+        if (!peer->pc)
+        {
+            memset(&config, 0, sizeof(config));
+            stun = "stun:stun.l.google.com:19302";
+            config.iceServers      = &stun;
+            config.iceServersCount = 1;
+
+            peer->pc = rtcCreatePeerConnection(&config);
+            rtcSetUserPointer(peer->pc, peer);
+            rtcSetLocalDescriptionCallback(peer->pc, local_description_cb);
+            rtcSetLocalCandidateCallback(peer->pc,   local_candidate_cb);
+            rtcSetDataChannelCallback(peer->pc,      data_channel_cb);
+        }
+
+        sdp_obj = cJSON_GetObjectItemCaseSensitive(json, "sdp");
+        if (sdp_obj)
+        {
+            sdp_str  = cJSON_GetObjectItemCaseSensitive(sdp_obj, "sdp");
+            sdp_type = cJSON_GetObjectItemCaseSensitive(sdp_obj, "type");
+            if (cJSON_IsString(sdp_str) && cJSON_IsString(sdp_type))
+                rtcSetRemoteDescription(peer->pc, sdp_str->valuestring, sdp_type->valuestring);
+        }
+    }
+    else if (strcmp(type_item->valuestring, "candidate") == 0)
+    {
+        peer = findpeer(clientid);
+        if (!peer)
+        {
+            cJSON_Delete(json);
+            return;
+        }
+
+        cand_obj = cJSON_GetObjectItemCaseSensitive(json, "candidate");
+        if (cand_obj)
+        {
+            cand_str = cJSON_GetObjectItemCaseSensitive(cand_obj, "candidate");
+            mid_str  = cJSON_GetObjectItemCaseSensitive(cand_obj, "sdpMid");
+            if (cJSON_IsString(cand_str) && cJSON_IsString(mid_str))
+                rtcAddRemoteCandidate(peer->pc, cand_str->valuestring, mid_str->valuestring);
+        }
     }
 
     cJSON_Delete(json);
@@ -131,20 +214,11 @@ void net_init(void)
 {
     rtcInitLogger(RTC_LOG_WARNING, NULL);
 
-    rtcConfiguration config = {0};
-    const char *stun = "stun:stun.l.google.com:19302";
-    config.iceServers      = &stun;
-    config.iceServersCount = 1;
-
-    pc_id = rtcCreatePeerConnection(&config);
-    rtcSetLocalDescriptionCallback(pc_id, local_description_cb);
-    rtcSetLocalCandidateCallback(pc_id,   local_candidate_cb);
-    rtcSetDataChannelCallback(pc_id,      data_channel_cb);
-
     ws_id = rtcCreateWebSocket("ws://localhost:8080");
+    rtcSetOpenCallback(ws_id,    ws_open_cb);
     rtcSetMessageCallback(ws_id, ws_message_cb);
 
-    printf("[net] initialized, waiting for peer...\n");
+    printf("[net] initialized, waiting for peers...\n");
 }
 
 int net_send(int dc, const void *data, int size)
