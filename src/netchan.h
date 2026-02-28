@@ -6,7 +6,7 @@
 
 #include "net.h"
 
-#define MAX_PACKET 1400
+#define MAX_PACKET 8192
 #define MAX_MSGQUE 64
 
 typedef struct
@@ -41,7 +41,7 @@ typedef struct
 
 // returns the location in data[] after reading the header (where the data starts)
 void* netchan_recv(netchan_t* state, void* data, int datalen);
-void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable);
+bool netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable);
 bool netchan_queue(netchan_t* state, const netbuf_t* msg);
 
 #endif

@@ -74,11 +74,12 @@ void* netchan_recv(netchan_t* state, void* data, int datalen)
     return curpos;
 }
 
-void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
+bool netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
 {
     netbuf_t buf;
     uint32_t seq, ack;
     bool sendreliable;
+    bool sentunreliable;
 
     netchan_trytransfermsg(state);
 
@@ -108,14 +109,20 @@ void netchan_send(netchan_t* state, int dc, const netbuf_t* unreliable)
     if(sendreliable)
         netbuf_writedata(&buf, state->reliable, state->reliablesize);
 
+    sentunreliable = false;
     if(unreliable && unreliable->len > 0 && MAX_PACKET - buf.len > unreliable->len)
+    {
         netbuf_writedata(&buf, unreliable->data, unreliable->len);
+        sentunreliable = true;
+    }
 
     net_send(dc, buf.data, buf.len);
     netbuf_free(&buf);
 
     if(sendreliable && !state->lastsentreliable)
         state->lastsentreliable = state->outseq;
+
+    return sentunreliable;
 }
 
 bool netchan_queue(netchan_t* state, const netbuf_t* msg)

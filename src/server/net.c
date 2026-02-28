@@ -11,7 +11,7 @@
 // ---- Receive queue ----
 
 #define NET_QUEUE_LEN 64
-#define MAX_PEERS 8
+#define MAX_PEERS MAX_CLIENT
 
 typedef struct
 {
@@ -24,6 +24,8 @@ typedef struct
 {
     int clientid;
     int pc;
+    int dc;
+    bool closed;
 } peer_t;
 
 static net_packet_t    recv_queue[NET_QUEUE_LEN];
@@ -64,17 +66,31 @@ static peer_t* findpeer(int clientid)
 {
     int i;
     for(i=0; i<npeers; i++)
-        if(peers[i].clientid == clientid)
+        if(!peers[i].closed && peers[i].clientid == clientid)
             return &peers[i];
     return NULL;
 }
 
 static peer_t* allocpeer(int clientid)
 {
+    int i;
+    for(i=0; i<npeers; i++)
+    {
+        if(peers[i].closed)
+        {
+            peers[i].clientid = clientid;
+            peers[i].pc       = 0;
+            peers[i].dc       = 0;
+            peers[i].closed   = false;
+            return &peers[i];
+        }
+    }
     if(npeers >= MAX_PEERS)
         return NULL;
     peers[npeers].clientid = clientid;
-    peers[npeers].pc = 0;
+    peers[npeers].pc       = 0;
+    peers[npeers].dc       = 0;
+    peers[npeers].closed   = false;
     return &peers[npeers++];
 }
 
@@ -122,14 +138,25 @@ static void data_channel_msg_cb(int dc, const char *msg, int size, void *ptr)
 
 static void data_channel_close_cb(int dc, void *ptr)
 {
+    int i;
+
     pthread_mutex_lock(&disconnect_mutex);
     if(ndisconnects < MAX_PEERS)
         disconnect_queue[ndisconnects++] = dc;
     pthread_mutex_unlock(&disconnect_mutex);
+
+    for(i=0; i<npeers; i++)
+        if(peers[i].dc == dc)
+        {
+            peers[i].closed = true;
+            break;
+        }
 }
 
 static void data_channel_cb(int pc, int dc, void *ptr)
 {
+    peer_t *peer = (peer_t*) ptr;
+    peer->dc = dc;
     printf("[net] peer connected on dc %d\n", dc);
     rtcSetMessageCallback(dc, data_channel_msg_cb);
     rtcSetClosedCallback(dc, data_channel_close_cb);

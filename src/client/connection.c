@@ -88,14 +88,27 @@ static void* recventdeltas(void* buf, void* curpos, int len)
             info->type = net_readi16(buf, curpos, len);
             curpos += 2;
         }
+        if(fields & FIELD_XVEL)
+        {
+            info->xvel = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_YVEL)
+        {
+            info->yvel = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_ZVEL)
+        {
+            info->zvel = net_readfloat(buf, curpos, len);
+            curpos += 4;
+        }
 
+        level_unplacemobj(&mobjs[edict]);
         if(!info->exists)
             memset(info, 0, sizeof(*info));
         else
-        {
-            level_unplacemobj(&mobjs[edict]);
             level_placemobj(&mobjs[edict]);
-        }
     }
 
     if(netpacketfull)

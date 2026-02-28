@@ -10,6 +10,9 @@
 #define FIELD_ANGLE 0x0010 // uint32_t (angle_t)
 #define FIELD_STATE 0x0020 // int16_t
 #define FIELD_TYPE 0x0040 // int16_t
+#define FIELD_XVEL 0x0080 // float
+#define FIELD_YVEL 0x0100 // float
+#define FIELD_ZVEL 0x0200 // float
 
 typedef enum
 {

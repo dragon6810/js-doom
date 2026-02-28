@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define NET_MAX_PACKET_SIZE 1400
+#define NET_MAX_PACKET_SIZE 8192
 
 #if __BIG_ENDIAN__
     #ifndef htonll

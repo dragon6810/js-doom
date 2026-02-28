@@ -66,6 +66,12 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         fieldflags |= FIELD_STATE;
     if(info->exists && (spawned || compare->type != info->type))
         fieldflags |= FIELD_TYPE;
+    if(info->exists && (spawned || compare->xvel != info->xvel))
+        fieldflags |= FIELD_XVEL;
+    if(info->exists && (spawned || compare->xvel != info->yvel))
+        fieldflags |= FIELD_YVEL;
+    if(info->exists && (spawned || compare->xvel != info->zvel))
+        fieldflags |= FIELD_ZVEL;
 
     // ent is the exact same
     if(!fieldflags)
@@ -87,6 +93,12 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         netbuf_writei16(buf, info->state);
     if(fieldflags & FIELD_TYPE)
         netbuf_writei16(buf, info->type);
+    if(fieldflags & FIELD_XVEL)
+        netbuf_writefloat(buf, info->xvel);
+    if(fieldflags & FIELD_YVEL)
+        netbuf_writefloat(buf, info->yvel);
+    if(fieldflags & FIELD_ZVEL)
+        netbuf_writefloat(buf, info->zvel);
 }
 
 static void buildunreliable(client_t* cl, netbuf_t* buf)
@@ -111,7 +123,10 @@ void disconnectclient(int i)
         return;
 
     if(cl->player.mobj)
-        cl->player.mobj->info.exists = false;
+    {
+        level_unplacemobj(cl->player.mobj);
+        memset(&cl->player.mobj->info, 0, sizeof(objinfo_t));
+    }
 
     cl->state = CLSTATE_DC;
     printf("client %d (%s) disconnected\n", i, cl->username);
@@ -137,10 +152,9 @@ void sendtoclients(void)
 
         netbuf_init(&unreliable);
         buildunreliable(&clients[i], &unreliable);
-        netchan_send(&clients[i].chan, clients[i].dc, &unreliable);
+        if(netchan_send(&clients[i].chan, clients[i].dc, &unreliable))
+            updategamestate(&clients[i]);
         netbuf_free(&unreliable);
-
-        updategamestate(&clients[i]);
     }
 }
 
@@ -329,6 +343,7 @@ void spawnplayer(client_t* client)
 
     memset(&client->player, 0, sizeof(player_t));
     client->player.mobj = &mobjs[edict];
+    memset(client->player.mobj, 0, sizeof(object_t));
     level_placemobj(client->player.mobj);
 
     client->player.mobj->info.exists = true;

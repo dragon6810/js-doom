@@ -38,6 +38,7 @@ typedef struct objinfo_s
     angle_t angle;
     statenum_t state;
     mobjtype_t type;
+    float xvel, yvel, zvel;
 } objinfo_t;
 
 struct object_s
