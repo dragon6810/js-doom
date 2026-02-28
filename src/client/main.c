@@ -9,6 +9,7 @@
 #include "level.h"
 #include "net.h"
 #include "player.h"
+#include "predict.h"
 #include "render.h"
 #include "screen.h"
 #include "wad.h"
@@ -43,7 +44,7 @@ void gatherinput(void)
     if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
     if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
 
-    inputcmd.angle = player.mobj->info.angle;
+    inputcmd.angle = predplayer.info.angle;
     if(keystates[SDL_SCANCODE_LEFT]) inputcmd.angle += turnspeed;
     if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.angle -= turnspeed;
 }
@@ -68,19 +69,23 @@ void loop(void)
 
     recvfromserver();
 
+    predictplayer();
+
     sendinputs = false;
     if(level_episode != -1 && level_map != -1)
     {
         gatherinput();
 
-        viewx = player.mobj->info.x;
-        viewy = player.mobj->info.y;
-        viewz = player.mobj->info.z + 41;
-        viewangle = player.mobj->info.angle;
+        viewx = predplayer.info.x;
+        viewy = predplayer.info.y;
+        viewz = predplayer.info.z + 41;
+        viewangle = predplayer.info.angle;
         render();
     }
 
     sendtoserver();
+
+    level_unplacemobj(&predplayer);
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
 

@@ -8,6 +8,7 @@
 #include "net.h"
 #include "netchan.h"
 #include "packets.h"
+#include "predict.h"
 #include "render.h"
 #include "wad.h"
 
@@ -244,5 +245,10 @@ void sendtoserver(void)
         buildunreliable(&buf);
         netchan_send(&serverconn.chan, net_server_dc(), &buf);
         netbuf_free(&buf);
+
+        if(sendinputs)
+            inputwindow[serverconn.chan.outseq % PRED_WINDOW] = inputcmd;
+        else
+            memset(&inputwindow[serverconn.chan.outseq % PRED_WINDOW], 0, sizeof(playercmd_t));
     }
 }

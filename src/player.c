@@ -1,6 +1,6 @@
 #include "player.h"
 
-void player_docmd(player_t* player, const playercmd_t* cmd)
+void player_docmd(object_t* playobj, const playercmd_t* cmd)
 {
     const float movespeed = 583;
 
@@ -10,8 +10,8 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
 
     framespeed = movespeed * cmd->frametime;
 
-    sinangle = ANGSIN(player->mobj->info.angle);
-    cosangle = ANGCOS(player->mobj->info.angle);
+    sinangle = ANGSIN(playobj->info.angle);
+    cosangle = ANGCOS(playobj->info.angle);
 
     leftmove = forwardmove = 0;
     if(cmd->flags & CMD_FORWARD)
@@ -23,12 +23,12 @@ void player_docmd(player_t* player, const playercmd_t* cmd)
     if(cmd->flags & CMD_RIGHT)
         leftmove -= framespeed;
 
-    player->mobj->info.x += forwardmove * cosangle - leftmove * sinangle;
-    player->mobj->info.y += forwardmove * sinangle + leftmove * cosangle;
+    playobj->info.x += forwardmove * cosangle - leftmove * sinangle;
+    playobj->info.y += forwardmove * sinangle + leftmove * cosangle;
 
-    player->mobj->info.angle = cmd->angle;
+    playobj->info.angle = cmd->angle;
 
-    level_unplacemobj(player->mobj);
-    level_placemobj(player->mobj);
-    player->mobj->info.z = player->mobj->ssector->sector->floorheight;
+    level_unplacemobj(playobj);
+    level_placemobj(playobj);
+    playobj->info.z = playobj->ssector->sector->floorheight;
 }

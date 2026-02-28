@@ -111,7 +111,7 @@ void sendtoclients(void)
         if(clients[i].state == CLSTATE_DC)
             continue;
         
-        #if 0
+        #if 1
         if(clients[i].chan.outseq > clients[i].chan.lastseen)
             continue;
         else
@@ -140,7 +140,7 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
     if(netpacketfull)
         return NULL;
 
-    player_docmd(&cl->player, &cmd);
+    player_docmd(cl->player.mobj, &cmd);
 
     return curpos;
 }

@@ -24,6 +24,6 @@ typedef struct
 
 extern player_t player;
 
-void player_docmd(player_t* player, const playercmd_t* cmd);
+void player_docmd(object_t* playobj, const playercmd_t* cmd);
 
 #endif
