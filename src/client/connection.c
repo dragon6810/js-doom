@@ -1,7 +1,11 @@
 #include "connection.h"
 
+#include <emscripten.h>
 #include <string.h>
 #include <stdio.h>
+
+#define HANDSHAKE_TIMEOUT_MS 5000.0
+#define RETRY_DELAY_MS       3000.0
 
 #include "client.h"
 #include "level.h"
@@ -188,6 +192,8 @@ static void recvpacket(void *buf, int len)
             break;
         case SVC_SERVERFULL:
             printf("[net] server full\n");
+            serverconn.state = CLSTATE_DC;
+            serverconn.nextattempt = emscripten_get_now() + RETRY_DELAY_MS;
             break;
         case SVC_CHANGELEVEL:
             if(!(curpos = recvclev(buf, curpos, len)))
@@ -225,6 +231,7 @@ void buildunreliable(netbuf_t* buf)
 
 void sendtoserver(void)
 {
+    double now;
     netbuf_t buf;
 
     if(!net_connected())
@@ -233,10 +240,24 @@ void sendtoserver(void)
         return;
     }
 
+    now = emscripten_get_now();
+
     if(serverconn.state == CLSTATE_DC)
     {
+        if(now < serverconn.nextattempt)
+            return;
         connect();
+        serverconn.shaketimer = now;
         serverconn.state = CLSTATE_SHAKING;
+    }
+
+    if(serverconn.state == CLSTATE_SHAKING &&
+       now - serverconn.shaketimer > HANDSHAKE_TIMEOUT_MS)
+    {
+        printf("[net] handshake timed out, retrying...\n");
+        serverconn.state = CLSTATE_DC;
+        serverconn.nextattempt = now + RETRY_DELAY_MS;
+        return;
     }
 
     if(serverconn.state != CLSTATE_DC)

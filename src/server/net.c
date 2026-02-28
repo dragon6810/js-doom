@@ -32,6 +32,10 @@ static int             queue_tail  = 0;
 static int             queue_count = 0;
 static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static int             disconnect_queue[MAX_PEERS];
+static int             ndisconnects = 0;
+static pthread_mutex_t disconnect_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static peer_t peers[MAX_PEERS];
 static int    npeers = 0;
 static int    ws_id  = 0;
@@ -116,10 +120,19 @@ static void data_channel_msg_cb(int dc, const char *msg, int size, void *ptr)
         queue_push(dc, msg, size);
 }
 
+static void data_channel_close_cb(int dc, void *ptr)
+{
+    pthread_mutex_lock(&disconnect_mutex);
+    if(ndisconnects < MAX_PEERS)
+        disconnect_queue[ndisconnects++] = dc;
+    pthread_mutex_unlock(&disconnect_mutex);
+}
+
 static void data_channel_cb(int pc, int dc, void *ptr)
 {
     printf("[net] peer connected on dc %d\n", dc);
     rtcSetMessageCallback(dc, data_channel_msg_cb);
+    rtcSetClosedCallback(dc, data_channel_close_cb);
 }
 
 static void ws_open_cb(int ws, void *ptr)
@@ -256,4 +269,20 @@ int net_recv(void *buf, int buf_size, int *dc_out)
 int net_connected(void)
 {
     return true;
+}
+
+int net_recv_disconnect(int *dc_out)
+{
+    int dc;
+    pthread_mutex_lock(&disconnect_mutex);
+    if(ndisconnects == 0) {
+        pthread_mutex_unlock(&disconnect_mutex);
+        return 0;
+    }
+    dc = disconnect_queue[0];
+    memmove(disconnect_queue, disconnect_queue + 1, (ndisconnects - 1) * sizeof(int));
+    ndisconnects--;
+    pthread_mutex_unlock(&disconnect_mutex);
+    if(dc_out) *dc_out = dc;
+    return 1;
 }

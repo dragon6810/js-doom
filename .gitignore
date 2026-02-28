@@ -6,6 +6,7 @@ main.data
 doom_server
 doom_server.dSYM
 .claude
+.DS_STORE
 
 # Logs
 logs

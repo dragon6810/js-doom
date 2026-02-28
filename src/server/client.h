@@ -10,6 +10,7 @@
 
 #define MAX_CLIENT 16
 #define GAMESTATE_WINDOW 32
+#define CLIENT_TIMEOUT 10
 
 typedef int8_t addr_t[4];
 
@@ -29,6 +30,7 @@ typedef struct
     player_t player;
     char username[USERNAME_LEN];
     int dc;
+    uint32_t lastrecv;
 } client_t;
 
 extern objinfo_t dummystate[MAX_MOBJ];
@@ -38,5 +40,6 @@ extern client_t clients[MAX_CLIENT];
 void recvfromclients(void);
 void sendtoclients(void);
 void spawnplayer(client_t* client);
+void disconnectclient(int i);
 
 #endif

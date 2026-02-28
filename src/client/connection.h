@@ -19,6 +19,8 @@ typedef struct
     clstate_e state;
     int32_t clientid;
     int32_t edict;
+    double shaketimer;
+    double nextattempt;
 } conn_t;
 
 extern conn_t serverconn;

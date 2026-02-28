@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+
+int net_recv_disconnect(int *dc_out);
 
 #include "info.h"
 #include "level.h"
@@ -100,6 +103,20 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
     netbuf_writeu16(buf, 0xFFFF);
 }
 
+void disconnectclient(int i)
+{
+    client_t *cl = &clients[i];
+
+    if(cl->state == CLSTATE_DC)
+        return;
+
+    if(cl->player.mobj)
+        cl->player.mobj->info.exists = false;
+
+    cl->state = CLSTATE_DC;
+    printf("client %d (%s) disconnected\n", i, cl->username);
+}
+
 void sendtoclients(void)
 {
     int i;
@@ -154,6 +171,8 @@ static void recvpacket(client_t* cl, void* buf, int len)
     curpos = netchan_recv(&cl->chan, buf, len);
     if(!curpos)
         return;
+
+    cl->lastrecv = (uint32_t)time(NULL);
 
     while(1)
     {
@@ -232,6 +251,7 @@ static void processhandshake(int dc, void* buf, int len)
 
     clients[i].state = CLSTATE_SHAKING;
     clients[i].dc = dc;
+    clients[i].lastrecv = (uint32_t)time(NULL);
     strcpy(clients[i].username, username);
     
     memset(&clients[i].chan, 0, sizeof(netchan_t));
@@ -261,18 +281,36 @@ static void processhandshake(int dc, void* buf, int len)
 
 void recvfromclients(void)
 {
-    int i;
-
+    int i, dc, len;
+    uint32_t now;
     uint8_t buf[NET_MAX_PACKET_SIZE];
-    int dc, len;
+
+    while(net_recv_disconnect(&dc))
+    {
+        for(i=0; i<MAX_CLIENT; i++)
+            if(clients[i].state != CLSTATE_DC && clients[i].dc == dc)
+                disconnectclient(i);
+    }
+
+    now = (uint32_t)time(NULL);
+    for(i=0; i<MAX_CLIENT; i++)
+    {
+        if(clients[i].state == CLSTATE_DC)
+            continue;
+        if(now - clients[i].lastrecv > CLIENT_TIMEOUT)
+        {
+            printf("client %d timed out\n", i);
+            disconnectclient(i);
+        }
+    }
 
     while((len = net_recv(buf, sizeof(buf), &dc)) > 0)
     {
-        for (i=0; i<MAX_CLIENT; i++)
-            if (clients[i].state != CLSTATE_DC && clients[i].dc == dc)
+        for(i=0; i<MAX_CLIENT; i++)
+            if(clients[i].state != CLSTATE_DC && clients[i].dc == dc)
                 break;
 
-        if (i >= MAX_CLIENT)
+        if(i >= MAX_CLIENT)
         {
             processhandshake(dc, buf, len);
             continue;
