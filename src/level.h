@@ -6,6 +6,8 @@
 #include "tex.h"
 #include "wad.h"
 
+#define TICRATE 35
+
 #define THING_EASY           0x0001
 #define THING_MEDIUM         0x0002
 #define THING_HARD           0x0004

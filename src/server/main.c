@@ -33,9 +33,10 @@ static void filldummygs(void)
 {
     int i;
 
-    memset(dummystate, 0, sizeof(dummystate));
-    for(i=0; i<mobjmax; i++)
-        dummystate[i] = mobjs[i].info;
+    memset(&dummystate, 0, sizeof(dummystate));
+    dummystate.maxmobj = mobjmax;
+    for(i=0; i<=mobjmax; i++)
+        dummystate.mobjs[i] = mobjs[i].info;
 }
 
 static void parseargs(int argc, char** argv)

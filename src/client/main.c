@@ -23,6 +23,7 @@ uint32_t *pixels;
 
 const Uint8* keystates;
 
+float starttime;
 double lastframetime, lastfpscheck;
 int fpsframes;
 
@@ -44,7 +45,7 @@ void gatherinput(void)
     if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
     if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
 
-    inputcmd.angle = predplayer.info.angle;
+    inputcmd.angle = mobjs[serverconn.edict].info.angle;
     if(keystates[SDL_SCANCODE_LEFT]) inputcmd.angle += turnspeed;
     if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.angle -= turnspeed;
 }
@@ -55,10 +56,13 @@ void loop(void)
 
     int num;
 
-    double curtime, frametime;
+    double curtime, frametime, progtime;
 
     curtime = emscripten_get_now();
-    frametime = inputcmd.frametime = (curtime - lastframetime) / 1000.0;
+    progtime = curtime / 1000.0 - starttime;
+    frametime = (curtime - lastframetime) / 1000.0;
+    if(frametime > 0.1) frametime = 0.1;
+    inputcmd.frametime = frametime;
 
     if(curtime - lastfpscheck > 1000)
     {
@@ -67,25 +71,24 @@ void loop(void)
         lastfpscheck = curtime;
     }
 
-    recvfromserver();
+    recvfromserver(curtime / 1000.0);
 
     predictplayer();
+    interpentities(curtime / 1000.0);
 
     sendinputs = false;
     if(level_episode != -1 && level_map != -1)
     {
         gatherinput();
 
-        viewx = predplayer.info.x;
-        viewy = predplayer.info.y;
-        viewz = predplayer.info.z + 41;
-        viewangle = predplayer.info.angle;
+        viewx = mobjs[serverconn.edict].info.x;
+        viewy = mobjs[serverconn.edict].info.y;
+        viewz = mobjs[serverconn.edict].info.z + 41 + player_calcheadbob(&mobjs[serverconn.edict], progtime);
+        viewangle = mobjs[serverconn.edict].info.angle;
         render();
     }
 
     sendtoserver();
-
-    level_unplacemobj(&predplayer);
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
 
@@ -116,6 +119,8 @@ void screen_init(int width, int height)
 
 int main()
 {
+    starttime = emscripten_get_now() / 1000.0;
+
     SDL_Init(SDL_INIT_VIDEO);
 
     net_init();

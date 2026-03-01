@@ -157,14 +157,14 @@ int level_findnewedict(void)
 {
     int i;
 
-    for(i=0; i<mobjmax; i++)
+    for(i=0; i<=mobjmax; i++)
         if(!mobjs[i].info.exists)
             return i;
 
     if(i >= MAX_MOBJ)
         return -1;
 
-    return mobjmax++;
+    return ++mobjmax;
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -206,6 +206,7 @@ void level_loadthings(lumpinfo_t* header)
 
     mapthings = lump->cache;
 
+    mobjmax = -1;
     for(i=0; i<nthings; i++)
     {
         // TODO: player starts
@@ -222,13 +223,13 @@ void level_loadthings(lumpinfo_t* header)
             continue;
         }
 
-        if(mobjmax >= MAX_MOBJ)
+        if(mobjmax >= MAX_MOBJ-1)
         {
             fprintf(stderr, "level_loadthings: level has too many things\n");
             break;
         }
 
-        mobj = &mobjs[mobjmax++];
+        mobj = &mobjs[++mobjmax];
         mobj->info.exists = true;
         mobj->info.type = type;
         mobj->info.x = mapthings[i].x;

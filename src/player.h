@@ -25,5 +25,6 @@ typedef struct
 extern player_t player;
 
 void player_docmd(object_t* playobj, const playercmd_t* cmd);
+float player_calcheadbob(object_t* playobj, float time);
 
 #endif

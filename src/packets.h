@@ -1,6 +1,8 @@
 #ifndef _PACKETS_H
 #define _PACKETS_H
 
+#include "level.h"
+
 #define USERNAME_LEN 16
 
 #define FIELD_EXISTS 0x0001 // uint8_t
@@ -23,5 +25,11 @@ typedef enum
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
 } packet_e;
+
+typedef struct
+{
+    int maxmobj;
+    objinfo_t mobjs[MAX_MOBJ];
+} gamestate_t;
 
 #endif

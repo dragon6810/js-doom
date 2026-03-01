@@ -17,6 +17,7 @@
 #include "wad.h"
 
 conn_t serverconn = {};
+float lastrecvtime = -1.0;
 
 static void connect(void)
 {
@@ -52,7 +53,10 @@ static void* recventdeltas(void* buf, void* curpos, int len)
         if(netpacketfull)
             break;
 
-        info = &mobjs[edict].info;
+        if(edict > newgs.maxmobj)
+            newgs.maxmobj = edict;
+
+        info = &newgs.mobjs[edict];
         if(fields & FIELD_EXISTS)
         {
             info->exists = net_readu8(buf, curpos, len);
@@ -104,11 +108,8 @@ static void* recventdeltas(void* buf, void* curpos, int len)
             curpos += 4;
         }
 
-        level_unplacemobj(&mobjs[edict]);
         if(!info->exists)
             memset(info, 0, sizeof(*info));
-        else
-            level_placemobj(&mobjs[edict]);
     }
 
     if(netpacketfull)
@@ -173,6 +174,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     player.mobj = &mobjs[serverconn.edict];
 
     memset(player.mobj, 0, sizeof(object_t));
+    mobjs[serverconn.edict].info.type = MT_PLAYER;
     level_placemobj(player.mobj);
     mobjs[serverconn.edict].info.exists = true;
 
@@ -223,13 +225,23 @@ static void recvpacket(void *buf, int len)
     }
 }
 
-void recvfromserver(void)
+void recvfromserver(float curtime)
 {
     uint8_t buf[NET_MAX_PACKET_SIZE];
     int len;
+    bool received;
 
+    received = false;
     while((len = net_recv(buf, sizeof(buf), NULL)) > 0)
+    {
+        if(!received)
+        {
+            memcpy(&oldgs, &newgs, sizeof(gamestate_t));
+            received = true;
+        }
+        lastrecvtime = curtime;
         recvpacket(buf, len);
+    }
 }
 
 void buildunreliable(netbuf_t* buf)
@@ -285,4 +297,12 @@ void sendtoserver(void)
         else
             memset(&inputwindow[serverconn.chan.outseq % PRED_WINDOW], 0, sizeof(playercmd_t));
     }
+}
+
+EMSCRIPTEN_KEEPALIVE
+void net_keepalive(void)
+{
+    recvfromserver(emscripten_get_now() / 1000.0);
+    sendinputs = false;
+    sendtoserver();
 }

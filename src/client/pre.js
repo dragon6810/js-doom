@@ -18,6 +18,28 @@ Module.onRuntimeInitialized = function() {
     Module._screen_init(RENDER_WIDTH, RENDER_HEIGHT);
 };
 
+// When the tab is hidden, requestAnimationFrame stops and the game loop freezes.
+// Keep the server connection alive by calling net_keepalive() every 3s so the
+// server's disconnect timeout doesn't fire.
+(function() {
+    let keepaliveInterval = null;
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (!keepaliveInterval) {
+                keepaliveInterval = setInterval(function() {
+                    if (Module._net_keepalive) Module._net_keepalive();
+                }, 3000);
+            }
+        } else {
+            if (keepaliveInterval) {
+                clearInterval(keepaliveInterval);
+                keepaliveInterval = null;
+            }
+        }
+    });
+})();
+
 let peerConnection;
 let dataChannel;
 let signalingSocket;

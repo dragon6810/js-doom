@@ -10,7 +10,7 @@
 
 #define MAX_CLIENT 16
 #define GAMESTATE_WINDOW 32
-#define CLIENT_TIMEOUT 10
+#define CLIENT_TIMEOUT 30
 
 typedef int8_t addr_t[4];
 
@@ -23,7 +23,9 @@ typedef enum
 
 typedef struct
 {
-    objinfo_t gamestates[GAMESTATE_WINDOW][MAX_MOBJ];
+    gamestate_t gamestates[GAMESTATE_WINDOW];
+
+    uint8_t buttons;
 
     netchan_t chan;
     clstate_e state;
@@ -33,7 +35,7 @@ typedef struct
     uint32_t lastrecv;
 } client_t;
 
-extern objinfo_t dummystate[MAX_MOBJ];
+extern gamestate_t dummystate;
 
 extern client_t clients[MAX_CLIENT];
 

@@ -24,8 +24,9 @@ typedef struct
 } conn_t;
 
 extern conn_t serverconn;
+extern float lastrecvtime;
 
-void recvfromserver(void);
+void recvfromserver(float clocktime);
 void sendtoserver(void);
 
 #endif

@@ -1,9 +1,12 @@
 #include "predict.h"
 
+#include <string.h>
+
 #include "connection.h"
 
 playercmd_t inputwindow[PRED_WINDOW] = {};
-object_t predplayer;
+gamestate_t oldgs = {};
+gamestate_t newgs = {};
 
 void predictplayer(void)
 {
@@ -11,9 +14,9 @@ void predictplayer(void)
 
     int start, end;
 
-    predplayer = mobjs[serverconn.edict];
-    predplayer.ssector = NULL;
-    level_placemobj(&predplayer);
+    level_unplacemobj(&mobjs[serverconn.edict]);
+    mobjs[serverconn.edict].info = newgs.mobjs[serverconn.edict];
+    level_placemobj(&mobjs[serverconn.edict]);
 
     start = serverconn.chan.inack + 1;
     end = serverconn.chan.outseq;
@@ -23,6 +26,56 @@ void predictplayer(void)
 
     for(i=start; i<=end; i++)
     {
-        player_docmd(&predplayer, &inputwindow[i % PRED_WINDOW]);
+        player_docmd(&mobjs[serverconn.edict], &inputwindow[i % PRED_WINDOW]);
+    }
+}
+
+void interpent(float t, int edict)
+{
+    objinfo_t *obj, *old, *new;
+
+    obj = &mobjs[edict].info;
+    old = &oldgs.mobjs[edict];
+    new = &newgs.mobjs[edict];
+
+    *obj = *new;
+    obj->x = LERP(old->x, new->x, t);
+    obj->y = LERP(old->y, new->y, t);
+    obj->z = LERP(old->z, new->z, t);
+
+    level_unplacemobj(&mobjs[edict]);
+    level_placemobj(&mobjs[edict]);
+}
+
+void interpentities(float abstime)
+{
+    int i;
+
+    float interptime;
+
+    interptime = (abstime - lastrecvtime) * TICRATE;
+    interptime = CLAMP(interptime, 0, 1);
+
+    for(i=0; i<=newgs.maxmobj; i++)
+    {
+        if(i == serverconn.edict)
+            continue;
+
+        if(!newgs.mobjs[i].exists)
+        {
+            level_unplacemobj(&mobjs[i]);
+            memset(&mobjs[i].info, 0, sizeof(objinfo_t));
+            continue;
+        }
+
+        if(!oldgs.mobjs[i].exists)
+        {
+            level_unplacemobj(&mobjs[i]);
+            mobjs[i].info = newgs.mobjs[i];
+            level_placemobj(&mobjs[i]);
+            continue;
+        }
+
+        interpent(interptime, i);
     }
 }

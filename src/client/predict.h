@@ -1,14 +1,19 @@
 #ifndef _PREDICT_H
 #define _PREDICT_H
 
+#include <stdint.h>
+
 #include "level.h"
+#include "packets.h"
 #include "player.h"
 
 #define PRED_WINDOW 64
 
 extern playercmd_t inputwindow[PRED_WINDOW];
-extern object_t predplayer;
+extern gamestate_t oldgs;
+extern gamestate_t newgs;
 
 void predictplayer(void);
+void interpentities(float abstime);
 
 #endif

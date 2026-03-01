@@ -14,7 +14,7 @@ int net_recv_disconnect(int *dc_out);
 #include "player.h"
 #include "wad.h"
 
-objinfo_t dummystate[MAX_MOBJ] = {};
+gamestate_t dummystate = {};
 
 client_t clients[MAX_CLIENT] = {};
 
@@ -23,28 +23,30 @@ static void updategamestate(client_t* cl)
     int i;
 
     int index;
-    objinfo_t *gs;
+    gamestate_t *gs;
 
     index = cl->chan.outseq % GAMESTATE_WINDOW;
-    gs = cl->gamestates[index];
-    for(i=0; i<mobjmax; i++)
-        gs[i] = mobjs[i].info;
+    gs = &cl->gamestates[index];
+    gs->maxmobj = mobjmax;
+    for(i=0; i<=mobjmax; i++)
+        gs->mobjs[i] = mobjs[i].info;
 }
 
 static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
 {
     bool spawned;
     int fieldflags;
-    objinfo_t *gs, *compare, *info;
+    gamestate_t *gs;
+    objinfo_t *compare, *info;
 
     info = &mobjs[edict].info;
 
     if(!cl->chan.inack)
-        gs = dummystate;
+        gs = &dummystate;
     else
-        gs = cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
+        gs = &cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
 
-    compare = &gs[edict];
+    compare = &gs->mobjs[edict];
 
     if(!info->exists && !compare->exists)
         return;
@@ -68,9 +70,9 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         fieldflags |= FIELD_TYPE;
     if(info->exists && (spawned || compare->xvel != info->xvel))
         fieldflags |= FIELD_XVEL;
-    if(info->exists && (spawned || compare->xvel != info->yvel))
+    if(info->exists && (spawned || compare->yvel != info->yvel))
         fieldflags |= FIELD_YVEL;
-    if(info->exists && (spawned || compare->xvel != info->zvel))
+    if(info->exists && (spawned || compare->zvel != info->zvel))
         fieldflags |= FIELD_ZVEL;
 
     // ent is the exact same
@@ -107,7 +109,7 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
 
     netbuf_writeu8(buf, SVC_ENTDELTAS);
 
-    for(i=0; i<mobjmax; i++)
+    for(i=0; i<=mobjmax; i++)
     {
         addentdeltas(i, cl, buf);
     }
@@ -171,6 +173,7 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
     if(netpacketfull)
         return NULL;
 
+    cl->buttons = cmd.flags;
     player_docmd(cl->player.mobj, &cmd);
 
     return curpos;
@@ -311,6 +314,8 @@ void recvfromclients(void)
     {
         if(clients[i].state == CLSTATE_DC)
             continue;
+
+        clients[i].buttons = 0;
         if(now - clients[i].lastrecv > CLIENT_TIMEOUT)
         {
             printf("client %d timed out\n", i);
@@ -344,9 +349,8 @@ void spawnplayer(client_t* client)
     memset(&client->player, 0, sizeof(player_t));
     client->player.mobj = &mobjs[edict];
     memset(client->player.mobj, 0, sizeof(object_t));
-    level_placemobj(client->player.mobj);
-
     client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;
+    level_placemobj(client->player.mobj);
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 }
