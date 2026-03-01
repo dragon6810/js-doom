@@ -26,6 +26,8 @@
 
 #define MAX_MOBJ 1024
 
+#define BLOCK_SIZE 128
+
 typedef struct object_s object_t;
 typedef struct sector_s sector_t;
 typedef struct ssector_s ssector_t;
@@ -121,6 +123,20 @@ struct sector_s
     object_t *mobjs;
 };
 
+typedef struct
+{
+    int nlines;
+    linedef_t **lines;
+} block_t;
+
+typedef struct
+{
+    int xorg, yorg;
+    int w, h;
+    // y-major, starts in sw
+    block_t *blks;
+} blockmap_t;
+
 extern int level_episode, level_map;
 
 extern int nverts;
@@ -137,6 +153,7 @@ extern int nnodes;
 extern node_t *nodes;
 extern int nsegs;
 extern seg_t *segs;
+extern blockmap_t blockmap;
 extern int mobjmax;
 extern object_t mobjs[MAX_MOBJ];
 
@@ -146,6 +163,7 @@ void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
 // finds an index to put a new mobj. -1 if edict full
 int level_findnewedict(void);
+bool level_validobjpos(object_t* mobj, float x, float y);
 int level_nodeside(node_t* node, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 void level_load(int episode, int map);

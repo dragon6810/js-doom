@@ -4,6 +4,27 @@
 #define SIDETHRUST 40.0
 #define TICFRIC 0.90625
 
+static void player_trymove(object_t* playobj, float frametime)
+{
+    float x, y;
+
+    x = playobj->info.x + playobj->info.xvel * frametime;
+    y = playobj->info.y + playobj->info.yvel * frametime;
+
+    if(level_validobjpos(playobj, x, y))
+    {
+        playobj->info.x = x;
+        playobj->info.y = y;
+        level_unplacemobj(playobj);
+        level_placemobj(playobj);
+        // playobj->info.z = playobj->ssector->sector->floorheight;
+    }
+    else
+    {
+        playobj->info.xvel = playobj->info.yvel = 0;
+    }
+}
+
 void player_docmd(object_t* playobj, const playercmd_t* cmd)
 {
     float framespeed;
@@ -31,18 +52,13 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
     playobj->info.xvel += thrustx * cmd->frametime;
     playobj->info.yvel += thrusty * cmd->frametime;
 
-    playobj->info.x += playobj->info.xvel * cmd->frametime;
-    playobj->info.y += playobj->info.yvel * cmd->frametime;
-
     playobj->info.angle = cmd->angle;
 
     framefric = powf(TICFRIC, 35.0f * cmd->frametime);
     playobj->info.xvel *= framefric;
     playobj->info.yvel *= framefric;
 
-    level_unplacemobj(playobj);
-    level_placemobj(playobj);
-    playobj->info.z = playobj->ssector->sector->floorheight;
+    player_trymove(playobj, cmd->frametime);
 }
 
 float player_calcheadbob(object_t* playobj, float time)

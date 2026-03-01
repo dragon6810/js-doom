@@ -91,6 +91,15 @@ typedef struct __attribute__((packed))
     int16_t tag;
 } mapsector_t;
 
+typedef struct __attribute__((packed))
+{
+    int16_t xorg;
+    int16_t yorg;
+    int16_t ncol;
+    int16_t nrow;
+    int16_t offsets[0];
+} mapblockmap_t;
+
 int level_episode = -1, level_map = -1;
 
 int nverts = 0;
@@ -109,6 +118,7 @@ int nsegs = 0;
 seg_t *segs = NULL;
 int mobjmax;
 object_t mobjs[MAX_MOBJ] = {};
+blockmap_t blockmap = {};
 
 texture_t* levelskytex = NULL;
 const char *episodeskies[] =
@@ -165,6 +175,153 @@ int level_findnewedict(void)
         return -1;
 
     return ++mobjmax;
+}
+
+static bool level_linesquare(linedef_t* line, float radius, float x, float y)
+{
+    float lx1, ly1, lx2, ly2, dx, dy;
+    float minx, miny, maxx, maxy;
+    float tmin, tmax, t1, t2, tmp;
+
+    minx = x - radius;
+    miny = y - radius;
+    maxx = x + radius;
+    maxy = y + radius;
+
+    lx1 = line->v1->x;
+    ly1 = line->v1->y;
+    lx2 = line->v2->x;
+    ly2 = line->v2->y;
+
+    tmin = 0;
+    tmax = 1;
+
+    dx = lx2 - lx1;
+    if(dx == 0)
+    {
+        if(lx1 <= minx || lx1 >= maxx)
+            return false;
+    }
+    else
+    {
+        t1 = (minx - lx1) / dx;
+        t2 = (maxx - lx1) / dx;
+        if(t1 > t2)
+        {
+            tmp=t1;
+            t1=t2;
+            t2=tmp;
+        }
+        tmin = MAX(t1, tmin);
+        tmax = MIN(t2, tmax);
+        if(tmin >= tmax)
+            return true;
+    }
+
+    dy = ly2 - ly1;
+    if(dy == 0)
+    {
+        if(ly1 <= miny || ly1 >= maxy)
+            return false;
+    }
+    else
+    {
+        t1 = (miny - ly1) / dy;
+        t2 = (maxy - ly1) / dy;
+        if(t1 > t2)
+        {
+            tmp=t1;
+            t1=t2;
+            t2=tmp;
+        }
+        tmin = MAX(t1, tmin);
+        tmax = MIN(t2, tmax);
+        if(tmin >= tmax)
+            return true;
+    }
+
+    return true;
+}
+
+float highestfloor;
+float lowestceil;
+
+static bool level_checkobjline(int bx, int by, float radius, float x, float y)
+{
+    int i;
+    block_t *blk;
+    linedef_t *line;
+
+    highestfloor = INT16_MIN;
+    lowestceil = INT16_MAX;
+
+    if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
+        return false;
+
+    blk = &blockmap.blks[by * blockmap.w + bx];
+
+    for(i=0; i<blk->nlines; i++)
+    {
+        line = blk->lines[i];
+
+        if(!(line->flags & LINEDEF_BLOCKALL))
+            continue;
+
+        if(line->front)
+        {
+            highestfloor = MAX(highestfloor, line->front->sector->floorheight);
+            lowestceil = MIN(lowestceil, line->front->sector->ceilheight);
+        }
+        if(line->back)
+        {
+            highestfloor = MAX(highestfloor, line->back->sector->floorheight);
+            lowestceil = MIN(lowestceil, line->back->sector->ceilheight);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool level_validobjpos(object_t* mobj, float x, float y)
+{
+    int bx, by;
+
+    float radius;
+    float minx, miny, maxx, maxy;
+    int bminx, bminy, bmaxx, bmaxy;
+
+    radius = mobjinfo[mobj->info.type].radius;
+    
+    minx = x - radius;
+    miny = y - radius;
+    maxx = x + radius;
+    maxy = y + radius;
+
+    bminx = (minx - blockmap.xorg) / BLOCK_SIZE;
+    bminy = (miny - blockmap.yorg) / BLOCK_SIZE;
+    bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
+    bmaxy = (maxy - blockmap.xorg) / BLOCK_SIZE;
+
+    for(bx=bminx; bx<=bmaxx; bx++)
+    {
+        for(by=bminy; by<=bmaxy; by++)
+        {
+            if(level_checkobjline(bx, by, radius, x, y))
+                return false;
+        }
+    }
+
+    if(lowestceil - highestfloor < mobjinfo[mobj->info.type].height);
+        return false;
+
+    if(highestfloor - mobj->info.z > 24)
+        return false;
+
+    mobj->info.z = highestfloor;
+
+    return true;
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -474,6 +631,39 @@ void level_loadsegs(lumpinfo_t* header)
     wad_decache(lump);
 }
 
+void level_loadblockmap(lumpinfo_t* header)
+{
+    int i, j;
+
+    lumpinfo_t *lump;
+    mapblockmap_t *mapblks;
+    uint16_t *lines;
+
+    lump = header + LUMPOFFS_BLOCKMAP;
+    wad_cache(lump);
+
+    mapblks = lump->cache;
+
+    blockmap.xorg = mapblks->xorg;
+    blockmap.yorg = mapblks->yorg;
+    blockmap.w = mapblks->ncol;
+    blockmap.h = mapblks->nrow;
+    blockmap.blks = malloc(blockmap.w * blockmap.h * sizeof(block_t));
+
+    for(i=0; i<blockmap.w*blockmap.h; i++)
+    {
+        lines = (uint16_t*) mapblks + mapblks->offsets[i];
+        for(j=0; lines[j]!=0xFFFF; j++);
+        
+        blockmap.blks[i].nlines = j;
+        blockmap.blks[i].lines = malloc(j * sizeof(linedef_t*));
+        for(j=0; j<blockmap.blks[i].nlines; j++)
+            blockmap.blks[i].lines[j] = &linedefs[lines[j]];
+    }
+
+    wad_decache(lump);
+}
+
 void level_load(int e, int m)
 {
     char levelname[5];
@@ -508,6 +698,7 @@ void level_load(int e, int m)
     level_loadssectors(lump);
     level_loadnodes(lump);
     level_loadsegs(lump);
+    level_loadblockmap(lump);
 
     level_linksectors();
     level_loadthings(lump);
