@@ -346,12 +346,16 @@ bool level_validobjpos(object_t* mobj, float x, float y)
     return true;
 }
 
-bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2)
+bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2, linecollider_t collider)
 {
+    int i;
+
     float dx, dy;
     int stepx, stepy;
     float tmaxx, tmaxy, tdx, tdy;
-    int bx, by, ex, ey;
+    int bx, by, ex, ey, b;
+    linedef_t *line, *bestline;
+    float t, bestt, prevt;
 
     bx = floorf((x1 - blockmap.xorg) / BLOCK_SIZE);
     by = floorf((y1 - blockmap.yorg) / BLOCK_SIZE);
@@ -388,7 +392,30 @@ bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2)
     {
         if(bx >= 0 && by >= 0 && bx < blockmap.w && by < blockmap.h)
         {
-            
+            b = by * blockmap.w + bx;
+            prevt = -1.0f;
+            for(;;)
+            {
+                bestline = NULL;
+                bestt = INFINITY;
+                for(i=0; i<blockmap.blks[b].nlines; i++)
+                {
+                    line = blockmap.blks[b].lines[i];
+                    t = segmentsegment(x1, y1, x2, y2, line->v1->x, line->v1->y, line->v2->x, line->v2->y);
+                    if(t == INFINITY || t < 0 || t > 1 || t <= prevt)
+                        continue;
+                    if(t < bestt)
+                    {
+                        bestline = line;
+                        bestt = t;
+                    }
+                }
+                if(!bestline)
+                    break;
+                prevt = bestt;
+                if(collider(x1, y1, x2, y2, bestline, bestt))
+                    return true;
+            }
         }
 
         if(bx == ex && by == ey)

@@ -45,4 +45,9 @@ float magnitude(float x, float y);
 fixed_t fixedmul(fixed_t a, fixed_t b);
 fixed_t fixeddiv(fixed_t a, fixed_t b);
 
+// returns t along line 1 where it hits seg 2
+// t can be < 0 or > 1 but that means its not on the segment
+// INFINITY means line 1 didnt touch seg 2
+float segmentsegment(float v1x1, float v1y1, float v1x2, float v1y2, float v2x1, float v2y1, float v2x2, float v2y2);
+
 #endif
