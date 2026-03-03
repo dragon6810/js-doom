@@ -351,6 +351,10 @@ void spawnplayer(client_t* client)
     memset(client->player.mobj, 0, sizeof(object_t));
     client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;
+    client->player.mobj->info.x = dmstarts[0].x;
+    client->player.mobj->info.y = dmstarts[0].y;
+    client->player.mobj->info.angle = dmstarts[0].angle;
     level_placemobj(client->player.mobj);
+    client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 }

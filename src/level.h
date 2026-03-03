@@ -28,6 +28,8 @@
 
 #define BLOCK_SIZE 128
 
+#define MAX_DMSTART 10
+
 typedef struct object_s object_t;
 typedef struct sector_s sector_t;
 typedef struct ssector_s ssector_t;
@@ -137,6 +139,12 @@ typedef struct
     block_t *blks;
 } blockmap_t;
 
+typedef struct
+{
+    float x, y;
+    angle_t angle;
+} startloc_t;
+
 extern int level_episode, level_map;
 
 extern int nverts;
@@ -157,13 +165,20 @@ extern blockmap_t blockmap;
 extern int mobjmax;
 extern object_t mobjs[MAX_MOBJ];
 
+extern int numdmstarts;
+extern startloc_t dmstarts[MAX_DMSTART];
+
 extern texture_t* levelskytex;
+
+typedef void (*linecollider_t)(linedef_t* line);
 
 void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
 // finds an index to put a new mobj. -1 if edict full
 int level_findnewedict(void);
 bool level_validobjpos(object_t* mobj, float x, float y);
+bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2);
+float level_mobjfloorheight(object_t* mobj);
 int level_nodeside(node_t* node, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 void level_load(int episode, int map);

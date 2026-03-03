@@ -3,10 +3,18 @@
 #define FORWARDTHRUST 50.0
 #define SIDETHRUST 40.0
 #define TICFRIC 0.90625
+#define GRAVITY 1225.0
+
+static void player_slidemove(object_t* playobj)
+{
+
+}
 
 static void player_trymove(object_t* playobj, float frametime)
 {
-    float x, y;
+    float x, y, floorz;
+
+    playobj->info.z += playobj->info.zvel * frametime;
 
     x = playobj->info.x + playobj->info.xvel * frametime;
     y = playobj->info.y + playobj->info.yvel * frametime;
@@ -17,12 +25,22 @@ static void player_trymove(object_t* playobj, float frametime)
         playobj->info.y = y;
         level_unplacemobj(playobj);
         level_placemobj(playobj);
-        // playobj->info.z = playobj->ssector->sector->floorheight;
     }
     else
     {
-        playobj->info.xvel = playobj->info.yvel = 0;
+        player_slidemove(playobj);
+        level_unplacemobj(playobj);
+        level_placemobj(playobj);
     }
+
+    floorz = level_mobjfloorheight(playobj);
+    if(playobj->info.z <= floorz)
+    {
+        playobj->info.z = floorz;
+        playobj->info.zvel = 0;
+    }
+    else
+        playobj->info.zvel -= GRAVITY * frametime;
 }
 
 void player_docmd(object_t* playobj, const playercmd_t* cmd)

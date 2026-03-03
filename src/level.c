@@ -1,5 +1,6 @@
 #include "level.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -119,6 +120,8 @@ seg_t *segs = NULL;
 int mobjmax;
 object_t mobjs[MAX_MOBJ] = {};
 blockmap_t blockmap = {};
+int numdmstarts = 0;
+startloc_t dmstarts[MAX_DMSTART];
 
 texture_t* levelskytex = NULL;
 const char *episodeskies[] =
@@ -177,6 +180,49 @@ int level_findnewedict(void)
     return ++mobjmax;
 }
 
+// returns true if "hit", false if not
+typedef bool (*linechecker_t)(object_t*, float x, float y, linedef_t*);
+
+static bool linechecker_mobjmove(object_t* mobj, float x, float y, linedef_t* line)
+{
+    float floor, ceil;
+
+    if(line->flags & LINEDEF_BLOCKALL)
+        return true;
+
+    if(!line->front && !line->back)
+        return false;
+
+    if(line->front)
+    {
+        floor = line->front->sector->floorheight;
+        ceil = line->front->sector->ceilheight;
+        if(line->back)
+        {
+            floor = MAX(floor, line->back->sector->floorheight);
+            ceil = MIN(ceil, line->back->sector->ceilheight);
+        }
+    }
+    else if(line->back)
+    {
+        floor = line->back->sector->floorheight;
+        ceil = line->back->sector->ceilheight;
+        if(line->front)
+        {
+            floor = MAX(floor, line->front->sector->floorheight);
+            ceil = MIN(ceil, line->front->sector->ceilheight);
+        }
+    }
+
+    if(floor - mobj->info.z > 24)
+        return true;
+
+    if(ceil - floor < mobjinfo[mobj->info.type].height)
+        return true;
+
+    return false;
+}
+
 static bool level_linesquare(linedef_t* line, float radius, float x, float y)
 {
     float lx1, ly1, lx2, ly2, dx, dy;
@@ -215,7 +261,7 @@ static bool level_linesquare(linedef_t* line, float radius, float x, float y)
         tmin = MAX(t1, tmin);
         tmax = MIN(t2, tmax);
         if(tmin >= tmax)
-            return true;
+            return false;
     }
 
     dy = ly2 - ly1;
@@ -237,23 +283,17 @@ static bool level_linesquare(linedef_t* line, float radius, float x, float y)
         tmin = MAX(t1, tmin);
         tmax = MIN(t2, tmax);
         if(tmin >= tmax)
-            return true;
+            return false;
     }
 
     return true;
 }
 
-float highestfloor;
-float lowestceil;
-
-static bool level_checkobjline(int bx, int by, float radius, float x, float y)
+static bool level_checkobjline(int bx, int by, float x, float y, object_t* obj, linechecker_t checker)
 {
     int i;
     block_t *blk;
     linedef_t *line;
-
-    highestfloor = INT16_MIN;
-    lowestceil = INT16_MAX;
 
     if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
         return false;
@@ -264,21 +304,11 @@ static bool level_checkobjline(int bx, int by, float radius, float x, float y)
     {
         line = blk->lines[i];
 
-        if(!(line->flags & LINEDEF_BLOCKALL))
+        if(!level_linesquare(line, mobjinfo[obj->info.type].radius, x, y))
             continue;
 
-        if(line->front)
-        {
-            highestfloor = MAX(highestfloor, line->front->sector->floorheight);
-            lowestceil = MIN(lowestceil, line->front->sector->ceilheight);
-        }
-        if(line->back)
-        {
-            highestfloor = MAX(highestfloor, line->back->sector->floorheight);
-            lowestceil = MIN(lowestceil, line->back->sector->ceilheight);
-        }
-
-        return true;
+        if(checker(obj, x, y, line))
+            return true;
     }
 
     return false;
@@ -302,26 +332,142 @@ bool level_validobjpos(object_t* mobj, float x, float y)
     bminx = (minx - blockmap.xorg) / BLOCK_SIZE;
     bminy = (miny - blockmap.yorg) / BLOCK_SIZE;
     bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
-    bmaxy = (maxy - blockmap.xorg) / BLOCK_SIZE;
+    bmaxy = (maxy - blockmap.yorg) / BLOCK_SIZE;
 
     for(bx=bminx; bx<=bmaxx; bx++)
     {
         for(by=bminy; by<=bmaxy; by++)
         {
-            if(level_checkobjline(bx, by, radius, x, y))
+            if(level_checkobjline(bx, by, x, y, mobj, linechecker_mobjmove))
                 return false;
         }
     }
 
-    if(lowestceil - highestfloor < mobjinfo[mobj->info.type].height);
-        return false;
-
-    if(highestfloor - mobj->info.z > 24)
-        return false;
-
-    mobj->info.z = highestfloor;
-
     return true;
+}
+
+bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2)
+{
+    float dx, dy;
+    int stepx, stepy;
+    float tmaxx, tmaxy, tdx, tdy;
+    int bx, by, ex, ey;
+
+    bx = floorf((x1 - blockmap.xorg) / BLOCK_SIZE);
+    by = floorf((y1 - blockmap.yorg) / BLOCK_SIZE);
+    ex = floorf((x2 - blockmap.xorg) / BLOCK_SIZE);
+    ey = floorf((y2 - blockmap.yorg) / BLOCK_SIZE);
+
+    dx = x2 - x1;
+    dy = y2 - y1;
+
+    stepx = stepy = 0;
+    if(dx > 0)
+        stepx = 1;
+    else if(dx < 0)
+        stepx = -1;
+    if(dy > 0)
+        stepy = 1;
+    else if(dy < 0)
+        stepy = -1;
+
+    tmaxx = tmaxy = INFINITY;
+    if(stepx > 0)
+        tmaxx = ((bx+1)*BLOCK_SIZE - (x1 - blockmap.xorg)) / dx;
+    else if(stepx < 0)
+        tmaxx = (bx*BLOCK_SIZE - (x1 - blockmap.xorg)) / dx;
+    if(stepy > 0)
+        tmaxy = ((by+1)*BLOCK_SIZE - (y1 - blockmap.yorg)) / dy;
+    else if(stepy < 0)
+        tmaxy = (by*BLOCK_SIZE - (y1 - blockmap.yorg)) / dy;
+
+    tdx = BLOCK_SIZE / fabsf(dx);
+    tdy = BLOCK_SIZE / fabsf(dy);
+
+    for(;;)
+    {
+        if(bx >= 0 && by >= 0 && bx < blockmap.w && by < blockmap.h)
+        {
+            
+        }
+
+        if(bx == ex && by == ey)
+            break;
+
+        if(tmaxx < tmaxy)
+        {
+            bx += stepx;
+            tmaxx += tdx;
+        }
+        else if(tmaxy < tmaxx)
+        {
+            by += stepy;
+            tmaxy += tdy;
+        }
+        else
+        {
+            bx += stepx;
+            by += stepy;
+            tmaxx += tdx;
+            tmaxy += tdy;
+        }
+    }
+
+    return false;
+}
+
+float level_mobjfloorheight(object_t* mobj)
+{
+    int bx, by, l;
+
+    float radius;
+    float minx, miny, maxx, maxy;
+    float highestfloor;
+    int bminx, bminy, bmaxx, bmaxy;
+    block_t *blk;
+    linedef_t *line;
+
+    radius = mobjinfo[mobj->info.type].radius;
+    
+    minx = mobj->info.x - radius;
+    miny = mobj->info.y - radius;
+    maxx = mobj->info.x + radius;
+    maxy = mobj->info.y + radius;
+
+    bminx = (minx - blockmap.xorg) / BLOCK_SIZE;
+    bminy = (miny - blockmap.yorg) / BLOCK_SIZE;
+    bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
+    bmaxy = (maxy - blockmap.yorg) / BLOCK_SIZE;
+
+    highestfloor = INT16_MIN;
+    for(bx=bminx; bx<=bmaxx; bx++)
+    {
+        for(by=bminy; by<=bmaxy; by++)
+        {
+            if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
+                continue;
+            blk = &blockmap.blks[by * blockmap.w + bx];
+
+            for(l=0; l<blk->nlines; l++)
+            {
+                line = blk->lines[l];
+                if(!level_linesquare(line, radius, mobj->info.x, mobj->info.y))
+                    continue;
+                
+                if(line->front)
+                    highestfloor = MAX(highestfloor, line->front->sector->floorheight);
+                if(line->back)
+                    highestfloor = MAX(highestfloor, line->back->sector->floorheight);
+            }
+        }
+    }
+
+    if(highestfloor != INT16_MIN)
+        return highestfloor;
+
+    if(mobj->ssector)
+        return mobj->ssector->sector->floorheight;
+    return level_getpointssector(mobj->info.x, mobj->info.y)->sector->floorheight;
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -367,8 +513,18 @@ void level_loadthings(lumpinfo_t* header)
     for(i=0; i<nthings; i++)
     {
         // TODO: player starts
-        if(mapthings[i].type <= 4 || mapthings[i].type == 11)
+        if(mapthings[i].type <= 4)
             continue;
+
+        if(mapthings[i].type == 11)
+        {
+            if(numdmstarts >= MAX_DMSTART)
+                continue;
+            dmstarts[numdmstarts].x = mapthings[i].x;
+            dmstarts[numdmstarts].y = mapthings[i].y;
+            dmstarts[numdmstarts].angle = mapthings[i].angle;
+            numdmstarts++;
+        }
 
         for(type=0; type<NUMMOBJTYPES; type++)
             if(mobjinfo[type].doomednum == mapthings[i].type)
@@ -702,6 +858,8 @@ void level_load(int e, int m)
 
     level_linksectors();
     level_loadthings(lump);
+
+    assert(numdmstarts);
 
     levelskytex = tex_find(episodeskies[level_episode - 1]);
 
