@@ -134,6 +134,7 @@ void level_unplacemobj(object_t* mobj)
     object_t *cur;
 
     sector_t *sector;
+    block_t *blk;
     object_t *prev, *next;
 
     if(mobj->ssector)
@@ -153,17 +154,52 @@ void level_unplacemobj(object_t* mobj)
             if(next)
                 next->sprev = prev;
         }
+        mobj->ssector = NULL;
+    }
+
+    if(mobj->blk)
+    {
+        blk = mobj->blk;
+        for(cur=blk->mobjs; cur&&cur!=mobj; cur=cur->bnext);
+        if(cur)
+        {
+            prev = cur->bprev;
+            next = cur->bnext;
+
+            if(prev)
+                prev->bnext = next;
+            else
+                blk->mobjs = next;
+
+            if(next)
+                next->bprev = prev;
+        }
+        mobj->blk = NULL;
     }
 }
 
 void level_placemobj(object_t* mobj)
 {
+    int bx, by;
+
     mobj->ssector = level_getpointssector(mobj->info.x, mobj->info.y);
     mobj->sprev = NULL;
     mobj->snext = mobj->ssector->sector->mobjs;
     mobj->ssector->sector->mobjs = mobj;
     if(mobj->snext)
         mobj->snext->sprev = mobj;
+
+    bx = floorf((mobj->info.x - blockmap.xorg) / BLOCK_SIZE);
+    by = floorf((mobj->info.y - blockmap.yorg) / BLOCK_SIZE);
+    if(bx >= 0 && bx < blockmap.w && by >= 0 && by < blockmap.h)
+    {
+        mobj->blk = &blockmap.blks[by * blockmap.w + bx];
+        mobj->bprev = NULL;
+        mobj->bnext = mobj->blk->mobjs;
+        if(mobj->blk->mobjs)
+            mobj->blk->mobjs->bprev = mobj;
+        mobj->blk->mobjs = mobj;
+    }
 }
 
 int level_findnewedict(void)
@@ -314,6 +350,44 @@ static bool level_checkobjline(int bx, int by, float x, float y, object_t* obj, 
     return false;
 }
 
+bool level_checksquareobj(int bx, int by, float x, float y, float radius, object_t* ignore)
+{
+    object_t *mobj;
+
+    block_t *blk;
+    float xmin, xmax, ymin, ymax;
+
+    if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
+        return false;
+
+    blk = &blockmap.blks[by * blockmap.w + bx];
+
+    xmin = x - radius;
+    xmax = x + radius;
+    ymin = y - radius;
+    ymax = y + radius;
+
+    for(mobj=blk->mobjs; mobj; mobj=mobj->bnext)
+    {
+        if(mobj == ignore)
+            continue;
+        if(!(mobjinfo[mobj->info.type].flags & MF_SOLID))
+            continue;
+
+        if(mobj->info.x - mobjinfo[mobj->info.type].radius > xmax)
+            continue;
+        if(mobj->info.x + mobjinfo[mobj->info.type].radius < xmin)
+            continue;
+        if(mobj->info.y - mobjinfo[mobj->info.type].radius > ymax)
+            continue;
+        if(mobj->info.y + mobjinfo[mobj->info.type].radius < ymin)
+            continue;
+        return true;
+    }
+
+    return false;
+}
+
 bool level_validobjpos(object_t* mobj, float x, float y)
 {
     int bx, by;
@@ -329,16 +403,18 @@ bool level_validobjpos(object_t* mobj, float x, float y)
     maxx = x + radius;
     maxy = y + radius;
 
-    bminx = (minx - blockmap.xorg) / BLOCK_SIZE;
-    bminy = (miny - blockmap.yorg) / BLOCK_SIZE;
-    bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
-    bmaxy = (maxy - blockmap.yorg) / BLOCK_SIZE;
+    bminx = floorf((minx - blockmap.xorg) / BLOCK_SIZE);
+    bminy = floorf((miny - blockmap.yorg) / BLOCK_SIZE);
+    bmaxx = floorf((maxx - blockmap.xorg) / BLOCK_SIZE);
+    bmaxy = floorf((maxy - blockmap.yorg) / BLOCK_SIZE);
 
     for(bx=bminx; bx<=bmaxx; bx++)
     {
         for(by=bminy; by<=bmaxy; by++)
         {
             if(level_checkobjline(bx, by, x, y, mobj, linechecker_mobjmove))
+                return false;
+            if(level_checksquareobj(bx, by, x, y, radius, mobj))
                 return false;
         }
     }
@@ -832,6 +908,7 @@ void level_loadblockmap(lumpinfo_t* header)
     blockmap.w = mapblks->ncol;
     blockmap.h = mapblks->nrow;
     blockmap.blks = malloc(blockmap.w * blockmap.h * sizeof(block_t));
+    memset(blockmap.blks, 0, blockmap.w * blockmap.h * sizeof(block_t));
 
     for(i=0; i<blockmap.w*blockmap.h; i++)
     {

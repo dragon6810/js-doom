@@ -35,6 +35,7 @@ typedef struct sector_s sector_t;
 typedef struct ssector_s ssector_t;
 typedef struct sidedef_s sidedef_t;
 typedef struct vertex_s vertex_t;
+typedef struct block_s block_t;
 
 // these fields are sent from server to client
 typedef struct objinfo_s
@@ -56,8 +57,10 @@ struct object_s
     int spawnflags;
 
     ssector_t *ssector;
+    block_t *blk;
 
     object_t *snext, *sprev; // sector list
+    object_t *bnext, *bprev; // block list
 };
 
 typedef struct
@@ -125,13 +128,13 @@ struct sector_s
     object_t *mobjs;
 };
 
-typedef struct
+struct block_s
 {
     int nlines;
     linedef_t **lines;
 
     object_t *mobjs;
-} block_t;
+};
 
 typedef struct
 {
