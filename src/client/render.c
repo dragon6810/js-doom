@@ -807,7 +807,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
         portalbottom = MAX(portalbottom, seg->backside->sector->floorheight);
     }
 
-    if(seg->frontside->sector->ceiltex == skylump && seg->backside->sector->ceiltex == skylump)
+    if(seg->frontside->sector->ceiltex == skylump && seg->backside && seg->backside->sector && seg->backside->sector->ceiltex == skylump)
     {
         worldtop = portaltop;
     }

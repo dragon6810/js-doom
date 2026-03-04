@@ -101,12 +101,13 @@ void loop(void)
 
     think(frametime);
 
-    if(serverconn.state == CLSTATE_CONNECTED && mobjs[serverconn.edict].info.exists)
+    if(serverconn.state == CLSTATE_CONNECTED)
     {
         sendinputs = false;
         if(level_episode != -1 && level_map != -1)
         {
             predictplayer();
+            interpsectors(curtime / 1000.0);
             interpentities(curtime / 1000.0);
 
             gatherinput();

@@ -16,13 +16,22 @@
 #define FIELD_YVEL 0x0100 // float
 #define FIELD_ZVEL 0x0200 // float
 
+#define SFIELD_FLOOR 0x01 // float
+#define SFIELD_CEIL  0x02 // float
+
+typedef struct
+{
+    float floorheight;
+    float ceilheight;
+} sectorinfo_t;
+
 typedef enum
 {
     CVS_HANDSHAKE=0, // char username[USERNAME_LEN]
     SVC_SERVERFULL, // 
     SVC_HANDSHAKE, // int32_t clientid, int32_t edictid, int16_t nwads, char[13][nwads] wadnames (in order)
     SVC_CHANGELEVEL, // int8_t episode, int8_t map
-    SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF
+    SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF, n times (uint16_t sector, uint8_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
     CSV_USE, // 
 } packet_e;
@@ -31,6 +40,7 @@ typedef struct
 {
     int maxmobj;
     objinfo_t mobjs[MAX_MOBJ];
+    sectorinfo_t *sectorinfos;
 } gamestate_t;
 
 #endif

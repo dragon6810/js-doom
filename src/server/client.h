@@ -39,6 +39,7 @@ extern gamestate_t dummystate;
 
 extern client_t clients[MAX_CLIENT];
 
+void allocgamestatesectors(void);
 void recvfromclients(void);
 void sendtoclients(void);
 void spawnplayer(client_t* client);

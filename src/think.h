@@ -18,5 +18,6 @@ extern thinker_t* thinkers;
 
 void think(float frametime);
 void addthinker(thinker_t* thinker);
+void freethinker(thinker_t* thinker);
 
 #endif

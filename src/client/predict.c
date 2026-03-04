@@ -47,6 +47,24 @@ void interpent(float t, int edict)
     level_placemobj(&mobjs[edict]);
 }
 
+void interpsectors(float abstime)
+{
+    int i;
+    float t;
+
+    if(!oldgs.sectorinfos || !newgs.sectorinfos)
+        return;
+
+    t = (abstime - lastrecvtime) * TICRATE;
+    t = CLAMP(t, 0, 1);
+
+    for(i=0; i<nsectors; i++)
+    {
+        sectors[i].floorheight = LERP(oldgs.sectorinfos[i].floorheight, newgs.sectorinfos[i].floorheight, t);
+        sectors[i].ceilheight  = LERP(oldgs.sectorinfos[i].ceilheight,  newgs.sectorinfos[i].ceilheight,  t);
+    }
+}
+
 void interpentities(float abstime)
 {
     int i;

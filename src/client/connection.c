@@ -1,6 +1,7 @@
 #include "connection.h"
 
 #include <emscripten.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -33,6 +34,45 @@ static void connect(void)
     netbuf_writedata(&buf, username, USERNAME_LEN);
     netchan_queue(&serverconn.chan, &buf);
     netbuf_free(&buf);
+}
+
+static void* recvsectordeltas(void* buf, void* curpos, int len)
+{
+    int sectornum;
+    int fields;
+    sectorinfo_t *info;
+
+    while(1)
+    {
+        sectornum = net_readu16(buf, curpos, len);
+        curpos += 2;
+        if(sectornum == 0xFFFF || netpacketfull)
+            break;
+
+        fields = net_readu8(buf, curpos, len);
+        curpos += 1;
+        if(netpacketfull)
+            break;
+
+        info = newgs.sectorinfos ? &newgs.sectorinfos[sectornum] : NULL;
+        if(fields & SFIELD_FLOOR)
+        {
+            float v = net_readfloat(buf, curpos, len);
+            curpos += 4;
+            if(info) info->floorheight = v;
+        }
+        if(fields & SFIELD_CEIL)
+        {
+            float v = net_readfloat(buf, curpos, len);
+            curpos += 4;
+            if(info) info->ceilheight = v;
+        }
+    }
+
+    if(netpacketfull)
+        return NULL;
+
+    return curpos;
 }
 
 static void* recventdeltas(void* buf, void* curpos, int len)
@@ -115,11 +155,12 @@ static void* recventdeltas(void* buf, void* curpos, int len)
     if(netpacketfull)
         return NULL;
 
-    return curpos;
+    return recvsectordeltas(buf, curpos, len);
 }
 
 static void* recvclev(void* buf, void* curpos, int len)
 {
+    int i;
     int8_t e, m;
 
     if(serverconn.state != CLSTATE_CONNECTED)
@@ -131,6 +172,18 @@ static void* recvclev(void* buf, void* curpos, int len)
         return NULL;
 
     level_load(e, m);
+
+    free(oldgs.sectorinfos);
+    free(newgs.sectorinfos);
+    oldgs.sectorinfos = malloc(nsectors * sizeof(sectorinfo_t));
+    newgs.sectorinfos = malloc(nsectors * sizeof(sectorinfo_t));
+    for(i=0; i<nsectors; i++)
+    {
+        oldgs.sectorinfos[i].floorheight = sectors[i].floorheight;
+        oldgs.sectorinfos[i].ceilheight = sectors[i].ceilheight;
+        newgs.sectorinfos[i].floorheight = sectors[i].floorheight;
+        newgs.sectorinfos[i].ceilheight = sectors[i].ceilheight;
+    }
 
     return curpos;
 }
@@ -175,7 +228,6 @@ static void* recvshake(void* buf, void* curpos, int len)
 
     memset(player.mobj, 0, sizeof(object_t));
     mobjs[serverconn.edict].info.type = MT_PLAYER;
-    level_placemobj(player.mobj);
     mobjs[serverconn.edict].info.exists = true;
 
     serverconn.state = CLSTATE_CONNECTED;
@@ -230,13 +282,18 @@ void recvfromserver(float curtime)
     uint8_t buf[NET_MAX_PACKET_SIZE];
     int len;
     bool received;
+    sectorinfo_t *oldsectors;
 
     received = false;
     while((len = net_recv(buf, sizeof(buf), NULL)) > 0)
     {
         if(!received)
         {
+            oldsectors = oldgs.sectorinfos;
             memcpy(&oldgs, &newgs, sizeof(gamestate_t));
+            oldgs.sectorinfos = oldsectors;
+            if(oldsectors && newgs.sectorinfos)
+                memcpy(oldsectors, newgs.sectorinfos, nsectors * sizeof(sectorinfo_t));
             received = true;
         }
         lastrecvtime = curtime;

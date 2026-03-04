@@ -79,6 +79,7 @@ int main(int argc, char** argv)
     }
 
     level_load(ep, map);
+    allocgamestatesectors();
 
     net_init();
 

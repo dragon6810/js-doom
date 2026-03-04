@@ -14,6 +14,7 @@ extern gamestate_t oldgs;
 extern gamestate_t newgs;
 
 void predictplayer(void);
+void interpsectors(float abstime);
 void interpentities(float abstime);
 
 #endif

@@ -253,7 +253,7 @@ void wad_clearcache(void)
 
     for(i=0; i<nlumps; i++)
     {
-        if(lumps[i].cache)
+        if(!lumps[i].cache)
             continue;
         free(lumps[i].cache);
         lumps[i].cache = NULL;

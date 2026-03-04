@@ -1,6 +1,7 @@
 #include "client.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -30,6 +31,25 @@ static void updategamestate(client_t* cl)
     gs->maxmobj = mobjmax;
     for(i=0; i<=mobjmax; i++)
         gs->mobjs[i] = mobjs[i].info;
+    for(i=0; i<nsectors; i++)
+    {
+        gs->sectorinfos[i].floorheight = sectors[i].floorheight;
+        gs->sectorinfos[i].ceilheight = sectors[i].ceilheight;
+    }
+}
+
+void allocgamestatesectors(void)
+{
+    int i, j;
+
+    free(dummystate.sectorinfos);
+    dummystate.sectorinfos = calloc(nsectors, sizeof(sectorinfo_t));
+    for(i=0; i<MAX_CLIENT; i++)
+        for(j=0; j<GAMESTATE_WINDOW; j++)
+        {
+            free(clients[i].gamestates[j].sectorinfos);
+            clients[i].gamestates[j].sectorinfos = calloc(nsectors, sizeof(sectorinfo_t));
+        }
 }
 
 static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
@@ -103,6 +123,41 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         netbuf_writefloat(buf, info->zvel);
 }
 
+static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
+{
+    int fieldflags;
+    bool firstsend;
+    gamestate_t *gs;
+    sectorinfo_t *compare;
+    sectorinfo_t info;
+
+    info.floorheight = sectors[sectornum].floorheight;
+    info.ceilheight = sectors[sectornum].ceilheight;
+
+    if(!cl->chan.inack)
+        gs = &dummystate;
+    else
+        gs = &cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
+
+    compare = &gs->sectorinfos[sectornum];
+
+    fieldflags = 0;
+    if(compare->floorheight != info.floorheight)
+        fieldflags |= SFIELD_FLOOR;
+    if(compare->ceilheight != info.ceilheight)
+        fieldflags |= SFIELD_CEIL;
+
+    if(!fieldflags)
+        return;
+
+    netbuf_writeu16(buf, sectornum);
+    netbuf_writeu8(buf, fieldflags);
+    if(fieldflags & SFIELD_FLOOR)
+        netbuf_writefloat(buf, info.floorheight);
+    if(fieldflags & SFIELD_CEIL)
+        netbuf_writefloat(buf, info.ceilheight);
+}
+
 static void buildunreliable(client_t* cl, netbuf_t* buf)
 {
     int i;
@@ -110,9 +165,12 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
     netbuf_writeu8(buf, SVC_ENTDELTAS);
 
     for(i=0; i<=mobjmax; i++)
-    {
         addentdeltas(i, cl, buf);
-    }
+
+    netbuf_writeu16(buf, 0xFFFF);
+
+    for(i=0; i<nsectors; i++)
+        addsectordeltas(i, cl, buf);
 
     netbuf_writeu16(buf, 0xFFFF);
 }
@@ -162,7 +220,7 @@ void sendtoclients(void)
 
 void* recvuse(client_t* cl, void* buf, void* curpos, int len)
 {
-    printf("client use\n");
+    player_use(&cl->player);
     return curpos;
 }
 

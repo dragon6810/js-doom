@@ -183,11 +183,15 @@ void level_placemobj(object_t* mobj)
     int bx, by;
 
     mobj->ssector = level_getpointssector(mobj->info.x, mobj->info.y);
-    mobj->sprev = NULL;
-    mobj->snext = mobj->ssector->sector->mobjs;
-    mobj->ssector->sector->mobjs = mobj;
-    if(mobj->snext)
-        mobj->snext->sprev = mobj;
+    mobj->sprev = mobj->snext = NULL;
+
+    if(mobj->ssector)
+    {
+        mobj->snext = mobj->ssector->sector->mobjs;
+        mobj->ssector->sector->mobjs = mobj;
+        if(mobj->snext)
+            mobj->snext->sprev = mobj;
+    }
 
     bx = floorf((mobj->info.x - blockmap.xorg) / BLOCK_SIZE);
     by = floorf((mobj->info.y - blockmap.yorg) / BLOCK_SIZE);
@@ -606,6 +610,17 @@ int level_nodeside(node_t* node, float x, float y)
     return det < 0;
 }
 
+int level_lineside(linedef_t* line, float x, float y)
+{
+    float dx, dy, det;
+
+    dx = x - line->v1->x;
+    dy = y - line->v1->y;
+
+    det = dx * (line->v2->y-line->v1->y) - (line->v2->x-line->v1->x) * dy;
+    return det < 0;
+}
+
 ssector_t* level_getpointssector(float x, float y)
 {
     int nodenum;
@@ -615,6 +630,27 @@ ssector_t* level_getpointssector(float x, float y)
         nodenum = nodes[nodenum].children[level_nodeside(&nodes[nodenum], x, y)];
 
     return &ssectors[nodenum & 0x7FFF];
+}
+
+float level_getlowestneighborceil(sector_t* sec)
+{
+    int i;
+
+    linedef_t *line;
+
+    float ceil;
+
+    ceil = INFINITY;
+    for(i=0; i<sec->nlines; i++)
+    {
+        line = sec->lines[i];
+        if(line->front && line->front->sector && line->front->sector != sec)
+            ceil = MIN(ceil, line->front->sector->ceilheight);
+        if(line->back && line->back->sector && line->back->sector != sec)
+            ceil = MIN(ceil, line->back->sector->ceilheight);
+    }
+
+    return ceil;
 }
 
 void level_loadthings(lumpinfo_t* header)
@@ -689,15 +725,41 @@ void level_loadthings(lumpinfo_t* header)
 
 void level_linksectors(void)
 {
-    int ss;
+    int ss, l, s;
 
     ssector_t *ssector;
+    linedef_t *line;
+    sector_t *sector;
 
     for(ss=0, ssector=ssectors; ss<nssectors; ss++, ssector++)
     {
         if(!ssector->nsegs)
             continue;
         ssector->sector = segs[ssector->firstseg].frontside->sector;
+    }
+
+    for(l=0, line=linedefs; l<nlinedefs; l++, line++)
+    {
+        if(!line->front || !line->front->sector)
+            continue;
+        line->front->sector->nlines++;
+        if(line->back && line->back->sector && (line->back->sector != line->front->sector))
+            line->back->sector->nlines++;
+    }
+
+    for(s=0, sector=sectors; s<nsectors; s++, sector++)
+    {
+        sector->lines = calloc(sector->nlines, sizeof(linedef_t*));
+        sector->nlines = 0;
+    }
+
+    for(l=0, line=linedefs; l<nlinedefs; l++, line++)
+    {
+        if(!line->front || !line->front->sector)
+            continue;
+        line->front->sector->lines[line->front->sector->nlines++] = line;
+        if(line->back && line->back->sector && (line->back->sector != line->front->sector))
+            line->back->sector->lines[line->back->sector->nlines++] = line;
     }
 }
 
@@ -753,6 +815,8 @@ void level_loadsectors(lumpinfo_t* header)
         sectors[i].tag = mapsectors[i].tag;
         sectors[i].frameindex = -1;
         sectors[i].mobjs = NULL;
+        sectors[i].nlines = 0;
+        sectors[i].lines = NULL;
     }
 
     wad_decache(lump);

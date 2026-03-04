@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include "special.h"
+
 #define FORWARDTHRUST 50.0
 #define SIDETHRUST 40.0
 #define TICFRIC 0.90625
@@ -299,4 +301,50 @@ float player_getviewheight(object_t* playobj, float time, float frametime)
 
     bob = player_calcheadbob(playobj, time);
     return bob + pviewheight + playobj->info.z;
+}
+
+static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, float t)
+{
+    float top, bottom;
+    int side;
+
+    side = level_lineside(line, x1, y1);
+
+    if(!side && line->special)
+    {
+        switch(line->special)
+        {
+        case 1:
+            special_door(line);
+            break;
+        };
+        
+        return true;
+    }
+
+    if(!line->front || !line->back)
+        return true;
+
+    top = MIN(line->front->sector->ceilheight, line->back->sector->ceilheight);
+    bottom = MAX(line->front->sector->floorheight, line->back->sector->floorheight);
+    if(bottom >= top)
+        return true;
+
+    return false;
+}
+
+void player_use(player_t* player)
+{
+    float x1, y1, x2, y2, dx, dy;
+
+    x1 = player->mobj->info.x;
+    y1 = player->mobj->info.y;
+
+    dx = ANGCOS(player->mobj->info.angle) * 64;
+    dy = ANGSIN(player->mobj->info.angle) * 64;
+
+    x2 = x1 + dx;
+    y2 = y1 + dy;
+
+    level_traverseline(x1, y1, x2, y2, false, usecol, NULL);
 }

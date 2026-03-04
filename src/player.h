@@ -29,5 +29,6 @@ extern float pviewheight, deltaviewheight;
 void player_init(void);
 void player_docmd(object_t* playobj, const playercmd_t* cmd);
 float player_getviewheight(object_t* playobj, float time, float frametime);
+void player_use(player_t* player);
 
 #endif
