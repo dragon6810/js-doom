@@ -129,6 +129,11 @@ struct sector_s
 
     int frameindex;
     object_t *mobjs;
+
+    struct thinker_s *thinker;
+
+    // blockmap bounds
+    int bminx, bmaxx, bminy, bmaxy;
 };
 
 struct block_s
@@ -180,6 +185,8 @@ extern texture_t* levelskytex;
 
 extern float linerangebottom, linerangetop, linerange;
 
+extern float mobjfloorheight, mobjceilheight;
+
 // return true if actual collision
 typedef bool (*linelinecol_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);
 typedef bool (*mobjlinecol_t)(float x1, float y1, float x2, float y2, object_t* mobj, float t);
@@ -190,11 +197,13 @@ void level_placemobj(object_t* mobj);
 int level_findnewedict(void);
 bool level_validobjpos(object_t* mobj, float x, float y);
 bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, mobjlinecol_t mobjcol);
-float level_mobjfloorheight(object_t* mobj);
+void level_mobjheights(object_t* mobj);
 int level_nodeside(node_t* node, float x, float y);
 int level_lineside(linedef_t* line, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 float level_getlowestneighborceil(sector_t* sec);
+bool level_mobjstuckinblock(int bx, int by);
+bool level_mobjstuckinsector(sector_t* sector);
 void level_load(int episode, int map);
 
 #endif

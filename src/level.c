@@ -545,16 +545,18 @@ bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit
     return false;
 }
 
-float level_mobjfloorheight(object_t* mobj)
+float mobjfloorheight, mobjceilheight;
+
+void level_mobjheights(object_t* mobj)
 {
     int bx, by, l;
 
     float radius;
     float minx, miny, maxx, maxy;
-    float highestfloor;
     int bminx, bminy, bmaxx, bmaxy;
     block_t *blk;
     linedef_t *line;
+    ssector_t *ssector;
 
     radius = mobjinfo[mobj->info.type].radius;
     
@@ -568,7 +570,12 @@ float level_mobjfloorheight(object_t* mobj)
     bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
     bmaxy = (maxy - blockmap.yorg) / BLOCK_SIZE;
 
-    highestfloor = INT16_MIN;
+    if(mobj->ssector)
+        ssector = mobj->ssector;
+    ssector = level_getpointssector(mobj->info.x, mobj->info.y);
+
+    mobjfloorheight = ssector->sector->floorheight;
+    mobjceilheight = ssector->sector->ceilheight;
     for(bx=bminx; bx<=bmaxx; bx++)
     {
         for(by=bminy; by<=bmaxy; by++)
@@ -584,19 +591,18 @@ float level_mobjfloorheight(object_t* mobj)
                     continue;
                 
                 if(line->front)
-                    highestfloor = MAX(highestfloor, line->front->sector->floorheight);
+                {
+                    mobjfloorheight = MAX(mobjfloorheight, line->front->sector->floorheight);
+                    mobjceilheight = MIN(mobjceilheight, line->front->sector->ceilheight);
+                }
                 if(line->back)
-                    highestfloor = MAX(highestfloor, line->back->sector->floorheight);
+                {
+                    mobjfloorheight = MAX(mobjfloorheight, line->back->sector->floorheight);
+                    mobjceilheight = MIN(mobjceilheight, line->back->sector->ceilheight);
+                }
             }
         }
     }
-
-    if(highestfloor != INT16_MIN)
-        return highestfloor;
-
-    if(mobj->ssector)
-        return mobj->ssector->sector->floorheight;
-    return level_getpointssector(mobj->info.x, mobj->info.y)->sector->floorheight;
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -651,6 +657,38 @@ float level_getlowestneighborceil(sector_t* sec)
     }
 
     return ceil;
+}
+
+bool level_mobjstuckinblock(int bx, int by)
+{
+    object_t *obj;
+
+    block_t *blk;
+
+    if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
+        return false;
+
+    blk = &blockmap.blks[by * blockmap.w + bx];
+    for(obj=blk->mobjs; obj; obj=obj->bnext)
+    {
+        level_mobjheights(obj);
+        if(mobjceilheight - mobjfloorheight < mobjinfo[obj->info.type].height)
+            return true;
+    }
+
+    return false;
+}
+
+bool level_mobjstuckinsector(sector_t* sector)
+{
+    int bx, by;
+
+    for(bx=sector->bminx; bx<=sector->bmaxx; bx++)
+        for(by=sector->bminy; by<=sector->bmaxy; by++)
+            if(level_mobjstuckinblock(bx, by))
+                return true;
+
+    return false;
 }
 
 void level_loadthings(lumpinfo_t* header)
@@ -761,6 +799,31 @@ void level_linksectors(void)
         if(line->back && line->back->sector && (line->back->sector != line->front->sector))
             line->back->sector->lines[line->back->sector->nlines++] = line;
     }
+
+    for(s=0, sector=sectors; s<nsectors; s++, sector++)
+    {
+        sector->bminx = blockmap.w;
+        sector->bminy = blockmap.h;
+        sector->bmaxx = -1;
+        sector->bmaxy = -1;
+        for(l=0; l<sector->nlines; l++)
+        {
+            line = sector->lines[l];
+            sector->bminx = MIN(sector->bminx, floorf((line->v1->x - blockmap.xorg) / BLOCK_SIZE));
+            sector->bminx = MIN(sector->bminx, floorf((line->v2->x - blockmap.xorg) / BLOCK_SIZE));
+            sector->bmaxx = MAX(sector->bmaxx, floorf((line->v1->x - blockmap.xorg) / BLOCK_SIZE));
+            sector->bmaxx = MAX(sector->bmaxx, floorf((line->v2->x - blockmap.xorg) / BLOCK_SIZE));
+            sector->bminy = MIN(sector->bminy, floorf((line->v1->y - blockmap.yorg) / BLOCK_SIZE));
+            sector->bminy = MIN(sector->bminy, floorf((line->v2->y - blockmap.yorg) / BLOCK_SIZE));
+            sector->bmaxy = MAX(sector->bmaxy, floorf((line->v1->y - blockmap.yorg) / BLOCK_SIZE));
+            sector->bmaxy = MAX(sector->bmaxy, floorf((line->v2->y - blockmap.yorg) / BLOCK_SIZE));
+        }
+
+        sector->bminx = CLAMP(sector->bminx, 0, blockmap.w - 1);
+        sector->bmaxx = CLAMP(sector->bmaxx, 0, blockmap.w - 1);
+        sector->bminy = CLAMP(sector->bminy, 0, blockmap.h - 1);
+        sector->bmaxy = CLAMP(sector->bmaxy, 0, blockmap.h - 1);
+    }
 }
 
 void level_loadverts(lumpinfo_t* header)
@@ -817,6 +880,8 @@ void level_loadsectors(lumpinfo_t* header)
         sectors[i].mobjs = NULL;
         sectors[i].nlines = 0;
         sectors[i].lines = NULL;
+        sectors[i].thinker = NULL;
+        sectors[i].bminx = sectors[i].bmaxx = sectors[i].bminy = sectors[i].bmaxy = -1;
     }
 
     wad_decache(lump);

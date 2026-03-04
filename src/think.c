@@ -8,24 +8,15 @@ void think(float frametime)
 {
     thinker_t *thinker;
 
-    thinker_t *prev, *next;
+    thinker_t *next;
 
     for(thinker=thinkers; thinker; thinker=next)
     {
         next = thinker->next;
         if(!thinker->func(thinker, frametime))
             continue;
-        
-        prev = thinker->prev;
 
-        if(prev)
-            prev->next = next;
-        if(next)
-            next->prev = prev;
-        if(thinker == thinkers)
-            thinkers = next;
-        
-        free(thinker);
+        freethinker(thinker);
     }
 }
 
@@ -51,6 +42,9 @@ void freethinker(thinker_t* thinker)
         next->prev = prev;
     if(thinker == thinkers)
         thinkers = next;
+
+    if(thinker->freefunc)
+        thinker->freefunc(thinker);
     
     free(thinker);
 }

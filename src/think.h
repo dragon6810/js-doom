@@ -7,10 +7,12 @@ typedef struct thinker_s thinker_t;
 
 // return true if the thinker should be killed
 typedef bool (*thinkfunc_t)(thinker_t* thinker, float ft);
+typedef bool (*thinkfreefunc_t)(thinker_t* thinker);
 
 struct thinker_s
 {
     thinkfunc_t func;
+    thinkfreefunc_t freefunc;
     thinker_t *prev, *next;
 };
 

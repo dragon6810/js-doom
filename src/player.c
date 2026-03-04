@@ -213,7 +213,8 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
         level_placemobj(playobj);
     }
 
-    floorz = level_mobjfloorheight(playobj);
+    level_mobjheights(playobj);
+    floorz = mobjfloorheight;
     if(playobj->info.z <= floorz)
     {
         if(airborn)
@@ -236,7 +237,8 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
 
     playobj->info.angle = cmd->angle;
 
-    floorz = level_mobjfloorheight(playobj);
+    level_mobjheights(playobj);
+    floorz = mobjfloorheight;
     if(playobj->info.z <= floorz)
     {
         sinangle = ANGSIN(playobj->info.angle);
