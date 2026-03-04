@@ -12,6 +12,7 @@
 #include "predict.h"
 #include "render.h"
 #include "screen.h"
+#include "think.h"
 #include "wad.h"
 
 int screenwidth;
@@ -50,6 +51,8 @@ void gatherinput(void)
     if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.angle -= turnspeed;
 }
 
+float lastplayerz = INFINITY, playerz;
+
 void loop(void)
 {
     int i;
@@ -73,19 +76,32 @@ void loop(void)
 
     recvfromserver(curtime / 1000.0);
 
-    predictplayer();
-    interpentities(curtime / 1000.0);
+    think(frametime);
 
-    sendinputs = false;
-    if(level_episode != -1 && level_map != -1)
+    if(serverconn.state == CLSTATE_CONNECTED && mobjs[serverconn.edict].info.exists)
     {
-        gatherinput();
+        sendinputs = false;
+        if(level_episode != -1 && level_map != -1)
+        {
+            predictplayer();
+            interpentities(curtime / 1000.0);
+            
+            gatherinput();
 
-        viewx = mobjs[serverconn.edict].info.x;
-        viewy = mobjs[serverconn.edict].info.y;
-        viewz = mobjs[serverconn.edict].info.z + 41 + player_calcheadbob(&mobjs[serverconn.edict], progtime);
-        viewangle = mobjs[serverconn.edict].info.angle;
-        render();
+            playerz = mobjs[serverconn.edict].info.z;
+            if(lastplayerz != INFINITY && playerz > lastplayerz)
+            {
+                pviewheight -= playerz - lastplayerz;
+                deltaviewheight = (41.0 - pviewheight) / 8;
+            }
+            lastplayerz = playerz;
+
+            viewx = mobjs[serverconn.edict].info.x;
+            viewy = mobjs[serverconn.edict].info.y;
+            viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
+            viewangle = mobjs[serverconn.edict].info.angle;
+            render();
+        }
     }
 
     sendtoserver();
@@ -124,8 +140,8 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
 
     net_init();
-    
     render_init();
+    player_init();
 
     keystates = SDL_GetKeyboardState(NULL);
 

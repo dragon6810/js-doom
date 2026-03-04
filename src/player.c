@@ -5,9 +5,19 @@
 #define TICFRIC 0.90625
 #define GRAVITY 1225.0
 
+#define VIEWHEIGHT 41
+
 object_t *slideobj;
 angle_t slideangle;
 float disttowall;
+
+float pviewheight = VIEWHEIGHT, deltaviewheight = 0;
+
+void player_init(void)
+{
+    pviewheight = VIEWHEIGHT;
+    deltaviewheight = 0;
+}
 
 static bool player_slidecollider(float x1, float y1, float x2, float y2, linedef_t* line, float t)
 {
@@ -178,7 +188,7 @@ moved:
     playobj->info.yvel = (tryy - y) / frametime;
 }
 
-static void player_trymove(object_t* playobj, float frametime)
+static void player_trymove(object_t* playobj, float frametime, bool airborn)
 {
     float x, y, floorz;
 
@@ -204,6 +214,8 @@ static void player_trymove(object_t* playobj, float frametime)
     floorz = level_mobjfloorheight(playobj);
     if(playobj->info.z <= floorz)
     {
+        if(airborn)
+            deltaviewheight = playobj->info.zvel / 35.0 / 8;
         playobj->info.z = floorz;
         playobj->info.zvel = 0;
     }
@@ -218,36 +230,41 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
     float sinangle, cosangle;
     float thrustx, thrusty;
     float framefric;
-
-    sinangle = ANGSIN(playobj->info.angle);
-    cosangle = ANGCOS(playobj->info.angle);
-
-    leftmove = forwardmove = 0;
-    if(cmd->flags & CMD_FORWARD)
-        forwardmove += FORWARDTHRUST;
-    if(cmd->flags & CMD_BACK)
-        forwardmove -= FORWARDTHRUST;
-    if(cmd->flags & CMD_LEFT)
-        leftmove += SIDETHRUST;
-    if(cmd->flags & CMD_RIGHT)
-        leftmove -= SIDETHRUST;
-
-    thrustx = (forwardmove * cosangle - leftmove * sinangle) * 35.0;
-    thrusty = (forwardmove * sinangle + leftmove * cosangle) * 35.0;
-
-    playobj->info.xvel += thrustx * cmd->frametime;
-    playobj->info.yvel += thrusty * cmd->frametime;
+    float floorz;
 
     playobj->info.angle = cmd->angle;
 
-    framefric = powf(TICFRIC, 35.0f * cmd->frametime);
-    playobj->info.xvel *= framefric;
-    playobj->info.yvel *= framefric;
+    floorz = level_mobjfloorheight(playobj);
+    if(playobj->info.z <= floorz)
+    {
+        sinangle = ANGSIN(playobj->info.angle);
+        cosangle = ANGCOS(playobj->info.angle);
 
-    player_trymove(playobj, cmd->frametime);
+        leftmove = forwardmove = 0;
+        if(cmd->flags & CMD_FORWARD)
+            forwardmove += FORWARDTHRUST;
+        if(cmd->flags & CMD_BACK)
+            forwardmove -= FORWARDTHRUST;
+        if(cmd->flags & CMD_LEFT)
+            leftmove += SIDETHRUST;
+        if(cmd->flags & CMD_RIGHT)
+            leftmove -= SIDETHRUST;
+
+        thrustx = (forwardmove * cosangle - leftmove * sinangle) * 35.0;
+        thrusty = (forwardmove * sinangle + leftmove * cosangle) * 35.0;
+
+        playobj->info.xvel += thrustx * cmd->frametime;
+        playobj->info.yvel += thrusty * cmd->frametime;
+
+        framefric = powf(TICFRIC, 35.0f * cmd->frametime);
+        playobj->info.xvel *= framefric;
+        playobj->info.yvel *= framefric;
+    }
+
+    player_trymove(playobj, cmd->frametime, playobj->info.z > floorz);
 }
 
-float player_calcheadbob(object_t* playobj, float time)
+static float player_calcheadbob(object_t* playobj, float time)
 {
     float amp, phase;
 
@@ -259,4 +276,27 @@ float player_calcheadbob(object_t* playobj, float time)
     phase = 7 * M_PI_2 * time;
 
     return 0.5 * sin(phase) * amp;
+}
+
+float player_getviewheight(object_t* playobj, float time, float frametime)
+{
+    float bob;
+
+    pviewheight += deltaviewheight * frametime * 35.0;
+    if(pviewheight >= VIEWHEIGHT)
+    {
+        pviewheight = VIEWHEIGHT;
+        deltaviewheight = 0;
+    }
+    if(pviewheight < VIEWHEIGHT / 2.0)
+    {
+        pviewheight = VIEWHEIGHT / 2.0;
+        if(deltaviewheight <= 0)
+            deltaviewheight = 1;
+    }
+    if(pviewheight < VIEWHEIGHT)
+        deltaviewheight += 0.25 * frametime * 35.0;
+
+    bob = player_calcheadbob(playobj, time);
+    return bob + pviewheight + playobj->info.z;
 }

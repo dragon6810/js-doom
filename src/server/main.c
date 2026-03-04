@@ -9,6 +9,7 @@
 #include "net.h"
 #include "wad.h"
 #include "level.h"
+#include "think.h"
 
 #define TICRATE         35
 #define TICMICROSECONDS (1000000 / TICRATE)
@@ -23,6 +24,8 @@ static uint64_t nowmicro(void)
 static void tic(void)
 {
     recvfromclients();
+
+    think(1.0 / TICRATE);
 
     sendtoclients();
 }

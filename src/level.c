@@ -639,6 +639,9 @@ void level_loadthings(lumpinfo_t* header)
             continue;
         }
 
+        if(mobjinfo[type].flags & MF_NOTDMATCH)
+            continue;
+
         if(mobjmax >= MAX_MOBJ-1)
         {
             fprintf(stderr, "level_loadthings: level has too many things\n");

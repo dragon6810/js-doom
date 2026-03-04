@@ -24,7 +24,10 @@ typedef struct
 
 extern player_t player;
 
+extern float pviewheight, deltaviewheight;
+
+void player_init(void);
 void player_docmd(object_t* playobj, const playercmd_t* cmd);
-float player_calcheadbob(object_t* playobj, float time);
+float player_getviewheight(object_t* playobj, float time, float frametime);
 
 #endif
