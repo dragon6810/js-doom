@@ -175,15 +175,19 @@ extern startloc_t dmstarts[MAX_DMSTART];
 
 extern texture_t* levelskytex;
 
+extern float linerangebottom;
+extern float linerangetop;
+
 // return true if actual collision
-typedef bool (*linecollider_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);
+typedef bool (*linelinecol_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);
+typedef bool (*mobjlinecol_t)(float x1, float y1, float x2, float y2, object_t* mobj, float t);
 
 void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
 // finds an index to put a new mobj. -1 if edict full
 int level_findnewedict(void);
 bool level_validobjpos(object_t* mobj, float x, float y);
-bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2, linecollider_t collider);
+bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, mobjlinecol_t mobjcol);
 float level_mobjfloorheight(object_t* mobj);
 int level_nodeside(node_t* node, float x, float y);
 ssector_t* level_getpointssector(float x, float y);

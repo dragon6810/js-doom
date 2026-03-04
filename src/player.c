@@ -116,7 +116,7 @@ attempt:
     bestdist = INFINITY;
     bestslideang = 0;
 
-    if(level_castsegmentagainstlines(leadx, leady, leadx+velx, leady+vely, player_slidecollider))
+    if(level_traverseline(leadx, leady, leadx+velx, leady+vely, false, player_slidecollider, NULL))
     {
         hitanything = true;
         if(disttowall < bestdist)
@@ -125,7 +125,7 @@ attempt:
             bestslideang = slideangle;
         }
     }
-    if(level_castsegmentagainstlines(trailx, leady, trailx+velx, leady+vely, player_slidecollider))
+    if(level_traverseline(trailx, leady, trailx+velx, leady+vely, false, player_slidecollider, NULL))
     {
         hitanything = true;
         if(disttowall < bestdist)
@@ -134,7 +134,7 @@ attempt:
             bestslideang = slideangle;
         }
     }
-    if(level_castsegmentagainstlines(leadx, traily, leadx+velx, traily+vely, player_slidecollider))
+    if(level_traverseline(leadx, traily, leadx+velx, traily+vely, false, player_slidecollider, NULL))
     {
         hitanything = true;
         if(disttowall < bestdist)

@@ -51,3 +51,24 @@ float segmentsegment(float v1x1, float v1y1, float v1x2, float v1y2, float v2x1,
 
     return t;
 }
+
+float segmentsquare(float x1, float y1, float x2, float y2, float x, float y, float radius)
+{
+    float t, mint;
+
+    mint = INFINITY;
+
+    t = segmentsegment(x1, y1, x2, y2, x - radius, y - radius, x - radius, y + radius);
+    if(t < mint) mint = t;
+
+    t = segmentsegment(x1, y1, x2, y2, x + radius, y - radius, x + radius, y + radius);
+    if(t < mint) mint = t;
+
+    t = segmentsegment(x1, y1, x2, y2, x - radius, y - radius, x + radius, y - radius);
+    if(t < mint) mint = t;
+
+    t = segmentsegment(x1, y1, x2, y2, x - radius, y + radius, x + radius, y + radius);
+    if(t < mint) mint = t;
+
+    return mint;
+}

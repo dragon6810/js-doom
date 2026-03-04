@@ -49,5 +49,9 @@ fixed_t fixeddiv(fixed_t a, fixed_t b);
 // t can be < 0 or > 1 but that means its not on the segment
 // INFINITY means line 1 didnt touch seg 2
 float segmentsegment(float v1x1, float v1y1, float v1x2, float v1y2, float v2x1, float v2y1, float v2x2, float v2y2);
+// returns t along line where it hits square
+// t can be < 0 or > 1 but that means its not on the segment
+// INFINITY means line didnt touch square
+float segmentsquare(float x1, float y1, float x2, float y2, float x, float y, float radius);
 
 #endif

@@ -33,6 +33,18 @@ playercmd_t inputcmd;
 
 player_t player = {};
 
+void douse(void)
+{
+    netbuf_t netbuf;
+
+    netbuf_init(&netbuf);
+    netbuf_writeu8(&netbuf, CSV_USE);
+    netchan_queue(&serverconn.chan, &netbuf);
+    netbuf_free(&netbuf);
+}
+
+bool uselastframe = false;
+
 void gatherinput(void)
 {
     const angle_t turnspeed = DEGTOANG(180.0 * inputcmd.frametime);
@@ -49,6 +61,17 @@ void gatherinput(void)
     inputcmd.angle = mobjs[serverconn.edict].info.angle;
     if(keystates[SDL_SCANCODE_LEFT]) inputcmd.angle += turnspeed;
     if(keystates[SDL_SCANCODE_RIGHT]) inputcmd.angle -= turnspeed;
+
+    if(keystates[SDL_SCANCODE_SPACE])
+    {
+        if(!uselastframe)
+        {
+            douse();
+            uselastframe = true;
+        }
+    }
+    else
+        uselastframe = false;
 }
 
 float lastplayerz = INFINITY, playerz;
@@ -85,7 +108,7 @@ void loop(void)
         {
             predictplayer();
             interpentities(curtime / 1000.0);
-            
+
             gatherinput();
 
             playerz = mobjs[serverconn.edict].info.z;

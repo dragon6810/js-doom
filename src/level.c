@@ -422,15 +422,17 @@ bool level_validobjpos(object_t* mobj, float x, float y)
     return true;
 }
 
-bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2, linecollider_t collider)
+bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, mobjlinecol_t mobjcol)
 {
     int i;
+    object_t *mobj;
 
     float dx, dy;
     int stepx, stepy;
     float tmaxx, tmaxy, tdx, tdy;
     int bx, by, ex, ey, b;
     linedef_t *line, *bestline;
+    object_t *bestmobj;
     float t, bestt, prevt;
 
     bx = floorf((x1 - blockmap.xorg) / BLOCK_SIZE);
@@ -472,8 +474,9 @@ bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2, linec
             prevt = -1.0f;
             for(;;)
             {
-                bestline = NULL;
+                bestline = bestmobj = NULL;
                 bestt = INFINITY;
+
                 for(i=0; i<blockmap.blks[b].nlines; i++)
                 {
                     line = blockmap.blks[b].lines[i];
@@ -486,10 +489,29 @@ bool level_castsegmentagainstlines(float x1, float y1, float x2, float y2, linec
                         bestt = t;
                     }
                 }
-                if(!bestline)
+
+                for(mobj=blockmap.blks[b].mobjs; mobj; mobj=mobj->bnext)
+                {
+                    t = segmentsquare(x1, y1, x2, y2, mobj->info.x, mobj->info.y, mobjinfo[mobj->info.type].radius);
+
+                    if(t == INFINITY || t < 0 || t > 1 || t <= prevt)
+                        continue;
+
+                    if(t < bestt)
+                    {
+                        bestline = NULL;
+                        bestmobj = mobj;
+                        bestt = t;
+                    }
+                }
+
+                if(!bestline && !bestmobj)
                     break;
                 prevt = bestt;
-                if(collider(x1, y1, x2, y2, bestline, bestt))
+
+                if(bestline && linecol && linecol(x1, y1, x2, y2, bestline, bestt) && !noearlyexit)
+                    return true;
+                if(bestmobj && mobjcol && mobjcol(x1, y1, x2, y2, mobj, bestt) && !noearlyexit)
                     return true;
             }
         }
@@ -639,7 +661,7 @@ void level_loadthings(lumpinfo_t* header)
             continue;
         }
 
-        if(mobjinfo[type].flags & MF_NOTDMATCH)
+        if(mobjinfo[type].flags & MF_NOTDMATCH || mobjinfo[type].flags & MF_COUNTKILL)
             continue;
 
         if(mobjmax >= MAX_MOBJ-1)

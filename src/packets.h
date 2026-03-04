@@ -24,6 +24,7 @@ typedef enum
     SVC_CHANGELEVEL, // int8_t episode, int8_t map
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
+    CSV_USE, // 
 } packet_e;
 
 typedef struct

@@ -160,6 +160,12 @@ void sendtoclients(void)
     }
 }
 
+void* recvuse(client_t* cl, void* buf, void* curpos, int len)
+{
+    printf("client use\n");
+    return curpos;
+}
+
 void* recvinput(client_t* cl, void* buf, void* curpos, int len)
 {
     playercmd_t cmd;
@@ -204,6 +210,10 @@ static void recvpacket(client_t* cl, void* buf, int len)
             break;
         case CSV_INPUT:
             if(!(curpos = recvinput(cl, buf, curpos, len)))
+                return;
+            break;
+        case CSV_USE:
+            if(!(curpos = recvuse(cl, buf, curpos, len)))
                 return;
             break;
         default:
