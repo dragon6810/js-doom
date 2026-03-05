@@ -61,7 +61,7 @@ void interpsectors(float abstime)
     for(i=0; i<nsectors; i++)
     {
         sectors[i].floorheight = LERP(oldgs.sectorinfos[i].floorheight, newgs.sectorinfos[i].floorheight, t);
-        sectors[i].ceilheight  = LERP(oldgs.sectorinfos[i].ceilheight,  newgs.sectorinfos[i].ceilheight,  t);
+        sectors[i].ceilheight = LERP(oldgs.sectorinfos[i].ceilheight, newgs.sectorinfos[i].ceilheight, t);
     }
 }
 

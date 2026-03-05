@@ -15,6 +15,7 @@
 #include "packets.h"
 #include "predict.h"
 #include "render.h"
+#include "stbar.h"
 #include "wad.h"
 
 conn_t serverconn = {};
@@ -222,6 +223,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     }
 
     render_init();
+    stbar_init();
 
     memset(&player, 0, sizeof(player));
     player.mobj = &mobjs[serverconn.edict];

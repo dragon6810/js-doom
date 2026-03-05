@@ -12,6 +12,7 @@
 #include "predict.h"
 #include "render.h"
 #include "screen.h"
+#include "stbar.h"
 #include "think.h"
 #include "wad.h"
 
@@ -125,6 +126,7 @@ void loop(void)
             viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
             viewangle = mobjs[serverconn.edict].info.angle;
             render();
+            stbar_draw();
         }
     }
 
@@ -165,6 +167,7 @@ int main()
 
     net_init();
     render_init();
+    stbar_init();
     player_init();
 
     keystates = SDL_GetKeyboardState(NULL);

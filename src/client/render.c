@@ -1,6 +1,7 @@
 #include "render.h"
 
 #include "client.h"
+#include "draw.h"
 #include "level.h"
 #include "screen.h"
 #include "tex.h"
@@ -30,6 +31,8 @@ int frameindex = 0;
 
 uint8_t *scalemap[LIGHTLEVELS][SCALEBANDS];
 uint8_t *zmap[LIGHTLEVELS][ZBANDS];
+
+int rectwidth, rectheight;
 
 typedef struct
 {
@@ -105,6 +108,9 @@ void render_init(void)
     int baselevel, level;
     float scale;
 
+    rectwidth = screenwidth;
+    rectheight = screenheight - 32.0 * (screenheight / 200.0);
+
     wad_setpalette(0);
     wad_loadcolormap();
 
@@ -130,7 +136,7 @@ void render_init(void)
     if(spanstarts)
         free(spanstarts);
 
-    spanstarts = malloc(screenheight * sizeof(int16_t));
+    spanstarts = malloc(rectheight * sizeof(int16_t));
 
     if(clipbuff)
         free(clipbuff);
@@ -213,52 +219,6 @@ angle_t render_ytoangle(int y)
     return ANGATAN(tangent);
 }
 
-void render_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t texmid, fixed_t iscale, fixed_t scale)
-{
-    int y;
-
-    fixed_t tfrac, startfrac, lenfrac, posttop, halfyfrac;
-    fixed_t y1frac, y2frac;
-    int dst;
-    color_t color;
-
-    y1frac = y1 << FIXEDSHIFT;
-    y2frac = y2 << FIXEDSHIFT;
-
-    halfyfrac = FLOATTOFIXED(halfy);
-
-    while(post->ystart != 0xFF)
-    {
-        startfrac = (fixed_t) post->ystart << FIXEDSHIFT;
-        lenfrac = (fixed_t) post->len << FIXEDSHIFT;
-
-        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac;
-        if(posttop > y2frac)
-        {
-            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
-            continue;
-        }
-
-        if(posttop < y1frac)
-        {
-            tfrac = fixedmul(y1frac - posttop, iscale);
-            posttop = y1frac;
-        }
-        else
-            tfrac = 0;
-
-        for(y=posttop>>FIXEDSHIFT, dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
-        {
-            if(tfrac >= lenfrac || y > y2)
-                break;
-
-            color = palette[map[post->payload[tfrac >> FIXEDSHIFT]]];
-            pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
-        }
-        post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
-    }
-}
-
 void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
 {
     int x;
@@ -332,7 +292,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
             continue;
 
         column = (post_t*) (tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3);
-        render_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scalefrac);
+        draw_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scalefrac);
         seg->maskeds[x - seg->x1] = INT16_MAX;
     }
 }
@@ -370,7 +330,7 @@ void render_clipthing(visthing_t* visthing, int w)
 
             if(!drawseg->top && !drawseg->bottom)
             {
-                visthingtop[x] = screenheight;
+                visthingtop[x] = rectheight;
                 visthingbottom[x] = -1;
                 continue;
             }
@@ -405,7 +365,7 @@ void render_drawthing(visthing_t* thing)
     for(x=MAX(thing->x, 0); x<thing->x+w&&x<screenwidth; x++)
     {
         visthingtop[x] = -1;
-        visthingbottom[x] = screenheight;
+        visthingbottom[x] = rectheight;
     }
 
     render_clipthing(thing, w);
@@ -436,7 +396,7 @@ void render_drawthing(visthing_t* thing)
             continue;
         
         post = (post_t*) ((uint8_t*) thing->patch + thing->patch->postoffs[s >> FIXEDSHIFT]);
-        render_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
+        draw_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
     }
 }
 
@@ -596,8 +556,8 @@ void render_drawskyplane(visplane_t* plane)
         if((plane->tops[x] == -1 && plane->bottoms[x] == -1) || plane->tops[x] > plane->bottoms[x])
             continue;
 
-        top = CLAMP(plane->tops[x], 0, screenheight - 1);
-        bottom = CLAMP(plane->bottoms[x], 0, screenheight - 1);
+        top = CLAMP(plane->tops[x], 0, rectheight - 1);
+        bottom = CLAMP(plane->bottoms[x], 0, rectheight - 1);
 
         a = render_xtoangle(x) + viewangle;
         s = (float) a / (float) ANG90 * (float) SKYW;
@@ -928,8 +888,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(pltop <= plbot)
             {
-                ceilplane->tops[x] = CLAMP(pltop, 0, screenheight - 1);
-                ceilplane->bottoms[x] = CLAMP(plbot, 0, screenheight - 1);
+                ceilplane->tops[x] = CLAMP(pltop, 0, rectheight - 1);
+                ceilplane->bottoms[x] = CLAMP(plbot, 0, rectheight - 1);
             }
             else
                 ceilplane->tops[x] = ceilplane->bottoms[x] = -1;
@@ -945,8 +905,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(pltop <= plbot)
             {
-                floorplane->tops[x] = CLAMP(pltop, 0, screenheight - 1);
-                floorplane->bottoms[x] = CLAMP(plbot, 0, screenheight - 1);
+                floorplane->tops[x] = CLAMP(pltop, 0, rectheight - 1);
+                floorplane->bottoms[x] = CLAMP(plbot, 0, rectheight - 1);
             }
             else
                 floorplane->tops[x] = floorplane->bottoms[x] = -1;
@@ -981,7 +941,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(!seg->backside)
             {
-                topclips[x] = screenheight;
+                topclips[x] = rectheight;
                 bottomclips[x] = -1;
 
                 if(pxtop <= pxbottom && seg->frontside->mid)
@@ -1326,7 +1286,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     x = (centerx - fixedmul((fixed_t) pic->xoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
     y = (centery - fixedmul((fixed_t) pic->yoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
 
-    if(x >= screenwidth || y >= screenheight)
+    if(x >= screenwidth || y >= rectheight)
         return true;
 
     w = fixedmul((fixed_t) pic->w << FIXEDSHIFT, visthing->scale) >> FIXEDSHIFT;
@@ -1411,7 +1371,7 @@ void render_setup(void)
     for(i=0; i<screenwidth; i++)
     {
         topclips[i] = -1;
-        bottomclips[i] = screenheight;
+        bottomclips[i] = rectheight;
     }
 
     nvisplanes = 0;

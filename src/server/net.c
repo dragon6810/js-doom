@@ -10,7 +10,7 @@
 
 // ---- Receive queue ----
 
-#define NET_QUEUE_LEN 64
+#define NET_QUEUE_LEN 512
 #define MAX_PEERS MAX_CLIENT
 
 typedef struct

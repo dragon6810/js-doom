@@ -7,7 +7,7 @@
 #include "packets.h"
 #include "player.h"
 
-#define PRED_WINDOW 64
+#define PRED_WINDOW 256
 
 extern playercmd_t inputwindow[PRED_WINDOW];
 extern gamestate_t oldgs;
