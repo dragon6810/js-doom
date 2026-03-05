@@ -13,6 +13,7 @@ int net_recv_disconnect(int *dc_out);
 #include "net.h"
 #include "netchan.h"
 #include "player.h"
+#include "rand.h"
 #include "wad.h"
 
 gamestate_t dummystate = {};
@@ -411,17 +412,21 @@ void spawnplayer(client_t* client)
 {
     int edict;
 
+    startloc_t *start;
+
     edict = level_findnewedict();
     assert(edict != -1);
+
+    start = &dmstarts[prand() % numdmstarts];
 
     memset(&client->player, 0, sizeof(player_t));
     client->player.mobj = &mobjs[edict];
     memset(client->player.mobj, 0, sizeof(object_t));
     client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;
-    client->player.mobj->info.x = dmstarts[0].x;
-    client->player.mobj->info.y = dmstarts[0].y;
-    client->player.mobj->info.angle = dmstarts[0].angle;
+    client->player.mobj->info.x = start->x;
+    client->player.mobj->info.y = start->y;
+    client->player.mobj->info.angle = start->angle;
     level_placemobj(client->player.mobj);
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
