@@ -4,6 +4,7 @@
 #include "info.h"
 #include "doommath.h"
 #include "tex.h"
+#include "think.h"
 #include "wad.h"
 
 #define TICRATE 35
@@ -58,6 +59,8 @@ struct object_s
 
     ssector_t *ssector;
     block_t *blk;
+
+    thinker_t *thinker;
 
     object_t *snext, *sprev; // sector list
     object_t *bnext, *bprev; // block list
@@ -203,7 +206,10 @@ int level_lineside(linedef_t* line, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 float level_getlowestneighborceil(sector_t* sec);
 bool level_mobjstuckinblock(int bx, int by);
+void level_setmobjstate(object_t* obj, statenum_t state);
 bool level_mobjstuckinsector(sector_t* sector);
+void level_addmobjthinker(object_t* obj);
+void level_killmobj(object_t* obj);
 void level_load(int episode, int map);
 
 #endif

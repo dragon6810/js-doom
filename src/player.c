@@ -51,31 +51,40 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
 
     int nukagetype;
 
-    if(thinker->player->mobj->ssector
-    && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight)
+    if(INRANGE(thinker->player->mobj->info.state, S_PLAY, S_PLAY_PAIN2))
     {
-        nukagetype = 0;
-        floortex = thinker->player->mobj->ssector->sector->floortex->name;
-        if(!strcmp(floortex, "NUKAGE1") || !strcmp(floortex, "NUKAGE2") || !strcmp(floortex, "NUKAGE3"))
-            nukagetype = 1;
-
-        if(nukagetype)
+        if(thinker->player->mobj->ssector
+        && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight)
         {
-            if(!thinker->wasonnukage)
+            nukagetype = 0;
+            floortex = thinker->player->mobj->ssector->sector->floortex->name;
+            if(!strcmp(floortex, "NUKAGE1") || !strcmp(floortex, "NUKAGE2") || !strcmp(floortex, "NUKAGE3"))
+                nukagetype = 1;
+
+            if(nukagetype)
+            {
+                if(!thinker->wasonnukage)
+                    thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
+                thinker->wasonnukage = true;
+            }
+            else
+                thinker->wasonnukage = false;
+
+            if(nukagetype == 1 && progtime - thinker->lastdamage >= damageperiod)
+            {
+                thinker->player->info.health -= 5;
                 thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
-            thinker->wasonnukage = true;
+            }
         }
         else
             thinker->wasonnukage = false;
 
-        if(nukagetype == 1 && progtime - thinker->lastdamage >= damageperiod)
+        if(thinker->player->info.health <= 0)
         {
-            thinker->player->info.health -= 5;
-            thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
+            thinker->player->info.health = 0;
+            level_setmobjstate(thinker->player->mobj, mobjinfo[MT_PLAYER].deathstate);
         }
     }
-    else
-        thinker->wasonnukage = false;
 
     return false;
 }

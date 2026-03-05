@@ -691,6 +691,58 @@ bool level_mobjstuckinsector(sector_t* sector)
     return false;
 }
 
+typedef struct
+{
+    thinker_t thinker;
+    float timeinstate;
+    object_t *mobj;
+} mobjthink_t;
+
+void level_setmobjstate(object_t* obj, statenum_t state)
+{
+    obj->info.state = state;
+    if(obj->thinker)
+        ((mobjthink_t*)obj->thinker)->timeinstate = 0;
+}
+
+static bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
+{
+    thinker->timeinstate += ft;
+
+    while(states[thinker->mobj->info.state].nextstate != S_NULL
+    && states[thinker->mobj->info.state].tics
+    && thinker->timeinstate > states[thinker->mobj->info.state].tics / 35.0)
+    {
+        thinker->timeinstate -= states[thinker->mobj->info.state].tics / 35.0;
+        thinker->mobj->info.state = states[thinker->mobj->info.state].nextstate;
+    }
+
+    return false;
+}
+
+static void level_mobjthinkfree(mobjthink_t* thinker)
+{
+    if(thinker->mobj && thinker->mobj->thinker == thinker)
+        thinker->mobj->thinker = thinker;
+}
+
+void level_addmobjthinker(object_t* obj)
+{
+    obj->thinker = calloc(1, sizeof(mobjthink_t));
+    obj->thinker->func = (thinkfunc_t) level_mobjthink;
+    obj->thinker->freefunc = (thinkfreefunc_t) level_mobjthinkfree;
+    ((mobjthink_t*)obj->thinker)->timeinstate = 0;
+    ((mobjthink_t*)obj->thinker)->mobj = obj;
+    addthinker(obj->thinker);
+}
+
+void level_killmobj(object_t* obj)
+{
+    if(obj->thinker)
+        freethinker(obj->thinker);
+    obj->info.exists = false;
+}
+
 void level_loadthings(lumpinfo_t* header)
 {
     int i;
@@ -756,6 +808,8 @@ void level_loadthings(lumpinfo_t* header)
 
         level_placemobj(mobj);
         mobj->info.z = mobj->ssector->sector->floorheight;
+
+        level_addmobjthinker(mobj);
     }
 
     wad_decache(lump);
