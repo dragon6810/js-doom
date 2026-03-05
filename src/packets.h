@@ -19,6 +19,16 @@
 #define SFIELD_FLOOR 0x01 // float
 #define SFIELD_CEIL  0x02 // float
 
+#define PFIELD_FLAGS 0x0001 // uint8_t
+#define PFIELD_HEALTH 0x0002 // uint16_t
+#define PFIELD_ARMOR 0x0004 // uint16_t
+#define PFIELD_WEAPONS 0x0008 // uint8_t
+#define PFIELD_BULLETS 0x0010 // uint16_t
+#define PFIELD_SHELLS 0x0020 // uint16_t
+#define PFIELD_ROCKETS 0x0040 // uint16_t
+#define PFIELD_CELLS 0x0080 // uint16_t
+#define PFIELD_FRAGS 0x100 // uint16_t
+
 typedef struct
 {
     float floorheight;
@@ -34,6 +44,7 @@ typedef enum
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF, n times (uint16_t sector, uint8_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
     CSV_USE, // 
+    SVC_PLAYERDELTAS, // uint16_t fields, <fields>
 } packet_e;
 
 typedef struct

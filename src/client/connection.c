@@ -227,6 +227,7 @@ static void* recvshake(void* buf, void* curpos, int len)
 
     memset(&player, 0, sizeof(player));
     player.mobj = &mobjs[serverconn.edict];
+    player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));
     mobjs[serverconn.edict].info.type = MT_PLAYER;

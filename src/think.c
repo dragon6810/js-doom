@@ -4,7 +4,7 @@
 
 thinker_t* thinkers = NULL;
 
-void think(float frametime)
+void think(float frametime, float progtime)
 {
     thinker_t *thinker;
 
@@ -13,7 +13,7 @@ void think(float frametime)
     for(thinker=thinkers; thinker; thinker=next)
     {
         next = thinker->next;
-        if(!thinker->func(thinker, frametime))
+        if(!thinker->func(thinker, frametime, progtime))
             continue;
 
         freethinker(thinker);

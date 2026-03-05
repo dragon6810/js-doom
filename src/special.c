@@ -16,7 +16,7 @@ typedef struct
     sector_t *sector;
 } doorthink_t;
 
-bool doorthink(doorthink_t* thinker, float ft)
+bool doorthink(doorthink_t* thinker, float ft, float progtime)
 {
     switch(thinker->state)
     {

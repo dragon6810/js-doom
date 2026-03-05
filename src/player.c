@@ -1,5 +1,9 @@
 #include "player.h"
 
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "special.h"
 
 #define FORWARDTHRUST 50.0
@@ -8,6 +12,13 @@
 #define GRAVITY 1225.0
 
 #define VIEWHEIGHT 41
+
+typedef struct
+{
+    thinker_t thinker;
+    player_t *player;
+    float lastdamage;
+} playerthink_t;
 
 object_t *slideobj;
 angle_t slideangle;
@@ -19,6 +30,63 @@ void player_init(void)
 {
     pviewheight = VIEWHEIGHT;
     deltaviewheight = 0;
+}
+
+static bool player_think(playerthink_t* thinker, float frametime, float progtime)
+{
+    const float damageperiod = 32.0 / 35.0;
+    
+    const char *floortex;
+
+    if(thinker->player->mobj->ssector
+    && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight
+    && progtime - thinker->lastdamage >= damageperiod)
+    {
+        floortex = thinker->player->mobj->ssector->sector->floortex->name;
+
+        if(!strcmp(floortex, "NUKAGE1") || !strcmp(floortex, "NUKAGE2") || !strcmp(floortex, "NUKAGE3"))
+        {
+            thinker->player->info.health -= 5;
+            thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
+        }
+    }
+
+    return false;
+}
+
+static void player_freethink(playerthink_t* thinker)
+{
+    if(thinker->player && thinker->player->thinker == thinker)
+        thinker->player->thinker = NULL;
+}
+
+void player_addthinker(player_t* player)
+{
+    player->thinker = calloc(1, sizeof(playerthink_t));
+
+    player->thinker->func = (thinkfunc_t) player_think;
+    player->thinker->freefunc = (thinkfreefunc_t) player_freethink;
+    ((playerthink_t*) player->thinker)->player = player;
+    ((playerthink_t*) player->thinker)->lastdamage = -32.0 / 35.0;
+
+    addthinker(player->thinker);
+}
+
+void player_free(player_t* player)
+{
+    freethinker(player->thinker);
+}
+
+void player_initinfo(playerinfo_t* info)
+{
+    info->flags = PFLAG_BLUCARD | PFLAG_YELCARD | PFLAG_REDCARD;
+    info->health = 100;
+    info->armor = 0;
+    info->weapons = (1 << WEAPON_FIST) | (1 << WEAPON_PIST);
+    info->ammo[AMMO_BUL] = 50;
+    info->ammo[AMMO_SHEL] = 0;
+    info->ammo[AMMO_ROCK] = 0;
+    info->ammo[AMMO_CELL] = 0;
 }
 
 static bool player_slidecollider(float x1, float y1, float x2, float y2, linedef_t* line, float t)

@@ -186,6 +186,7 @@ void disconnectclient(int i)
     if(cl->player.mobj)
     {
         level_unplacemobj(cl->player.mobj);
+        player_free(&cl->player);
         memset(&cl->player.mobj->info, 0, sizeof(objinfo_t));
     }
 
@@ -420,6 +421,8 @@ void spawnplayer(client_t* client)
     start = &dmstarts[prand() % numdmstarts];
 
     memset(&client->player, 0, sizeof(player_t));
+    player_initinfo(&client->player.info);
+    player_addthinker(&client->player);
     client->player.mobj = &mobjs[edict];
     memset(client->player.mobj, 0, sizeof(object_t));
     client->player.mobj->info.exists = true;

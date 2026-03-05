@@ -100,7 +100,7 @@ void loop(void)
 
     recvfromserver(curtime / 1000.0);
 
-    think(frametime);
+    think(frametime, progtime);
 
     if(serverconn.state == CLSTATE_CONNECTED)
     {

@@ -21,13 +21,17 @@ static uint64_t nowmicro(void)
     return (uint64_t)tv.tv_sec * 1000000 + (uint64_t)tv.tv_usec;
 }
 
+int ntics = 0;
+
 static void tic(void)
 {
     recvfromclients();
 
-    think(1.0 / TICRATE);
+    think(1.0 / TICRATE, (float) ntics / TICRATE);
 
     sendtoclients();
+
+    ntics++;
 }
 
 int ep = -1, map = -1;
