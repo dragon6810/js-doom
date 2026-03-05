@@ -76,6 +76,71 @@ static void* recvsectordeltas(void* buf, void* curpos, int len)
     return curpos;
 }
 
+static void* recvplayerdeltas(void* buf, void* curpos, int len)
+{
+    int fields;
+    playerinfo_t info;
+
+    fields = net_readu16(buf, curpos, len);
+    curpos += 2;
+    if(netpacketfull)
+        return NULL;
+
+    info = player.info;
+    if(fields & PFIELD_FLAGS)
+    {
+        info.flags = net_readu8(buf, curpos, len);
+        curpos += 1;
+    }
+    if(fields & PFIELD_HEALTH)
+    {
+        info.health = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_ARMOR)
+    {
+        info.armor = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_WEAPONS)
+    {
+        info.weapons = net_readu8(buf, curpos, len);
+        curpos += 1;
+    }
+    if(fields & PFIELD_BULLETS)
+    {
+        info.ammo[AMMO_BUL] = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_SHELLS)
+    {
+        info.ammo[AMMO_SHEL] = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_ROCKETS)
+    {
+        info.ammo[AMMO_ROCK] = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_CELLS)
+    {
+        info.ammo[AMMO_CELL] = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_FRAGS)
+    {
+        info.frags = net_readu16(buf, curpos, len);
+        curpos += 2;
+    }
+
+    if(netpacketfull)
+        return NULL;
+
+    player.info = info;
+
+    return curpos;
+}
+
 static void* recventdeltas(void* buf, void* curpos, int len)
 {
     int edict;
@@ -271,6 +336,10 @@ static void recvpacket(void *buf, int len)
             break;
         case SVC_ENTDELTAS:
             if(!(curpos = recventdeltas(buf, curpos, len)))
+                return;
+            break;
+        case SVC_PLAYERDELTAS:
+            if(!(curpos = recvplayerdeltas(buf, curpos, len)))
                 return;
             break;
         default:
