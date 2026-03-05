@@ -551,11 +551,13 @@ void render_drawskyplane(visplane_t* plane)
 
     tex_stitch(levelskytex);
 
-    tstep = 200.0 / screenheight;
     for(x=plane->x1; x<=plane->x2; x++)
     {
         if((plane->tops[x] == -1 && plane->bottoms[x] == -1) || plane->tops[x] > plane->bottoms[x])
             continue;
+        
+        tstep = 200.0 / screenheight;
+        tstep *= ANGCOS(render_xtoangle(x));
 
         top = CLAMP(plane->tops[x], 0, rectheight - 1);
         bottom = CLAMP(plane->bottoms[x], 0, rectheight - 1);
@@ -724,6 +726,16 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat, int light)
     return &visplanes[nvisplanes++];
 }
 
+static float render_calcscale(angle_t angle, angle_t normal, float dist)
+{
+    float scale;
+    
+    scale = ANGCOS(angle - normal) * projectconst / (dist * ANGCOS(angle - viewangle));
+    scale = CLAMP(scale, 1.0 / 256.0, 64.0);
+	
+    return scale;
+}
+
 void render_segrange(int x1, int x2, seg_t* seg)
 {
     int x, y;
@@ -754,8 +766,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
     // perpendicular distance from line to camera
     dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
 
-    scale = scale1 = ANGCOS(a1 - normal) / MAX(dist * ANGCOS(a1 - viewangle), 0.05) * projectconst;
-    scale2 = ANGCOS(a2 - normal) / MAX(dist * ANGCOS(a2 - viewangle), 0.05) * projectconst;
+    scale = scale1 = render_calcscale(a1, normal, dist);
+    scale2 = render_calcscale(a2, normal, dist);
 
     scalestep = (scale2 - scale1) / (float) (x2 - x1);
 
@@ -1244,7 +1256,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     dz = FLOATTOFIXED(mobj->info.z - viewz);
 
     dist = fixedmul(dx, cosview) + fixedmul(dy, sinview);
-    if(dist < 1 << FIXEDSHIFT)
+    if(dist < 4 << FIXEDSHIFT)
         return true;
 
     visthing->scale = fixeddiv(projectfrac, dist);
