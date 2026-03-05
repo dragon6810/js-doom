@@ -159,9 +159,67 @@ static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
         netbuf_writefloat(buf, info.ceilheight);
 }
 
+static void addplaydeltas(client_t* cl, netbuf_t* buf)
+{
+    int fields;
+    playerinfo_t *compare, *info;
+
+    info = &cl->player.info;
+    if(!cl->chan.inack)
+        compare = &dummystate;
+    else
+        compare = &cl->playstates[cl->chan.inack % GAMESTATE_WINDOW];
+    
+    fields = 0;
+    if(compare->flags != info->flags)
+        fields |= PFIELD_FLAGS;
+    if(compare->health != info->health)
+        fields |= PFIELD_HEALTH;
+    if(compare->armor != info->armor)
+        fields |= PFIELD_ARMOR;
+    if(compare->weapons != info->weapons)
+        fields |= PFIELD_WEAPONS;
+    if(compare->ammo[AMMO_BUL] != info->ammo[AMMO_BUL])
+        fields |= PFIELD_BULLETS;
+    if(compare->ammo[AMMO_SHEL] != info->ammo[AMMO_SHEL])
+        fields |= PFIELD_SHELLS;
+    if(compare->ammo[AMMO_ROCK] != info->ammo[AMMO_ROCK])
+        fields |= PFIELD_ROCKETS;
+    if(compare->ammo[AMMO_CELL] != info->ammo[AMMO_CELL])
+        fields |= PFIELD_CELLS;
+    if(compare->frags != info->frags)
+        fields |= PFIELD_FRAGS;
+    
+    if(!fields)
+        return;
+
+    netbuf_writeu8(buf, SVC_PLAYERDELTAS);
+    netbuf_writeu16(buf, fields);
+    if(fields & PFIELD_FLAGS)
+        netbuf_writeu8(buf, info->flags);
+    if(fields & PFIELD_HEALTH)
+        netbuf_writeu16(buf, info->health);
+    if(fields & PFIELD_ARMOR)
+        netbuf_writeu16(buf, info->armor);
+    if(fields & PFIELD_WEAPONS)
+        netbuf_writeu8(buf, info->weapons);
+    if(fields & PFIELD_BULLETS)
+        netbuf_writeu16(buf, info->ammo[AMMO_BUL]);
+    if(fields & PFIELD_SHELLS)
+        netbuf_writeu16(buf, info->ammo[AMMO_SHEL]);
+    if(fields & PFIELD_ROCKETS)
+        netbuf_writeu16(buf, info->ammo[AMMO_ROCK]);
+    if(fields & PFIELD_CELLS)
+        netbuf_writeu16(buf, info->ammo[AMMO_CELL]);
+    if(fields & PFIELD_FRAGS)
+        netbuf_writeu16(buf, info->frags);
+}
+
 static void buildunreliable(client_t* cl, netbuf_t* buf)
 {
     int i;
+
+    addplaydeltas(cl, buf);
 
     netbuf_writeu8(buf, SVC_ENTDELTAS);
 

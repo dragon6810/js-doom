@@ -25,11 +25,21 @@ angle_t slideangle;
 float disttowall;
 
 float pviewheight = VIEWHEIGHT, deltaviewheight = 0;
+playerinfo_t defaultplayerinfo;
 
 void player_init(void)
 {
     pviewheight = VIEWHEIGHT;
     deltaviewheight = 0;
+
+    defaultplayerinfo.flags = PFLAG_BLUCARD | PFLAG_YELCARD | PFLAG_REDCARD;
+    defaultplayerinfo.health = 100;
+    defaultplayerinfo.armor = 0;
+    defaultplayerinfo.weapons = (1 << WEAPON_FIST) | (1 << WEAPON_PIST);
+    defaultplayerinfo.ammo[AMMO_BUL] = 50;
+    defaultplayerinfo.ammo[AMMO_SHEL] = 0;
+    defaultplayerinfo.ammo[AMMO_ROCK] = 0;
+    defaultplayerinfo.ammo[AMMO_CELL] = 0;
 }
 
 static bool player_think(playerthink_t* thinker, float frametime, float progtime)
@@ -79,14 +89,7 @@ void player_free(player_t* player)
 
 void player_initinfo(playerinfo_t* info)
 {
-    info->flags = PFLAG_BLUCARD | PFLAG_YELCARD | PFLAG_REDCARD;
-    info->health = 100;
-    info->armor = 0;
-    info->weapons = (1 << WEAPON_FIST) | (1 << WEAPON_PIST);
-    info->ammo[AMMO_BUL] = 50;
-    info->ammo[AMMO_SHEL] = 0;
-    info->ammo[AMMO_ROCK] = 0;
-    info->ammo[AMMO_CELL] = 0;
+    *info = defaultplayerinfo;
 }
 
 static bool player_slidecollider(float x1, float y1, float x2, float y2, linedef_t* line, float t)

@@ -66,6 +66,7 @@ typedef struct
 extern player_t player;
 
 extern float pviewheight, deltaviewheight;
+extern playerinfo_t defaultplayerinfo;
 
 void player_init(void);
 void player_addthinker(player_t* player);

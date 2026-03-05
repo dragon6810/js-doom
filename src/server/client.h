@@ -24,6 +24,7 @@ typedef enum
 typedef struct
 {
     gamestate_t gamestates[GAMESTATE_WINDOW];
+    playerinfo_t playstates[GAMESTATE_WINDOW];
 
     uint8_t buttons;
 
