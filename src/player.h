@@ -78,6 +78,8 @@ void player_free(player_t* player);
 // default spawn values
 void player_initinfo(playerinfo_t* info);
 void player_docmd(object_t* playobj, const playercmd_t* cmd);
+float player_calcbobamp(object_t* playobj);
+float player_calcheadbob(object_t* playobj, float time);
 float player_getviewheight(object_t* playobj, float time, float frametime);
 void player_use(player_t* player);
 

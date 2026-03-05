@@ -14,6 +14,6 @@ extern angle_t viewangle;
 extern int rectheight;
 
 void render_init(void);
-void render(void);
+void render(float progtime);
 
 #endif

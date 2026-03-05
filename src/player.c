@@ -365,18 +365,25 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
     player_trymove(playobj, cmd->frametime, playobj->info.z > floorz);
 }
 
-static float player_calcheadbob(object_t* playobj, float time)
+float player_calcbobamp(object_t* playobj)
 {
-    float amp, phase;
+    float amp;
 
     amp = playobj->info.xvel * playobj->info.xvel + playobj->info.yvel * playobj->info.yvel;
     amp /= 4.0 * 35.0 * 35.0;
     if(amp > 16)
         amp = 16;
 
+    return amp;
+}
+
+float player_calcheadbob(object_t* playobj, float time)
+{
+    float phase;
+
     phase = 7 * M_PI_2 * time;
 
-    return 0.5 * sin(phase) * amp;
+    return 0.5 * sin(phase) * player_calcbobamp(playobj);
 }
 
 float player_getviewheight(object_t* playobj, float time, float frametime)

@@ -551,7 +551,7 @@ void render_drawskyplane(visplane_t* plane)
 
     tex_stitch(levelskytex);
 
-    tstep = 320.0 / screenheight / 2;
+    tstep = 200.0 / screenheight;
     for(x=plane->x1; x<=plane->x2; x++)
     {
         if((plane->tops[x] == -1 && plane->bottoms[x] == -1) || plane->tops[x] > plane->bottoms[x])
@@ -1384,13 +1384,13 @@ void render_setup(void)
     clipend = clipbuff;
 }
 
-void render(void)
+void render(float progtime)
 {
     render_setup();
     render_node(nnodes-1);   
     render_drawplanes();
     render_drawthings();
-    visweapon_draw();
+    visweapon_draw(progtime);
 
     frameindex++;
 }

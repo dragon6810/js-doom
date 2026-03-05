@@ -125,7 +125,7 @@ void loop(void)
             viewy = mobjs[serverconn.edict].info.y;
             viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
             viewangle = mobjs[serverconn.edict].info.angle;
-            render();
+            render(progtime);
             stbar_draw();
         }
     }
