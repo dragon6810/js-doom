@@ -86,6 +86,7 @@ int main(int argc, char** argv)
     allocgamestatesectors();
 
     net_init();
+    player_init();
 
     nexttic = nowmicro();
 

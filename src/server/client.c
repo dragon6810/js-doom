@@ -37,6 +37,8 @@ static void updategamestate(client_t* cl)
         gs->sectorinfos[i].floorheight = sectors[i].floorheight;
         gs->sectorinfos[i].ceilheight = sectors[i].ceilheight;
     }
+
+    memcpy(&cl->playstates[index], &cl->player.info, sizeof(playerinfo_t));
 }
 
 void allocgamestatesectors(void)

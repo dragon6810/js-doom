@@ -42,11 +42,11 @@ typedef enum
 
 typedef struct
 {
-    uint8_t flags;
-    uint8_t health, armor;
-    uint8_t weapons; // each bit is a flag (bit is 1 << (weapon))
-    uint16_t ammo[NUM_AMMO];
-    uint16_t frags;
+    int flags;
+    int health, armor;
+    int weapons; // each bit is a flag (bit is 1 << (weapon))
+    int ammo[NUM_AMMO];
+    int frags;
 } playerinfo_t;
 
 typedef struct

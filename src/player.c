@@ -18,6 +18,7 @@ typedef struct
     thinker_t thinker;
     player_t *player;
     float lastdamage;
+    bool wasonnukage;
 } playerthink_t;
 
 object_t *slideobj;
@@ -48,18 +49,33 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
     
     const char *floortex;
 
-    if(thinker->player->mobj->ssector
-    && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight
-    && progtime - thinker->lastdamage >= damageperiod)
-    {
-        floortex = thinker->player->mobj->ssector->sector->floortex->name;
+    int nukagetype;
 
+    if(thinker->player->mobj->ssector
+    && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight)
+    {
+        nukagetype = 0;
+        floortex = thinker->player->mobj->ssector->sector->floortex->name;
         if(!strcmp(floortex, "NUKAGE1") || !strcmp(floortex, "NUKAGE2") || !strcmp(floortex, "NUKAGE3"))
+            nukagetype = 1;
+
+        if(nukagetype)
+        {
+            if(!thinker->wasonnukage)
+                thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
+            thinker->wasonnukage = true;
+        }
+        else
+            thinker->wasonnukage = false;
+
+        if(nukagetype == 1 && progtime - thinker->lastdamage >= damageperiod)
         {
             thinker->player->info.health -= 5;
             thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
         }
     }
+    else
+        thinker->wasonnukage = false;
 
     return false;
 }
