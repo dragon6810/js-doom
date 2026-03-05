@@ -503,5 +503,7 @@ void spawnplayer(client_t* client)
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 
+    client->player.dumb = false;
+
     level_addmobjthinker(client->player.mobj);
 }

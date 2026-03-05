@@ -5,6 +5,7 @@
 #include "level.h"
 #include "screen.h"
 #include "tex.h"
+#include "visweapon.h"
 #include "wad.h"
 
 #include <stdlib.h>
@@ -1389,6 +1390,7 @@ void render(void)
     render_node(nnodes-1);   
     render_drawplanes();
     render_drawthings();
+    visweapon_draw();
 
     frameindex++;
 }

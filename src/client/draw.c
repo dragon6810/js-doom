@@ -1,6 +1,41 @@
 #include "draw.h"
 
+#include "render.h"
 #include "screen.h"
+
+void draw_pic(pic_t* pic, uint8_t* colmap, int x, int y)
+{
+    fixed_t s;
+    fixed_t iscale, scale, texmid;
+    post_t *post;
+
+    x -= pic->xoffs;
+    y -= pic->yoffs;
+
+    scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
+    iscale = fixeddiv(1 << FIXEDSHIFT, scale);
+
+    if(y >= rectheight)
+        return;
+
+    texmid = -((y << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT - 1)));
+
+    if(y + (fixedmul(pic->h << FIXEDSHIFT, scale) >> FIXEDSHIFT) <= 0)
+        return;
+
+    y = MAX(y, 0);
+
+    for(s=0; x<screenwidth && (s>>FIXEDSHIFT)<pic->w; x++, s+=iscale)
+    {
+        if(x < 0)
+            continue;
+        if(x >= screenwidth)
+            break;
+
+        post = (post_t*) ((uint8_t*) pic + pic->postoffs[s >> FIXEDSHIFT]);
+        draw_postcolumn(post, colormap->maps[0], x, y, rectheight-1, texmid, iscale, scale); 
+    }
+}
 
 void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t texmid, fixed_t iscale, fixed_t scale)
 {

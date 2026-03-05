@@ -53,7 +53,8 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
 
     if(INRANGE(thinker->player->mobj->info.state, S_PLAY, S_PLAY_PAIN2))
     {
-        if(thinker->player->mobj->ssector
+        if(!thinker->player->dumb
+        && thinker->player->mobj->ssector
         && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight)
         {
             nukagetype = 0;

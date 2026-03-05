@@ -291,12 +291,16 @@ static void* recvshake(void* buf, void* curpos, int len)
     stbar_init();
 
     memset(&player, 0, sizeof(player));
+    player.dumb = true;
+
     player.mobj = &mobjs[serverconn.edict];
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));
     mobjs[serverconn.edict].info.type = MT_PLAYER;
     mobjs[serverconn.edict].info.exists = true;
+
+    player_addthinker(&player);
 
     serverconn.state = CLSTATE_CONNECTED;
     printf("[net] handshake ack, client id %d, edict id %d\n", serverconn.clientid, serverconn.edict);

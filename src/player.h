@@ -21,7 +21,9 @@
 
 typedef enum
 {
-    WEAPON_FIST=0,
+    WEAPON_NONE=0,
+
+    WEAPON_FIST,
     WEAPON_PIST,
     WEAPON_SHOT,
     WEAPON_CHAIN,
@@ -54,6 +56,8 @@ typedef struct
     object_t *mobj;
     playerinfo_t info;
     thinker_t *thinker;
+
+    bool dumb; // 'dumb' player, true for client, false for server
 } player_t;
 
 typedef struct
