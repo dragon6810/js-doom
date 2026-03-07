@@ -17,6 +17,9 @@
 
 #define BAM_SCALE ((uint64_t) UINT32_MAX + 1)
 
+#define TABANGLES 8192
+#define TABSHIFT 19
+
 #define ANGTORAD(ang) ((float) ((double) (ang) / (double) BAM_SCALE * 2.0 * (double) M_PI))
 #define ANGTODEG(ang) ((float) ((double) (ang) / (double) BAM_SCALE * 360.0))
 #define RADTOANG(rad) ((angle_t) (sangle_t) ((double) (rad) / (2.0 * M_PI) * (double) BAM_SCALE))
@@ -44,6 +47,7 @@ typedef int32_t sangle_t;
 typedef int32_t fixed_t;
 
 float magnitude(float x, float y);
+fixed_t fixedmag(fixed_t x, fixed_t y);
 fixed_t fixedmul(fixed_t a, fixed_t b);
 fixed_t fixeddiv(fixed_t a, fixed_t b);
 

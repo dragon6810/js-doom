@@ -7,6 +7,21 @@ float magnitude(float x, float y)
     return sqrtf(x * x + y * y);
 }
 
+fixed_t fixedmag(fixed_t x, fixed_t y)
+{
+    angle_t angle;
+    fixed_t num, den;
+
+    angle = ANGATAN2(y, x);
+    
+    num = y;
+    den = FLOATTOFIXED(ANGSIN(angle));
+    if(abs(den) < 1 << (FIXEDSHIFT - 8))
+        return abs(x);
+
+    return fixeddiv(num, den);
+}
+
 fixed_t fixedmul(fixed_t a, fixed_t b)
 {
     int64_t a64, b64;

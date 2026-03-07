@@ -1,5 +1,9 @@
 #include "render.h"
 
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "client.h"
 #include "draw.h"
 #include "level.h"
@@ -7,9 +11,6 @@
 #include "tex.h"
 #include "visweapon.h"
 #include "wad.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #define MAX_CLIPSPAN 192
 #define MAX_VISPLANE 256
@@ -57,8 +58,8 @@ typedef struct
     seg_t *seg;
     int16_t *bottom, *top; // both NULL, solid wall. one null, top or bottom wall
     int16_t *maskeds;
-    float scale1, scale2;
-    float scalestep;
+    fixed_t scale1, scale2;
+    fixed_t scalestep;
     int x1, x2;
 } drawseg_t;
 
@@ -102,12 +103,19 @@ int16_t *visthingbottom;
 const int npastelcolors = 10;
 const int pastelcolors[] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
 
+// 180 degrees, index 0 is actually at -90 deg
+int angletox[TABANGLES / 2];
+angle_t *xtoangle = NULL;
+
 void render_init(void)
 {
+    const float halfplane = HPLANE / 2;
+
     int i, j;
 
     int baselevel, level;
-    float scale;
+    float scale, tangent;
+    angle_t ang;
 
     rectwidth = screenwidth;
     rectheight = screenheight - 32.0 * (screenheight / 200.0);
@@ -176,38 +184,24 @@ void render_init(void)
             zmap[i][j] = colormap->maps[level];
         }
     }
-}
 
-int render_angletox(angle_t angle)
-{
-    const float halfplane = HPLANE / 2;
+    for(i=0; i<TABANGLES/2; i++)
+    {
+        ang = (i << TABSHIFT) - ANG90;
+        if(ang < ANG180 && ang > HFOV/2)
+            angletox[i] = -1;
+        else if(ang > ANG180 && ang < ANG360-HFOV/2)
+            angletox[i] = screenwidth;
+        else
+            angletox[i] = CLAMP(-ANGTAN(ang) * projectconst + halfx, -1, screenwidth);
+    }
 
-    float alpha;
-    int x;
-
-    // screen left -> (1, -1) <- screen right
-    alpha = ANGTAN(angle) / halfplane;
-
-    x = (-alpha / 2.0 + 0.5) * screenwidth;
-    if(x < 0)
-        x = 0;
-    if(x > screenwidth)
-        x = screenwidth;
-    
-    return x;
-}
-
-angle_t render_xtoangle(int x)
-{
-    const float halfplane = HPLANE / 2;
-
-    float f, alpha, tangent;
-
-    f = (float) x + 0.5;
-    alpha = 1.0 - (2.0 * f) / (float) screenwidth;
-    tangent = alpha * halfplane;
-    
-    return ANGATAN(tangent);
+    xtoangle = calloc(screenwidth, sizeof(angle_t));
+    for(i=0; i<screenwidth; i++)
+    {
+        for(j=0; j<TABANGLES/2&&angletox[j]>i; j++);
+        xtoangle[i] = (j << TABSHIFT) - ANG90;
+    }
 }
 
 angle_t render_ytoangle(int y)
@@ -225,7 +219,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
     int x;
 
     fixed_t halfyfrac;
-    fixed_t scalefrac, startx, scalestepfrac, top, topstep, height, hstep, iscale;
+    fixed_t scale, startx, top, topstep, height, hstep, iscale;
     fixed_t ttop, portaltop, portalbottom;
     int pxtop, pxbottom;
     int baselight;
@@ -256,30 +250,29 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
     else
         ttop = FLOATTOFIXED(seg->seg->frontside->yoffs);
 
-    scalestepfrac = FLOATTOFIXED(seg->scalestep);
     startx = (x1 - seg->x1) << FIXEDSHIFT;
-    scalefrac = FLOATTOFIXED(seg->scale1) + fixedmul(startx, scalestepfrac);
+    scale = seg->scale1 + fixedmul(startx, seg->scalestep);
 
-    top = fixedmul(FLOATTOFIXED(viewz) - portaltop, scalefrac) + halfyfrac;
-    topstep = fixedmul(FLOATTOFIXED(viewz) - portaltop, scalestepfrac);
+    top = fixedmul(FLOATTOFIXED(viewz) - portaltop, scale) + halfyfrac;
+    topstep = fixedmul(FLOATTOFIXED(viewz) - portaltop, seg->scalestep);
 
-    height = fixedmul(portaltop - portalbottom, scalefrac);
-    hstep = fixedmul(portaltop - portalbottom, scalestepfrac);
+    height = fixedmul(portaltop - portalbottom, scale);
+    hstep = fixedmul(portaltop - portalbottom, seg->scalestep);
 
-    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scalefrac+=scalestepfrac)
+    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=seg->scalestep)
     {
         if(seg->maskeds[x - seg->x1] == INT16_MAX)
             continue;
-        if(maxscale > 0 && scalefrac >= maxscale)
+        if(maxscale > 0 && scale >= maxscale)
             continue;
         
-        lightindex = CLAMP(FIXEDTOFLOAT(scalefrac) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(FIXEDTOFLOAT(scale) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
         //iscale = fixeddiv((fixed_t) 1 << FIXEDSHIFT, scalefrac);
-        iscale = 0xFFFFFFFFu / (uint32_t) scalefrac;
+        iscale = 0xFFFFFFFFu / (uint32_t) scale;
         texmid = ttop + fixedmul(halfyfrac - top, iscale);
-        top = halfyfrac - fixedmul(texmid, scalefrac);
+        top = halfyfrac - fixedmul(texmid, scale);
 
         pxtop = (top >> FIXEDSHIFT) + 1;
         pxbottom = (top + height) >> FIXEDSHIFT;
@@ -293,7 +286,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
             continue;
 
         column = (post_t*) (tex_getcolumn(seg->seg->frontside->mid, seg->maskeds[x - seg->x1]) - 3);
-        draw_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scalefrac);
+        draw_postcolumn(column, map, x, pxtop, pxbottom, texmid, iscale, scale);
         seg->maskeds[x - seg->x1] = INT16_MAX;
     }
 }
@@ -308,8 +301,8 @@ void render_clipthing(visthing_t* visthing, int w)
 
     for(drawseg=&drawsegs[ndrawsegs-1]; drawseg>=drawsegs; drawseg--)
     {
-        farthest = FLOATTOFIXED(MIN(drawseg->scale1, drawseg->scale2));
-        closest = FLOATTOFIXED(MAX(drawseg->scale1, drawseg->scale2));
+        farthest = MIN(drawseg->scale1, drawseg->scale2);
+        closest = MAX(drawseg->scale1, drawseg->scale2);
 
         x1 = MAX(drawseg->x1, visthing->x);
         x2 = MIN(drawseg->x2, visthing->x + w - 1);
@@ -323,8 +316,8 @@ void render_clipthing(visthing_t* visthing, int w)
         if(closest <= visthing->scale || drawseg->maskeds)
             continue;
 
-        scale = FLOATTOFIXED(drawseg->scale1) + fixedmul((x1 - drawseg->x1) << FIXEDSHIFT, FLOATTOFIXED(drawseg->scalestep));
-        for(x=x1; x<=x2; x++, scale+=FLOATTOFIXED(drawseg->scalestep))
+        scale = drawseg->scale1 + fixedmul((x1 - drawseg->x1) << FIXEDSHIFT, drawseg->scalestep);
+        for(x=x1; x<=x2; x++, scale+=drawseg->scalestep)
         {
             if(scale <= visthing->scale)
                 continue;
@@ -501,7 +494,7 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     worldx = viewx;
     worldy = viewy;
 
-    a1 = viewangle + render_xtoangle(x1);
+    a1 = viewangle + xtoangle[x1];
     adjust = 1.0 / ANGCOS(a1 - viewangle);
     worldx += ANGCOS(a1) * dist * adjust;
     worldy += ANGSIN(a1) * dist * adjust;
@@ -557,12 +550,12 @@ void render_drawskyplane(visplane_t* plane)
             continue;
         
         tstep = 200.0 / screenheight;
-        tstep *= ANGCOS(render_xtoangle(x));
+        tstep *= ANGCOS(xtoangle[x]);
 
         top = CLAMP(plane->tops[x], 0, rectheight - 1);
         bottom = CLAMP(plane->bottoms[x], 0, rectheight - 1);
 
-        a = render_xtoangle(x) + viewangle;
+        a = xtoangle[x] + viewangle;
         s = (float) a / (float) ANG90 * (float) SKYW;
 
         col = tex_getcolumn(levelskytex, s);
@@ -726,12 +719,24 @@ visplane_t* render_getvisplane(float z, lumpinfo_t* flat, int light)
     return &visplanes[nvisplanes++];
 }
 
-static float render_calcscale(angle_t angle, angle_t normal, float dist)
+static fixed_t render_calcscale(angle_t angle, angle_t normal, fixed_t dist)
 {
-    float scale;
-    
-    scale = ANGCOS(angle - normal) * projectconst / (dist * ANGCOS(angle - viewangle));
-    scale = CLAMP(scale, 1.0 / 256.0, 64.0);
+    fixed_t num, den, scale;
+
+    num = fixedmul(FLOATTOFIXED(ANGCOS(angle - normal)), projectfrac);
+    den = fixedmul(dist, FLOATTOFIXED(ANGCOS(angle - viewangle)));
+
+    if (den > num >> FIXEDSHIFT)
+    {
+        scale = fixeddiv(num, den);
+
+        if (scale > 64 << FIXEDSHIFT)
+            scale = 64 << FIXEDSHIFT;
+        else if (scale < 256)
+            scale = 256;
+    }
+    else // division overflows
+	    scale = 64 << FIXEDSHIFT;
 	
     return scale;
 }
@@ -740,9 +745,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 {
     int x, y;
 
-    int color;
     float portaltop, portalbottom, worldtop, worldbottom;
-    float dist, scale, scale1, scale2, scalestep;
+    fixed_t dist, scale, scale1, scale2, scalestep;
     float top, topstep, height, hstep;
     float tsilheight, portalheight, bsilheight, tsilstep, bsilstep;
     int pltop, plbot;
@@ -759,17 +763,25 @@ void render_segrange(int x1, int x2, seg_t* seg)
     int sectorlight, baselight, lightindex;
     uint8_t *map;
     
-    a1 = render_xtoangle(x1) + viewangle;
-    a2 = render_xtoangle(x2) + viewangle;
+    a1 = xtoangle[x1] + viewangle;
+    a2 = xtoangle[x2] + viewangle;
 
     normal = seg->angle + ANG90;
     // perpendicular distance from line to camera
-    dist = magnitude(seg->v1->x - viewx, seg->v1->y - viewy) * ANGCOS(unclippeda1 - normal);
+    dist = fixedmag(FLOATTOFIXED(seg->v1->x - viewx), FLOATTOFIXED(seg->v1->y - viewy));
+    dist = fixedmul(dist, FLOATTOFIXED(ANGCOS(unclippeda1 - normal)));
 
     scale = scale1 = render_calcscale(a1, normal, dist);
-    scale2 = render_calcscale(a2, normal, dist);
-
-    scalestep = (scale2 - scale1) / (float) (x2 - x1);
+    if(x2 > x1)
+    {
+        scale2 = render_calcscale(a2, normal, dist);
+        scalestep = fixeddiv(scale2 - scale1, (x2 - x1) << FIXEDSHIFT);
+    }
+    else
+    {
+        scale2 = scale1;
+        scalestep = 0;
+    }
 
     worldtop = portaltop = seg->frontside->sector->ceilheight;
     worldbottom = portalbottom = seg->frontside->sector->floorheight;
@@ -795,22 +807,22 @@ void render_segrange(int x1, int x2, seg_t* seg)
     if(drawbottom && seg->frontside->lower)
         tex_stitch(seg->frontside->lower);
 
-    top = -(worldtop - viewz) * scale1 + halfy;
-    topstep = -(worldtop - viewz) * scalestep;
+    top = -(worldtop - viewz) * FIXEDTOFLOAT(scale1) + halfy;
+    topstep = -(worldtop - viewz) * FIXEDTOFLOAT(scalestep);
 
-    height = (worldtop - worldbottom) * scale1;
-    hstep = (worldtop - worldbottom) * scalestep;
+    height = (worldtop - worldbottom) * FIXEDTOFLOAT(scale1);
+    hstep = (worldtop - worldbottom) * FIXEDTOFLOAT(scalestep);
 
     tsilheight = bsilheight = 0;
     if(drawtop)
     {
-        tsilheight = (worldtop - portaltop) * scale1;
-        tsilstep = (worldtop - portaltop) * scalestep;
+        tsilheight = (worldtop - portaltop) * FIXEDTOFLOAT(scale1);
+        tsilstep = (worldtop - portaltop) * FIXEDTOFLOAT(scalestep);
     }
     if(drawbottom)
     {
-        bsilheight = (portalbottom - worldbottom) * scale1;
-        bsilstep = (portalbottom - worldbottom) * scalestep;
+        bsilheight = (portalbottom - worldbottom) * FIXEDTOFLOAT(scale1);
+        bsilstep = (portalbottom - worldbottom) * FIXEDTOFLOAT(scalestep);
     }
 
     sectorlight = baselight = seg->frontside->sector->light >> LIGHTSHIFT;
@@ -883,12 +895,12 @@ void render_segrange(int x1, int x2, seg_t* seg)
     drewtop = drewbottom = false;
     for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
     {
-        tstep = 1.0 / scale;
+        tstep = 1.0 / FIXEDTOFLOAT(scale);
 
-        a = render_xtoangle(x);
-        s = sbase + dist * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
+        a = xtoangle[x];
+        s = sbase + FIXEDTOFLOAT(dist) * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
         
-        lightindex = CLAMP(scale * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
+        lightindex = CLAMP(FIXEDTOFLOAT(scale) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
         if(ceilplane)
@@ -1201,13 +1213,13 @@ void render_seg(seg_t* seg)
     if(a2 > (HFOV/2) && a2 < (ANG360-HFOV/2) && (ANG360-HFOV/2) - a2 >= theta)
         return;
 
-    if(a1 < (ANG360-HFOV/2) && a1 > HFOV/2)
+    if(a1 < ANG360-HFOV/2 && a1 > HFOV/2)
         a1 = HFOV/2;
-    if(a2 > HFOV/2 && a2 < (ANG360-HFOV/2))
-        a2 = -HFOV/2;
+    if(a2 > HFOV/2 && a2 < ANG360-HFOV/2)
+        a2 = ANG360-HFOV/2;
     
-    x1 = render_angletox(a1);
-    x2 = render_angletox(a2) - 1; // so we don't double up where segs meet
+    x1 = angletox[(a1 + ANG90) >> TABSHIFT];
+    x2 = angletox[(a2 + ANG90) >> TABSHIFT] - 1; // so we don't double up where segs meet
 
     if(x1 > x2)
         return;

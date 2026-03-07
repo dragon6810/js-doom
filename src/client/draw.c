@@ -82,3 +82,23 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
         post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
     }
 }
+
+void draw_texcolumn(texture_t* tex, uint8_t* map, int s, int x, int y1, int y2, fixed_t texmid, fixed_t iscale, fixed_t scale)
+{
+    int y;
+
+    int dst;
+    fixed_t tfrac;
+    color_t color;
+    uint8_t *column;
+
+    tfrac = texmid + fixedmul((x << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT-1)), iscale);
+    column = tex_getcolumn(tex, s);
+
+    dst = y1 * screenwidth + x;
+    for(y=y1; y<=y2; y++, tfrac+=iscale, dst+=screenwidth)
+    {
+        color = palette[map[column[(tfrac >> FIXEDSHIFT) % 128]]];
+        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+    }
+}
