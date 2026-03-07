@@ -384,8 +384,8 @@ void render_drawthing(visthing_t* thing)
 
     for(; x<thing->x+w&&x<screenwidth; x++, s+=sstep)
     {
-        y1 = MAX(thing->y, visthingtop[x] + 1);
-        y2 = MIN(thing->y + h - 1, visthingbottom[x] - 1);
+        y1 = MAX(thing->y, visthingtop[x]);
+        y2 = MIN(thing->y + h - 1, visthingbottom[x]);
         if(y1 > y2)
             continue;
         
@@ -1001,7 +1001,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
         {
             ftop = top;
             fbottom = top + tsilheight;
-            tsilheight += tsilstep;
 
             pxtop = (ftop >> FIXEDSHIFT) + 1;
             pxbottom = fbottom >> FIXEDSHIFT;
@@ -1028,7 +1027,6 @@ void render_segrange(int x1, int x2, seg_t* seg)
         {
             ftop = top + tsilheight + midheight;
             fbottom = ftop + bsilheight;
-            bsilheight += bsilstep;
 
             pxtop = (ftop >> FIXEDSHIFT) + 1;
             pxbottom = fbottom >> FIXEDSHIFT;
@@ -1053,6 +1051,11 @@ void render_segrange(int x1, int x2, seg_t* seg)
                 }
             }
         }
+
+        if(drawtop)
+            tsilheight += tsilstep;
+        if(drawbottom)
+            bsilheight += bsilstep;
     }
 
     if(!seg->backside || seg->backside->sector->floorheight == seg->backside->sector->ceilheight)
