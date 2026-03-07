@@ -100,6 +100,8 @@ angle_t unclippeda1;
 int16_t *visthingtop;
 int16_t *visthingbottom;
 
+fixed_t viewxfrac, viewyfrac, viewzfrac;
+
 const int npastelcolors = 10;
 const int pastelcolors[] = { 16, 51, 83, 115, 161, 171, 194, 211, 226, 250 };
 
@@ -249,12 +251,13 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
         ttop = (seg->seg->frontside->mid->h << FIXEDSHIFT) - (portaltop - portalbottom) + FLOATTOFIXED(seg->seg->frontside->yoffs);
     else
         ttop = FLOATTOFIXED(seg->seg->frontside->yoffs);
+    texmid = ttop + portaltop - viewzfrac;
 
     startx = (x1 - seg->x1) << FIXEDSHIFT;
     scale = seg->scale1 + fixedmul(startx, seg->scalestep);
 
-    top = fixedmul(FLOATTOFIXED(viewz) - portaltop, scale) + halfyfrac;
-    topstep = fixedmul(FLOATTOFIXED(viewz) - portaltop, seg->scalestep);
+    top = fixedmul(viewzfrac - portaltop, scale) + halfyfrac;
+    topstep = fixedmul(viewzfrac - portaltop, seg->scalestep);
 
     height = fixedmul(portaltop - portalbottom, scale);
     hstep = fixedmul(portaltop - portalbottom, seg->scalestep);
@@ -270,8 +273,6 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
         map = scalemap[baselight][lightindex];
 
         iscale = 0xFFFFFFFFu / (uint32_t) scale;
-        
-        texmid = ttop + portaltop - FLOATTOFIXED(viewz);
 
         pxtop = (top >> FIXEDSHIFT) + 1;
         pxbottom = (top + height) >> FIXEDSHIFT;
@@ -744,16 +745,16 @@ void render_segrange(int x1, int x2, seg_t* seg)
 {
     int x, y;
 
-    float portaltop, portalbottom, worldtop, worldbottom;
-    fixed_t dist, scale, scale1, scale2, scalestep;
-    float top, topstep, height, hstep;
-    float tsilheight, portalheight, bsilheight, tsilstep, bsilstep;
+    fixed_t portaltop, portalbottom, worldtop, worldbottom;
+    fixed_t dist, scale, scale1, scale2, scalestep, iscale;
+    fixed_t top, topstep, midheight, midhstep;
+    fixed_t tsilheight, portalheight, bsilheight, tsilstep, bsilstep;
+    fixed_t toptexmid, midtexmid, bottexmid;
     int pltop, plbot;
     float sbase, s;
     angle_t normal, a1, a2, a;
     int pxtop, pxbottom;
-    float ftop, fbottom;
-    float ttop, t, tstep;
+    fixed_t ftop, fbottom;
     int mods, modt;
     bool drawceil, drawfloor, drawtop, drawbottom, drewtop, drewbottom;
     visplane_t *floorplane, *ceilplane;
@@ -767,14 +768,14 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
     normal = seg->angle + ANG90;
     // perpendicular distance from line to camera
-    dist = fixedmag(FLOATTOFIXED(seg->v1->x - viewx), FLOATTOFIXED(seg->v1->y - viewy));
+    dist = fixedmag(FLOATTOFIXED(seg->v1->x) - viewxfrac, FLOATTOFIXED(seg->v1->y) - viewyfrac);
     dist = fixedmul(dist, FLOATTOFIXED(ANGCOS(unclippeda1 - normal)));
 
     scale = scale1 = render_calcscale(a1, normal, dist);
     if(x2 > x1)
     {
         scale2 = render_calcscale(a2, normal, dist);
-        scalestep = fixeddiv(scale2 - scale1, (x2 - x1) << FIXEDSHIFT);
+        scalestep = (scale2 - scale1) / (x2 - x1);
     }
     else
     {
@@ -782,13 +783,13 @@ void render_segrange(int x1, int x2, seg_t* seg)
         scalestep = 0;
     }
 
-    worldtop = portaltop = seg->frontside->sector->ceilheight;
-    worldbottom = portalbottom = seg->frontside->sector->floorheight;
+    worldtop = portaltop = FLOATTOFIXED(seg->frontside->sector->ceilheight);
+    worldbottom = portalbottom = FLOATTOFIXED(seg->frontside->sector->floorheight);
 
     if(seg->backside && seg->backside->sector)
     {
-        portaltop = MIN(portaltop, seg->backside->sector->ceilheight);
-        portalbottom = MAX(portalbottom, seg->backside->sector->floorheight);
+        portaltop = MIN(portaltop, FLOATTOFIXED(seg->backside->sector->ceilheight));
+        portalbottom = MAX(portalbottom, FLOATTOFIXED(seg->backside->sector->floorheight));
     }
 
     if(seg->frontside->sector->ceiltex == skylump && seg->backside && seg->backside->sector && seg->backside->sector->ceiltex == skylump)
@@ -806,23 +807,41 @@ void render_segrange(int x1, int x2, seg_t* seg)
     if(drawbottom && seg->frontside->lower)
         tex_stitch(seg->frontside->lower);
 
-    top = -(worldtop - viewz) * FIXEDTOFLOAT(scale1) + halfy;
-    topstep = -(worldtop - viewz) * FIXEDTOFLOAT(scalestep);
+    top = -fixedmul(worldtop - viewzfrac, scale1) + FLOATTOFIXED(halfy);
+    topstep = -fixedmul(worldtop - viewzfrac, scalestep);
 
-    height = (worldtop - worldbottom) * FIXEDTOFLOAT(scale1);
-    hstep = (worldtop - worldbottom) * FIXEDTOFLOAT(scalestep);
+    midheight = fixedmul(portaltop - portalbottom, scale1);
+    midhstep = fixedmul(portaltop - portalbottom, scalestep);
 
     tsilheight = bsilheight = 0;
     if(drawtop)
     {
-        tsilheight = (worldtop - portaltop) * FIXEDTOFLOAT(scale1);
-        tsilstep = (worldtop - portaltop) * FIXEDTOFLOAT(scalestep);
+        tsilheight = fixedmul(worldtop - portaltop, scale1);
+        tsilstep = fixedmul(worldtop - portaltop, scalestep);
+
+        if(seg->line->flags & LINEDEF_UPPERUNPEG)
+            toptexmid = 0;
+        else
+            toptexmid = (seg->frontside->upper->h << FIXEDSHIFT) - (worldtop - portaltop);
+        toptexmid += worldtop - viewzfrac + FLOATTOFIXED(seg->frontside->yoffs);
     }
     if(drawbottom)
     {
-        bsilheight = (portalbottom - worldbottom) * FIXEDTOFLOAT(scale1);
-        bsilstep = (portalbottom - worldbottom) * FIXEDTOFLOAT(scalestep);
+        bsilheight = fixedmul(portalbottom - worldbottom, scale1);
+        bsilstep = fixedmul(portalbottom - worldbottom, scalestep);
+
+        if(seg->line->flags & LINEDEF_LOWERUNPEG)
+            bottexmid = worldtop - portalbottom;
+        else
+            bottexmid = 0;
+        bottexmid += portalbottom - viewzfrac + FLOATTOFIXED(seg->frontside->yoffs);
     }
+
+    if(seg->line->flags & LINEDEF_LOWERUNPEG)
+        midtexmid = (seg->frontside->mid->h << FIXEDSHIFT) - (portaltop - portalbottom);
+    else
+        midtexmid = 0;
+    midtexmid += portaltop - viewzfrac + FLOATTOFIXED(seg->frontside->yoffs);
 
     sectorlight = baselight = seg->frontside->sector->light >> LIGHTSHIFT;
     if(seg->v1->y == seg->v2->y)
@@ -892,9 +911,9 @@ void render_segrange(int x1, int x2, seg_t* seg)
     sbase = seg->frontside->xoffs + seg->offset;
 
     drewtop = drewbottom = false;
-    for(x=x1; x<=x2; x++, top+=topstep, height+=hstep, scale+=scalestep)
+    for(x=x1; x<=x2; x++, top+=topstep, midheight+=midhstep, scale+=scalestep)
     {
-        tstep = 1.0 / FIXEDTOFLOAT(scale);
+        iscale = 0xFFFFFFFFu / (uint32_t) scale;
 
         a = xtoangle[x];
         s = sbase + FIXEDTOFLOAT(dist) * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
@@ -905,7 +924,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
         if(ceilplane)
         {
             pltop = topclips[x] + 1;
-            plbot = top;
+            plbot = top >> FIXEDSHIFT;
 
             if(plbot >= bottomclips[x])
                 plbot = bottomclips[x] - 1;
@@ -921,7 +940,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
         if(floorplane)
         {
-            pltop = top + height + 1;
+            pltop = ((top + tsilheight + midheight + bsilheight) >> FIXEDSHIFT) + 1;
             plbot = bottomclips[x] - 1;
 
             if(pltop <= topclips[x])
@@ -939,10 +958,10 @@ void render_segrange(int x1, int x2, seg_t* seg)
         if(portaltop > portalbottom)
         {   
             ftop = top + tsilheight;
-            fbottom = top + height - bsilheight;
+            fbottom = ftop + midheight;
 
-            pxtop = ftop + 1;
-            pxbottom = fbottom;
+            pxtop = (ftop >> FIXEDSHIFT) + 1;
+            pxbottom = fbottom >> FIXEDSHIFT;
 
             if(pxtop <= topclips[x])
                 pxtop = topclips[x] + 1;
@@ -970,14 +989,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
                 if(pxtop <= pxbottom && seg->frontside->mid)
                 {
-                    if(seg->line->flags & LINEDEF_LOWERUNPEG)
-                        ttop = seg->frontside->mid->h - (portaltop - portalbottom) + seg->frontside->yoffs;
-                    else
-                        ttop = seg->frontside->yoffs;
-
-                    t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->mid, s);
-                    render_solidcol(column, map, seg->frontside->mid->h, x, pxtop, pxbottom, t, tstep);
+                    draw_texcolumn(column, map, x, pxtop, pxbottom, midtexmid, iscale, scale);
                 }
             }
             else if(pxtop <= pxbottom && seg->frontside->mid)
@@ -990,8 +1003,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
             fbottom = top + tsilheight;
             tsilheight += tsilstep;
 
-            pxtop = ftop + 1;
-            pxbottom = fbottom;
+            pxtop = (ftop >> FIXEDSHIFT) + 1;
+            pxbottom = fbottom >> FIXEDSHIFT;
 
             if(pxtop <= topclips[x])
                 pxtop = topclips[x] + 1;
@@ -1006,25 +1019,19 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(pxtop <= pxbottom && seg->frontside->upper)
             {
-                if(seg->line->flags & LINEDEF_UPPERUNPEG)
-                    ttop = seg->frontside->yoffs;
-                else
-                    ttop = seg->frontside->upper->h - (worldtop - portaltop) + seg->frontside->yoffs;
-
-                t = tstep * ((float) pxtop - ftop) + ttop;
                 column = tex_getcolumn(seg->frontside->upper, s);
-                render_solidcol(column, map, seg->frontside->upper->h, x, pxtop, pxbottom, t, tstep);
+                draw_texcolumn(column, map, x, pxtop, pxbottom, toptexmid, iscale, scale);
             }
         }
 
         if(drawbottom)
         {
-            ftop = top + height - bsilheight;
-            fbottom = top + height;
+            ftop = top + tsilheight + midheight;
+            fbottom = ftop + bsilheight;
             bsilheight += bsilstep;
 
-            pxtop = ftop + 1;
-            pxbottom = fbottom;
+            pxtop = (ftop >> FIXEDSHIFT) + 1;
+            pxbottom = fbottom >> FIXEDSHIFT;
 
             if(pxtop <= topclips[x])
                 pxtop = topclips[x] + 1;
@@ -1041,14 +1048,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
             {
                 if(seg->frontside->lower)
                 {
-                    if(seg->line->flags & LINEDEF_LOWERUNPEG)
-                        ttop = worldtop - portalbottom + seg->frontside->yoffs;
-                    else
-                        ttop = seg->frontside->yoffs;
-
-                    t = tstep * ((float) pxtop - ftop) + ttop;
                     column = tex_getcolumn(seg->frontside->lower, s);
-                    render_solidcol(column, map, seg->frontside->lower->h, x, pxtop, pxbottom, t, tstep);
+                    draw_texcolumn(column, map, x, pxtop, pxbottom, bottexmid, iscale, scale);
                 }
             }
         }
@@ -1405,6 +1406,10 @@ void render_setup(void)
 
     ndrawsegs = 0;
     clipend = clipbuff;
+
+    viewxfrac = FLOATTOFIXED(viewx);
+    viewyfrac = FLOATTOFIXED(viewy);
+    viewzfrac = FLOATTOFIXED(viewz);
 }
 
 void render(float progtime)

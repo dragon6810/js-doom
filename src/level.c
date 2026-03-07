@@ -775,6 +775,7 @@ void level_loadthings(lumpinfo_t* header)
             dmstarts[numdmstarts].y = mapthings[i].y;
             dmstarts[numdmstarts].angle = mapthings[i].angle;
             numdmstarts++;
+            continue;
         }
 
         for(type=0; type<NUMMOBJTYPES; type++)
