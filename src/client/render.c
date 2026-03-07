@@ -180,7 +180,7 @@ void render_init(void)
 
         for(j=0; j<ZBANDS; j++)
         {
-            scale = halfx / (float) (j + 1);
+            scale = 160.0 / (float) (j + 1);
             level = baselevel - scale / 2;
             level = CLAMP(level, 0, LIGHTMAP - 1);
             zmap[i][j] = colormap->maps[level];
@@ -480,6 +480,7 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     float worldx, worldy;
     float dx, dy, step;
     float adjust;
+    fixed_t wxf, wyf, dxf, dyf;
     int s, t;
     angle_t a1;
     int lightindex;
@@ -491,23 +492,27 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     lightindex = CLAMP(lightindex, 0, ZBANDS - 1);
     map = zmap[plane->baselight][lightindex];
 
-    worldx = viewx;
-    worldy = viewy;
-
     a1 = viewangle + xtoangle[x1];
     adjust = 1.0 / ANGCOS(a1 - viewangle);
-    worldx += ANGCOS(a1) * dist * adjust;
-    worldy += ANGSIN(a1) * dist * adjust;
+    worldx = viewx + ANGCOS(a1) * dist * adjust;
+    worldy = viewy + ANGSIN(a1) * dist * adjust;
 
     step = dist / projectconst;
-
     dx = ANGSIN(viewangle) * step;
     dy = -ANGCOS(viewangle) * step;
 
-    for(x=x1; x<=x2; x++, worldx+=dx, worldy+=dy)
+    worldx = fmodf(worldx, (float) FLAT_RES);
+    worldy = fmodf(worldy, (float) FLAT_RES);
+
+    wxf = FLOATTOFIXED(worldx);
+    wyf = FLOATTOFIXED(worldy);
+    dxf = FLOATTOFIXED(dx);
+    dyf = FLOATTOFIXED(dy);
+
+    for(x=x1; x<=x2; x++, wxf+=dxf, wyf+=dyf)
     {
-        s = (int) worldx & (FLAT_RES - 1);
-        t = (int) worldy & (FLAT_RES - 1);
+        s = (wxf >> FIXEDSHIFT) & (FLAT_RES - 1);
+        t = (wyf >> FIXEDSHIFT) & (FLAT_RES - 1);
         color = palette[map[((uint8_t*) plane->flat->cache)[t * FLAT_RES + s]]];
         pixels[y * screenwidth + x] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
     }
@@ -550,7 +555,7 @@ void render_drawskyplane(visplane_t* plane)
             continue;
         
         tstep = 200.0 / screenheight;
-        tstep *= ANGCOS(xtoangle[x]);
+        // tstep *= ANGCOS(xtoangle[x]);
 
         top = CLAMP(plane->tops[x], 0, rectheight - 1);
         bottom = CLAMP(plane->bottoms[x], 0, rectheight - 1);
@@ -559,7 +564,7 @@ void render_drawskyplane(visplane_t* plane)
         s = (float) a / (float) ANG90 * (float) SKYW;
 
         col = tex_getcolumn(levelskytex, s);
-        render_solidcol(col, colormap->maps[0], SKYH, x, top, bottom, halfy + (top - halfy) * tstep, tstep);
+        draw_texcolumn(col, colormap->maps[0], x, top, bottom, 100 << FIXEDSHIFT, FLOATTOFIXED(tstep), FLOATTOFIXED(1.0 / tstep));
     }
 }
 
@@ -1275,7 +1280,9 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
         return true;
 
     visthing->scale = fixeddiv(projectfrac, dist);
-    
+    if(visthing->scale > 64 << FIXEDSHIFT)
+        visthing->scale = 64 << FIXEDSHIFT;
+
     centerx = FLOATTOFIXED(halfx) + fixedmul(fixedmul(dx, sinview) - fixedmul(dy, cosview), visthing->scale);
     centery = FLOATTOFIXED(halfy) - fixedmul(dz, visthing->scale);
 
