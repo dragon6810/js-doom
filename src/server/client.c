@@ -304,7 +304,8 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
     cl->buttons = cmd.flags;
     player_docmd(cl->player.mobj, &cmd);
 
-    if(!cmd.flags && INRANGE(cl->player.mobj->info.state, S_PLAY_RUN1, S_PLAY_RUN4)
+    if(!cmd.flags
+    && cl->player.mobj->info.state == S_PLAY_RUN1
     && INRANGE(cl->player.mobj->info.xvel, -stopspeed, stopspeed)
     && INRANGE(cl->player.mobj->info.yvel, -stopspeed, stopspeed))
         level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].spawnstate);

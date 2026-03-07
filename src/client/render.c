@@ -269,10 +269,9 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
         lightindex = CLAMP(FIXEDTOFLOAT(scale) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
-        //iscale = fixeddiv((fixed_t) 1 << FIXEDSHIFT, scalefrac);
         iscale = 0xFFFFFFFFu / (uint32_t) scale;
-        texmid = ttop + fixedmul(halfyfrac - top, iscale);
-        top = halfyfrac - fixedmul(texmid, scale);
+        
+        texmid = ttop + portaltop - FLOATTOFIXED(viewz);
 
         pxtop = (top >> FIXEDSHIFT) + 1;
         pxbottom = (top + height) >> FIXEDSHIFT;

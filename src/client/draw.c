@@ -67,11 +67,15 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
         {
             tfrac = fixedmul(y1frac - posttop, iscale);
             posttop = y1frac;
+            y = posttop >> FIXEDSHIFT;
         }
         else
-            tfrac = 0;
+        {
+            y = (posttop + (1 << FIXEDSHIFT) - 1) >> FIXEDSHIFT;
+            tfrac = fixedmul((y << FIXEDSHIFT) - posttop, iscale);
+        }
 
-        for(y=posttop>>FIXEDSHIFT, dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
+        for(dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
         {
             if(tfrac >= lenfrac || y > y2)
                 break;
@@ -79,6 +83,7 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
             color = palette[map[post->payload[tfrac >> FIXEDSHIFT]]];
             pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
         }
+        
         post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
     }
 }
@@ -98,7 +103,7 @@ void draw_texcolumn(texture_t* tex, uint8_t* map, int s, int x, int y1, int y2, 
     dst = y1 * screenwidth + x;
     for(y=y1; y<=y2; y++, tfrac+=iscale, dst+=screenwidth)
     {
-        color = palette[map[column[(tfrac >> FIXEDSHIFT) % 128]]];
+        color = palette[map[column[(tfrac >> FIXEDSHIFT) & 127]]];
         pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
     }
 }
