@@ -4,5 +4,6 @@
 #include <stdint.h>
 
 uint8_t prand(void);
+uint8_t mrand(void);
 
 #endif

@@ -727,7 +727,7 @@ void level_damagemobj(object_t* obj, int dmg)
     }
 }
 
-static bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
+bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
 {
     thinker->timeinstate += ft;
 
@@ -742,7 +742,7 @@ static bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
     return false;
 }
 
-static void level_mobjthinkfree(mobjthink_t* thinker)
+void level_mobjthinkfree(mobjthink_t* thinker)
 {
     if(thinker->mobj && thinker->mobj->thinker == thinker)
         thinker->mobj->thinker = thinker;

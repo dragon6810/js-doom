@@ -9,7 +9,8 @@ uint32_t *pixels;
 
 screen_t screens[NUM_SCR] = {};
 
-color_t *curpalette = NULL;
+bool palset = false;
+uint32_t curpal[256];
 
 EMSCRIPTEN_KEEPALIVE
 void screen_init(int width, int height)
@@ -56,23 +57,29 @@ void screen_present(void)
     int i, x, y, src, dst;
     color_t *col;
 
-    if(!curpalette)
+    if(!palset)
         return;
 
     for(i=0; i<NUM_SCR; i++)
     {
         for(y=src=0; y<screens[i].h; y++)
         {
-            for(x=0; x<screens[i].w; x++, src++)
-            {
-                dst = (y + screens[i].y) * screenwidth + x + screens[i].x;
-                col = &curpalette[screens[i].pixels[src]];
-                pixels[dst] = (int) col->r << 16 | (int) col->g << 8 | (int) col->b;
-            }
+            dst = (y + screens[i].y) * screenwidth;
+            for(x=0; x<screens[i].w; x++, src++, dst++)
+                pixels[dst] = curpal[screens[i].pixels[src]];
         }
     }
 
     SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
     SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
+}
+
+void screen_setpal(color_t* pal)
+{
+    int i;
+
+    palset = true;
+    for(i=0; i<256; i++)
+        curpal[i] = (int) pal[i].r << 16 | (int) pal[i].g << 8 | (int) pal[i].b;
 }

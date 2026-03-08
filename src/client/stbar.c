@@ -5,8 +5,41 @@
 
 #include "client.h"
 #include "draw.h"
+#include "rand.h"
 #include "screen.h"
 #include "wad.h"
+
+// Number of status faces.
+#define ST_NUMPAINFACES		5
+#define ST_NUMSTRAIGHTFACES	3
+#define ST_NUMTURNFACES		2
+#define ST_NUMSPECIALFACES		3
+
+#define ST_FACESTRIDE \
+          (ST_NUMSTRAIGHTFACES+ST_NUMTURNFACES+ST_NUMSPECIALFACES)
+
+#define ST_NUMEXTRAFACES		2
+
+#define ST_NUMFACES \
+          (ST_FACESTRIDE*ST_NUMPAINFACES+ST_NUMEXTRAFACES)
+
+#define ST_TURNOFFSET		(ST_NUMSTRAIGHTFACES)
+#define ST_OUCHOFFSET		(ST_TURNOFFSET + ST_NUMTURNFACES)
+#define ST_EVILGRINOFFSET		(ST_OUCHOFFSET + 1)
+#define ST_RAMPAGEOFFSET		(ST_EVILGRINOFFSET + 1)
+#define ST_GODFACE			(ST_NUMPAINFACES*ST_FACESTRIDE)
+#define ST_DEADFACE			(ST_GODFACE+1)
+
+#define ST_FACESX			143
+#define ST_FACESY			0
+
+#define ST_EVILGRINCOUNT		(2*TICRATE)
+#define ST_STRAIGHTFACECOUNT	(TICRATE/2)
+#define ST_TURNCOUNT		(1*TICRATE)
+#define ST_OUCHCOUNT		(1*TICRATE)
+#define ST_RAMPAGEDELAY		(2*TICRATE)
+
+#define ST_MUCHPAIN			20
 
 // AMMO number pos.
 #define ST_AMMOWIDTH		3	
@@ -40,13 +73,13 @@
 #define ST_KEY0WIDTH		8
 #define ST_KEY0HEIGHT		5
 #define ST_KEY0X			239
-#define ST_KEY0Y			4
+#define ST_KEY0Y			3
 #define ST_KEY1WIDTH		ST_KEY0WIDTH
 #define ST_KEY1X			239
-#define ST_KEY1Y			14
+#define ST_KEY1Y			13
 #define ST_KEY2WIDTH		ST_KEY0WIDTH
 #define ST_KEY2X			239
-#define ST_KEY2Y			24
+#define ST_KEY2Y			23
 
 // Ammunition counter.
 #define ST_AMMO0WIDTH 3
@@ -84,6 +117,10 @@ lumpinfo_t *graynums[10];
 lumpinfo_t *yellownums[10];
 lumpinfo_t *bigpercent;
 lumpinfo_t *keys[6];
+lumpinfo_t *facestart;
+lumpinfo_t *facebg;
+
+lumpinfo_t *curface;
 
 void stbar_init(void)
 {
@@ -129,6 +166,14 @@ void stbar_init(void)
         if(!keys[i])
             fprintf(stderr, "stbar_init no %s lump\n", keyname);
     }
+
+    facestart = wad_findlump("STFST01", false);
+    if(!facestart)
+        fprintf(stderr, "stbar_init no STFST01 lump\n");
+
+    facebg = wad_findlump("STFB0", false);
+    if(!facebg)
+        fprintf(stderr, "stbar_init no STFB0 lump\n");
 }
 
 typedef struct
@@ -136,15 +181,36 @@ typedef struct
     thinker_t thinker;
     int lasthealth;
     float dmgfade;
+    float lastglance;
 } stthink_t;
 
-static bool stbar_think(stthink_t* thinker, float ft, float progt)
+int glanceface = 0;
+
+static void stbar_calcface(stthink_t* thinker, float ft, float progt)
+{
+    int offs;
+
+    if(!facestart)
+        curface = NULL;
+
+    if(progt - thinker->lastglance > 0.5)
+    {
+        glanceface = mrand() % 3;
+        thinker->lastglance = progt;
+    }
+
+    curface = facestart + glanceface;
+}
+
+bool stbar_think(stthink_t* thinker, float ft, float progt)
 {
     int palindex;
     int dmg;
 
     if(!player.mobj)
         return false;
+
+    stbar_calcface(thinker, ft, progt);
 
     if(thinker->lasthealth >= 0)
         dmg = CLAMP(thinker->lasthealth - player.mobj->info.health, 0, 100);
@@ -165,7 +231,7 @@ static bool stbar_think(stthink_t* thinker, float ft, float progt)
             thinker->dmgfade = 0;
     }
 
-    curpalette = palettes[palindex];
+    screen_setpal(palettes[palindex]);
 
     thinker->lasthealth = player.mobj->info.health;
 
@@ -183,17 +249,15 @@ void stbar_makethink(void)
 }
 
 // y from top of stbar
-static void stbar_drawpic(pic_t* pic, int x, int y)
+static void stbar_drawpic(pic_t* pic, uint8_t* trans, int x, int y)
 {
     fixed_t texmid;
     fixed_t iscale, scale, s;
     post_t *post;
 
-    
-
     scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
-    x = (scale * x) >> FIXEDSHIFT;
-    y = (scale * y) >> FIXEDSHIFT;
+    x = (scale * (x - pic->xoffs)) >> FIXEDSHIFT;
+    y = (scale * (y - pic->yoffs)) >> FIXEDSHIFT;
 
     y += sttop;
 
@@ -217,7 +281,10 @@ static void stbar_drawpic(pic_t* pic, int x, int y)
             break;
 
         post = (post_t*) ((uint8_t*) pic + pic->postoffs[s >> FIXEDSHIFT]);
-        draw_postcolumn(post, colormap->maps[0], x, y, screenheight-1, texmid, iscale, scale); 
+        if(trans)
+            draw_transpostcolumn(post, trans, colormap->maps[0], x, y, screenheight-1, texmid, iscale, scale);
+        else
+            draw_postcolumn(post, colormap->maps[0], x, y, screenheight-1, texmid, iscale, scale); 
     }
 }
 
@@ -238,7 +305,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
     {
         wad_cache(percent);
         pic = percent->cache;
-        stbar_drawpic(pic, x, y);
+        stbar_drawpic(pic, NULL, x, y);
     }
 
     if(!num)
@@ -246,7 +313,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         wad_cache(digits[0]);
         pic = digits[0]->cache;
         x -= pic->w;
-        stbar_drawpic(pic, x, y);
+        stbar_drawpic(pic, NULL, x, y);
         return;
     }
 
@@ -256,8 +323,19 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         wad_cache(digits[dig]);
         pic = digits[dig]->cache;
         x -= pic->w;
-        stbar_drawpic(pic, x, y);
+        stbar_drawpic(pic, NULL, x, y);
     }
+}
+
+static void stbar_drawfacebg(void)
+{
+    if(!player.mobj->info.color)
+        return;
+    if(!facebg)
+        return;
+    
+    wad_cache(facebg);
+    stbar_drawpic(facebg->cache, transtbls[player.mobj->info.color], ST_FACESX, ST_FACESY);
 }
 
 void stbar_draw(void)
@@ -285,7 +363,7 @@ void stbar_draw(void)
         maxcell *= 2;
     }
 
-    stbar_drawpic(stbarlump->cache, 0, 0);
+    stbar_drawpic(stbarlump->cache, NULL, 0, 0);
 
     // stbar_drawnumber(ST_AMMOX, ST_AMMOY, 50, ST_AMMOWIDTH, bignums, NULL);
     stbar_drawnumber(ST_HEALTHX, ST_HEALTHY, player.mobj->info.health, ST_HEALTHWIDTH, bignums, bigpercent);
@@ -306,8 +384,15 @@ void stbar_draw(void)
         wad_cache(keys[1]);
         wad_cache(keys[2]);
 
-        stbar_drawpic(keys[0]->cache, ST_KEY0X, ST_KEY0Y);
-        stbar_drawpic(keys[1]->cache, ST_KEY1X, ST_KEY1Y);
-        stbar_drawpic(keys[2]->cache, ST_KEY2X, ST_KEY2Y);
+        stbar_drawpic(keys[0]->cache, NULL, ST_KEY0X, ST_KEY0Y);
+        stbar_drawpic(keys[1]->cache, NULL, ST_KEY1X, ST_KEY1Y);
+        stbar_drawpic(keys[2]->cache, NULL, ST_KEY2X, ST_KEY2Y);
+    }
+
+    stbar_drawfacebg();
+    if(curface)
+    {
+        wad_cache(curface);
+        stbar_drawpic(curface->cache, NULL, ST_FACESX, ST_FACESY);
     }
 }

@@ -25,9 +25,8 @@ extern int screenheight;
 
 extern screen_t screens[NUM_SCR];
 
-extern color_t *curpalette;
-
 void screen_initscreens(void);
 void screen_present(void);
+void screen_setpal(color_t* pal);
 
 #endif

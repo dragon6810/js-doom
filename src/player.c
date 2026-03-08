@@ -42,7 +42,7 @@ void player_init(void)
     defaultplayerinfo.ammo[AMMO_CELL] = 0;
 }
 
-static bool player_think(playerthink_t* thinker, float frametime, float progtime)
+bool player_think(playerthink_t* thinker, float frametime, float progtime)
 {
     const float damageperiod = 32.0 / 35.0;
 
@@ -91,7 +91,7 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
     return false;
 }
 
-static void player_freethink(playerthink_t* thinker)
+void player_freethink(playerthink_t* thinker)
 {
     if(thinker->player && thinker->player->thinker == thinker)
         thinker->player->thinker = NULL;

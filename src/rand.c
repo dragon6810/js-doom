@@ -27,8 +27,14 @@ static const uint8_t randoms[256] =
 // maybe send this from the server to the client so
 // predicted state of random things is in sync?
 uint8_t prandindex = 0;
+uint8_t mrandindex = 0;
 
 uint8_t prand(void)
 {
     return randoms[prandindex++];
+}
+
+uint8_t mrand(void)
+{
+    return randoms[mrandindex++];
 }

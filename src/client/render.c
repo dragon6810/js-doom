@@ -122,8 +122,7 @@ void render_init(void)
 
     rectwidth = screenwidth;
     rectheight = screenheight - 32.0 * (screenheight / 200.0);
-
-    curpalette = palettes[0];
+    
     wad_loadcolormap();
 
     if(topclips)
