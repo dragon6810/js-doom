@@ -147,6 +147,8 @@ int main()
     player_init();
     draw_init();
 
+    stbar_makethink();
+
     screen_initscreens();
 
     keystates = SDL_GetKeyboardState(NULL);

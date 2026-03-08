@@ -1,5 +1,6 @@
 #include "stbar.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "client.h"
@@ -128,6 +129,57 @@ void stbar_init(void)
         if(!keys[i])
             fprintf(stderr, "stbar_init no %s lump\n", keyname);
     }
+}
+
+typedef struct
+{
+    thinker_t thinker;
+    int lasthealth;
+    float dmgfade;
+} stthink_t;
+
+static bool stbar_think(stthink_t* thinker, float ft, float progt)
+{
+    int palindex;
+    int dmg;
+
+    if(!player.mobj)
+        return false;
+
+    if(thinker->lasthealth >= 0)
+        dmg = CLAMP(thinker->lasthealth - player.mobj->info.health, 0, 100);
+    else
+        dmg = 0;
+    thinker->dmgfade += dmg;
+
+    palindex = 0;
+    if(thinker->dmgfade)
+    {
+        palindex = ((int) thinker->dmgfade + 7) / 8;
+        if(palindex >= 8)
+            palindex = 7;
+        palindex++;
+
+        thinker->dmgfade -= ft * 35;
+        if(thinker->dmgfade < 0)
+            thinker->dmgfade = 0;
+    }
+
+    curpalette = palettes[palindex];
+
+    thinker->lasthealth = player.mobj->info.health;
+
+    return false;
+}
+
+void stbar_makethink(void)
+{
+    stthink_t *thinker;
+
+    thinker = calloc(1, sizeof(stthink_t));
+    thinker->thinker.func = (thinkfunc_t) stbar_think;
+    thinker->lasthealth = -1;
+    addthinker(thinker);
 }
 
 // y from top of stbar

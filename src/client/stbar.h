@@ -3,6 +3,7 @@
 
 // call on wad load or screen resize
 void stbar_init(void);
+void stbar_makethink(void);
 void stbar_draw(void);
 
 #endif
