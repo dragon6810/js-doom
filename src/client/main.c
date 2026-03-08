@@ -20,10 +20,6 @@
 int screenwidth;
 int screenheight;
 
-SDL_Renderer *renderer;
-SDL_Texture *screenTexture;
-uint32_t *pixels;
-
 const Uint8* keystates;
 
 float starttime;
@@ -133,31 +129,10 @@ void loop(void)
 
     sendtoserver();
 
-    SDL_UpdateTexture(screenTexture, NULL, pixels, screenwidth * sizeof(uint32_t));
-
-    SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
-
-    SDL_RenderPresent(renderer);
+    screen_present();
 
     lastframetime = curtime;
     fpsframes++;
-}
-
-EMSCRIPTEN_KEEPALIVE
-void screen_init(int width, int height)
-{
-    screenwidth = width;
-    screenheight = height;
-
-    SDL_Window *window;
-    SDL_CreateWindowAndRenderer(screenwidth, screenheight, 0, &window, &renderer);
-
-    screenTexture = SDL_CreateTexture(renderer,
-                                      SDL_PIXELFORMAT_ARGB8888,
-                                      SDL_TEXTUREACCESS_STREAMING,
-                                      screenwidth, screenheight);
-
-    pixels = (uint32_t*) malloc(screenwidth * screenheight * sizeof(uint32_t));
 }
 
 int main()
@@ -172,15 +147,11 @@ int main()
     player_init();
     draw_init();
 
+    screen_initscreens();
+
     keystates = SDL_GetKeyboardState(NULL);
 
     emscripten_set_main_loop(loop, 0, 1);
-
-    // The following code is now effectively dead, but we keep it for potential future cleanup.
-    free(pixels);
-    SDL_DestroyTexture(screenTexture);
-    SDL_DestroyRenderer(renderer);
-    SDL_Quit();
 
     return 0;
 }

@@ -92,11 +92,6 @@ static void* recvplayerdeltas(void* buf, void* curpos, int len)
         info.flags = net_readu8(buf, curpos, len);
         curpos += 1;
     }
-    if(fields & PFIELD_HEALTH)
-    {
-        info.health = net_readu16(buf, curpos, len);
-        curpos += 2;
-    }
     if(fields & PFIELD_ARMOR)
     {
         info.armor = net_readu16(buf, curpos, len);
@@ -217,6 +212,11 @@ static void* recventdeltas(void* buf, void* curpos, int len)
         {
             info->color = net_readu8(buf, curpos, len);
             curpos += 1;
+        }
+        if(fields & FIELD_HEALTH)
+        {
+            info->health = net_readi16(buf, curpos, len);
+            curpos += 2;
         }
 
         if(!info->exists)

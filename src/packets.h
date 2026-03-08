@@ -16,19 +16,19 @@
 #define FIELD_YVEL 0x0100 // float
 #define FIELD_ZVEL 0x0200 // float
 #define FIELD_COLOR 0x0400 // uint8_t
+#define FIELD_HEALTH 0x0800 // int16_t
 
 #define SFIELD_FLOOR 0x01 // float
 #define SFIELD_CEIL  0x02 // float
 
 #define PFIELD_FLAGS 0x0001 // uint8_t
-#define PFIELD_HEALTH 0x0002 // uint16_t
-#define PFIELD_ARMOR 0x0004 // uint16_t
-#define PFIELD_WEAPONS 0x0008 // uint8_t
-#define PFIELD_BULLETS 0x0010 // uint16_t
-#define PFIELD_SHELLS 0x0020 // uint16_t
-#define PFIELD_ROCKETS 0x0040 // uint16_t
-#define PFIELD_CELLS 0x0080 // uint16_t
-#define PFIELD_FRAGS 0x100 // uint16_t
+#define PFIELD_ARMOR 0x0002 // uint16_t
+#define PFIELD_WEAPONS 0x0004 // uint8_t
+#define PFIELD_BULLETS 0x0008 // uint16_t
+#define PFIELD_SHELLS 0x0010 // uint16_t
+#define PFIELD_ROCKETS 0x0020 // uint16_t
+#define PFIELD_CELLS 0x0040 // uint16_t
+#define PFIELD_FRAGS 0x0080 // uint16_t
 
 typedef struct
 {

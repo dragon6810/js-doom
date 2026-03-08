@@ -10,6 +10,7 @@
 #define MAX_WAD 16
 
 #define TOTAL_COLORMAP 34
+#define NUM_PAL 14
 #define LIGHTMAP 32
 
 typedef struct
@@ -73,7 +74,7 @@ extern FILE *wads[MAX_WAD];
 extern char wadnames[MAX_WAD][13];
 
 extern sprite_t sprites[NUMSPRITES];
-extern color_t *palette;
+extern color_t palettes[NUM_PAL][256];
 extern colormap_t *colormap;
 extern lumpinfo_t *skylump;
 
@@ -83,6 +84,5 @@ void wad_cache(lumpinfo_t* lump);
 void wad_decache(lumpinfo_t* lump);
 void wad_clearcache(void); // probably should be called at the end of a level
 void wad_loadcolormap(void);
-void wad_setpalette(int palnum);
 
 #endif

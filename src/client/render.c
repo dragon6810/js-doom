@@ -123,7 +123,7 @@ void render_init(void)
     rectwidth = screenwidth;
     rectheight = screenheight - 32.0 * (screenheight / 200.0);
 
-    wad_setpalette(0);
+    curpalette = palettes[0];
     wad_loadcolormap();
 
     if(topclips)
@@ -273,7 +273,7 @@ void render_maskedseg(drawseg_t* seg, int x1, int x2, fixed_t maxscale)
         lightindex = CLAMP(FIXEDTOFLOAT(scale) * 16 * 320.0 / screenwidth, 0, SCALEBANDS - 1);
         map = scalemap[baselight][lightindex];
 
-        iscale = 0xFFFFFFFFu / (uint32_t) scale;
+        iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
 
         pxtop = (top >> FIXEDSHIFT) + 1;
         pxbottom = (top + height) >> FIXEDSHIFT;
@@ -354,7 +354,7 @@ void render_drawthing(visthing_t* thing)
     if(w <= 0 || h <= 0)
         return;
 
-    iscale = fixeddiv((fixed_t) 1 << FIXEDSHIFT, thing->scale);
+    iscale = 0xFFFFFFFFu / (uint32_t) thing->scale + 1;
     texmid = fixedmul(FLOATTOFIXED(halfy) - (thing->y << FIXEDSHIFT), iscale);
 
     for(x=MAX(thing->x, 0); x<thing->x+w&&x<screenwidth; x++)
@@ -479,7 +479,6 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
 {
     int x;
 
-    color_t color;
     float dist;
     float worldx, worldy;
     float dx, dy, step;
@@ -517,27 +516,7 @@ void render_drawspan(visplane_t* plane, int y, int x1, int x2)
     {
         s = (wxf >> FIXEDSHIFT) & (FLAT_RES - 1);
         t = (wyf >> FIXEDSHIFT) & (FLAT_RES - 1);
-        color = palette[map[((uint8_t*) plane->flat->cache)[t * FLAT_RES + s]]];
-        pixels[y * screenwidth + x] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
-    }
-}
-
-void render_solidcol(uint8_t* col, uint8_t* colmap, int texheight, int x, int y1, int y2, float t, float tstep)
-{
-    int y, dst;
-
-    color_t color;
-    fixed_t tfrac, tsfrac;
-
-    tfrac = FLOATTOFIXED(t);
-    while(tfrac<0)
-        tfrac += texheight << FIXEDSHIFT;
-    tsfrac = FLOATTOFIXED(tstep);
-
-    for(y=y1, dst=y1*screenwidth+x; y<=y2; y++, tfrac+=tsfrac, dst+=screenwidth)
-    {
-        color = palette[colmap[col[(tfrac >> FIXEDSHIFT) % texheight]]];
-        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+        drawscreen->pixels[y * screenwidth + x] = map[((uint8_t*) plane->flat->cache)[t * FLAT_RES + s]];
     }
 }
 
@@ -922,7 +901,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
     drewtop = drewbottom = false;
     for(x=x1; x<=x2; x++, top+=topstep, midheight+=midhstep, scale+=scalestep)
     {
-        iscale = 0xFFFFFFFFu / (uint32_t) scale;
+        iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
 
         a = xtoangle[x];
         s = sbase + FIXEDTOFLOAT(dist) * (ANGTAN(unclippeda1 - normal) - ANGTAN(a + viewangle - normal));
@@ -1430,6 +1409,7 @@ void render_setup(void)
 
 void render(float progtime)
 {
+    drawscreen = &screens[SCR_LVL];
     render_setup();
     render_node(nnodes-1);   
     render_drawplanes();

@@ -99,6 +99,8 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         fieldflags |= FIELD_ZVEL;
     if(info->exists && (spawned || compare->color != info->color))
         fieldflags |= FIELD_COLOR;
+    if(info->exists && (spawned || compare->health != info->health))
+        fieldflags |= FIELD_HEALTH;
 
     // ent is the exact same
     if(!fieldflags)
@@ -128,6 +130,8 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         netbuf_writefloat(buf, info->zvel);
     if(fieldflags & FIELD_COLOR)
         netbuf_writeu8(buf, info->color);
+    if(fieldflags & FIELD_HEALTH)
+        netbuf_writei16(buf, info->health);
 }
 
 static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
@@ -179,8 +183,6 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
     fields = 0;
     if(compare->flags != info->flags)
         fields |= PFIELD_FLAGS;
-    if(compare->health != info->health)
-        fields |= PFIELD_HEALTH;
     if(compare->armor != info->armor)
         fields |= PFIELD_ARMOR;
     if(compare->weapons != info->weapons)
@@ -203,8 +205,6 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
     netbuf_writeu16(buf, fields);
     if(fields & PFIELD_FLAGS)
         netbuf_writeu8(buf, info->flags);
-    if(fields & PFIELD_HEALTH)
-        netbuf_writeu16(buf, info->health);
     if(fields & PFIELD_ARMOR)
         netbuf_writeu16(buf, info->armor);
     if(fields & PFIELD_WEAPONS)
@@ -504,6 +504,7 @@ void spawnplayer(client_t* client)
     client->player.mobj->info.x = start->x;
     client->player.mobj->info.y = start->y;
     client->player.mobj->info.angle = start->angle;
+    client->player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;
     level_placemobj(client->player.mobj);
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;

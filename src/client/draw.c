@@ -4,6 +4,7 @@
 #include "screen.h"
 
 uint8_t transtbls[NUM_MC][256];
+screen_t *drawscreen = NULL;
 
 static void draw_remaprange(uint8_t* tbl, int dst, int dstlen, int src, int srclen)
 {
@@ -48,7 +49,7 @@ void draw_pic(pic_t* pic, uint8_t* colmap, int x, int y)
     y -= pic->yoffs;
 
     scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
-    iscale = fixeddiv(1 << FIXEDSHIFT, scale);
+    iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
 
     if(y >= rectheight)
         return;
@@ -68,7 +69,7 @@ void draw_pic(pic_t* pic, uint8_t* colmap, int x, int y)
             break;
 
         post = (post_t*) ((uint8_t*) pic + pic->postoffs[s >> FIXEDSHIFT]);
-        draw_postcolumn(post, colormap->maps[0], x, y, rectheight-1, texmid, iscale, scale); 
+        draw_postcolumn(post, colormap->maps[0], x, y, rectheight-1, texmid, iscale, scale);
     }
 }
 
@@ -79,7 +80,6 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
     fixed_t tfrac, startfrac, lenfrac, posttop, halfyfrac;
     fixed_t y1frac, y2frac;
     int dst;
-    color_t color;
 
     y1frac = y1 << FIXEDSHIFT;
     y2frac = y2 << FIXEDSHIFT;
@@ -110,13 +110,12 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
             tfrac = fixedmul((y << FIXEDSHIFT) - posttop, iscale);
         }
 
-        for(dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
+        for(dst=(y-drawscreen->y)*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
         {
             if(tfrac >= lenfrac || y > y2)
                 break;
 
-            color = palette[map[post->payload[tfrac >> FIXEDSHIFT]]];
-            pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+            drawscreen->pixels[dst] = map[post->payload[tfrac >> FIXEDSHIFT]];
         }
 
         post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
@@ -130,7 +129,6 @@ void draw_transpostcolumn(post_t* post, uint8_t* trans, uint8_t* map, int x, int
     fixed_t tfrac, startfrac, lenfrac, posttop, halfyfrac;
     fixed_t y1frac, y2frac;
     int dst;
-    color_t color;
 
     y1frac = y1 << FIXEDSHIFT;
     y2frac = y2 << FIXEDSHIFT;
@@ -161,13 +159,12 @@ void draw_transpostcolumn(post_t* post, uint8_t* trans, uint8_t* map, int x, int
             tfrac = fixedmul((y << FIXEDSHIFT) - posttop, iscale);
         }
 
-        for(dst=y*screenwidth+x; ; tfrac+=iscale, y++, dst+=screenwidth)
+        for(dst=(y-drawscreen->y)*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
         {
             if(tfrac >= lenfrac || y > y2)
                 break;
 
-            color = palette[map[trans[post->payload[tfrac >> FIXEDSHIFT]]]];
-            pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+            drawscreen->pixels[dst] = map[trans[post->payload[tfrac >> FIXEDSHIFT]]];
         }
 
         post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
@@ -180,14 +177,12 @@ void draw_texcolumn(uint8_t* col, uint8_t* map, int x, int y1, int y2, fixed_t t
 
     int dst;
     fixed_t tfrac;
-    color_t color;
 
     tfrac = texmid + fixedmul((y1 << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT-1)), iscale);
 
-    dst = y1 * screenwidth + x;
-    for(y=y1; y<=y2; y++, tfrac+=iscale, dst+=screenwidth)
+    dst = (y1 - drawscreen->y) * drawscreen->w + x;
+    for(y=y1; y<=y2; y++, tfrac+=iscale, dst+=drawscreen->w)
     {
-        color = palette[map[col[(tfrac >> FIXEDSHIFT) & 127]]];
-        pixels[dst] = (int) color.r << 16 | (int) color.g << 8 | (int) color.b;
+        drawscreen->pixels[dst] = map[col[(tfrac >> FIXEDSHIFT) & 127]];
     }
 }

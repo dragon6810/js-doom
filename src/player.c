@@ -34,7 +34,6 @@ void player_init(void)
     deltaviewheight = 0;
 
     defaultplayerinfo.flags = PFLAG_BLUCARD | PFLAG_YELCARD | PFLAG_REDCARD;
-    defaultplayerinfo.health = 100;
     defaultplayerinfo.armor = 0;
     defaultplayerinfo.weapons = (1 << WEAPON_FIST) | (1 << WEAPON_PIST);
     defaultplayerinfo.ammo[AMMO_BUL] = 50;
@@ -46,10 +45,8 @@ void player_init(void)
 static bool player_think(playerthink_t* thinker, float frametime, float progtime)
 {
     const float damageperiod = 32.0 / 35.0;
-    
-    const char *floortex;
 
-    int nukagetype;
+    int nukagedamage;
 
     if(INRANGE(thinker->player->mobj->info.state, S_PLAY, S_PLAY_PAIN2))
     {
@@ -57,12 +54,22 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
         && thinker->player->mobj->ssector
         && thinker->player->mobj->info.z <= thinker->player->mobj->ssector->sector->floorheight)
         {
-            nukagetype = 0;
-            floortex = thinker->player->mobj->ssector->sector->floortex->name;
-            if(!strcmp(floortex, "NUKAGE1") || !strcmp(floortex, "NUKAGE2") || !strcmp(floortex, "NUKAGE3"))
-                nukagetype = 1;
+            nukagedamage = 0;
+            switch(thinker->player->mobj->ssector->sector->special)
+            {
+            case 5:
+                nukagedamage = 10;
+            case 7:
+                nukagedamage = 5;
+                break;
+            case 16:
+                nukagedamage = 20;
+                break;
+            default:
+                break;
+            }
 
-            if(nukagetype)
+            if(nukagedamage)
             {
                 if(!thinker->wasonnukage)
                     thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
@@ -71,20 +78,14 @@ static bool player_think(playerthink_t* thinker, float frametime, float progtime
             else
                 thinker->wasonnukage = false;
 
-            if(nukagetype == 1 && progtime - thinker->lastdamage >= damageperiod)
+            if(nukagedamage && progtime - thinker->lastdamage >= damageperiod)
             {
-                thinker->player->info.health -= 5;
+                level_damagemobj(thinker->player->mobj, nukagedamage);
                 thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
             }
         }
         else
             thinker->wasonnukage = false;
-
-        if(thinker->player->info.health <= 0)
-        {
-            thinker->player->info.health = 0;
-            level_setmobjstate(thinker->player->mobj, mobjinfo[MT_PLAYER].deathstate);
-        }
     }
 
     return false;

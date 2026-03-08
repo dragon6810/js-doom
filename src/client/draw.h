@@ -3,10 +3,12 @@
 
 #include "doommath.h"
 #include "level.h"
+#include "screen.h"
 #include "tex.h"
 #include "wad.h"
 
 extern uint8_t transtbls[NUM_MC][256];
+extern screen_t *drawscreen;
 
 void draw_init(void);
 void draw_pic(pic_t* pic, uint8_t* colmap, int x, int y);

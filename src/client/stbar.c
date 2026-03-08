@@ -137,6 +137,8 @@ static void stbar_drawpic(pic_t* pic, int x, int y)
     fixed_t iscale, scale, s;
     post_t *post;
 
+    
+
     scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
     x = (scale * x) >> FIXEDSHIFT;
     y = (scale * y) >> FIXEDSHIFT;
@@ -147,7 +149,7 @@ static void stbar_drawpic(pic_t* pic, int x, int y)
         return;
 
     texmid = -((y << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT - 1)));
-    iscale = 0xFFFFFFFFu / (uint32_t) scale;
+    iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
     texmid = fixedmul(texmid, iscale);
 
     if(y + (fixedmul(pic->h << FIXEDSHIFT, scale) >> FIXEDSHIFT) <= sttop)
@@ -212,6 +214,8 @@ void stbar_draw(void)
 
     int maxbul, maxshel, maxrock, maxcell;
 
+    drawscreen = &screens[SCR_ST];
+
     if(!stbarlump)
         return;
     wad_cache(stbarlump);
@@ -232,7 +236,7 @@ void stbar_draw(void)
     stbar_drawpic(stbarlump->cache, 0, 0);
 
     // stbar_drawnumber(ST_AMMOX, ST_AMMOY, 50, ST_AMMOWIDTH, bignums, NULL);
-    stbar_drawnumber(ST_HEALTHX, ST_HEALTHY, player.info.health, ST_HEALTHWIDTH, bignums, bigpercent);
+    stbar_drawnumber(ST_HEALTHX, ST_HEALTHY, player.mobj->info.health, ST_HEALTHWIDTH, bignums, bigpercent);
     stbar_drawnumber(ST_FRAGSX, ST_FRAGSY, player.info.frags, ST_FRAGSWIDTH, bignums, NULL);
     stbar_drawnumber(ST_ARMORX, ST_ARMORY, player.info.armor, ST_ARMORWIDTH, bignums, bigpercent);
     stbar_drawnumber(ST_AMMO0X, ST_AMMO0Y, player.info.ammo[AMMO_BUL], ST_AMMO0WIDTH, yellownums, NULL);

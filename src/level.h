@@ -65,6 +65,7 @@ typedef struct objinfo_s
     mobjtype_t type;
     float xvel, yvel, zvel;
     mc_e color;
+    int health;
 } objinfo_t;
 
 struct object_s
@@ -225,6 +226,7 @@ ssector_t* level_getpointssector(float x, float y);
 float level_getlowestneighborceil(sector_t* sec);
 bool level_mobjstuckinblock(int bx, int by);
 void level_setmobjstate(object_t* obj, statenum_t state);
+void level_damagemobj(object_t* obj, int dmg);
 bool level_mobjstuckinsector(sector_t* sector);
 void level_addmobjthinker(object_t* obj);
 void level_killmobj(object_t* obj);

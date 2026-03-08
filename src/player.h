@@ -45,7 +45,7 @@ typedef enum
 typedef struct
 {
     int flags;
-    int health, armor;
+    int armor;
     int weapons; // each bit is a flag (bit is 1 << (weapon))
     int ammo[NUM_AMMO];
     int frags;
@@ -53,19 +53,20 @@ typedef struct
 
 typedef struct
 {
-    object_t *mobj;
-    playerinfo_t info;
-    thinker_t *thinker;
-
-    bool dumb; // 'dumb' player, true for client, false for server
-} player_t;
-
-typedef struct
-{
     uint8_t flags; // CMD_XX
     angle_t angle;
     float frametime;
 } playercmd_t;
+
+typedef struct
+{
+    object_t *mobj;
+    playerinfo_t info;
+    thinker_t *thinker;
+    playercmd_t lastcmd;
+
+    bool dumb; // 'dumb' player, true for client, false for server
+} player_t;
 
 extern player_t player;
 

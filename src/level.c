@@ -705,6 +705,16 @@ void level_setmobjstate(object_t* obj, statenum_t state)
         ((mobjthink_t*)obj->thinker)->timeinstate = 0;
 }
 
+void level_damagemobj(object_t* obj, int dmg)
+{
+    obj->info.health -= dmg;
+    if(obj->info.health > 0)
+        return;
+    
+    obj->info.health = 0;
+    level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
+}
+
 static bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
 {
     thinker->timeinstate += ft;
