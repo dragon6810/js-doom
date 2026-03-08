@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "rand.h"
 #include "wad.h"
 
 #define LUMPOFFS_THINGS 1
@@ -707,12 +708,23 @@ void level_setmobjstate(object_t* obj, statenum_t state)
 
 void level_damagemobj(object_t* obj, int dmg)
 {
+    int rng;
+
     obj->info.health -= dmg;
-    if(obj->info.health > 0)
+    if(obj->info.health <= 0)
+    {
+        obj->info.health = 0;
+        level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
         return;
-    
-    obj->info.health = 0;
-    level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
+    }
+
+    if(mobjinfo[obj->info.type].painstate != S_NULL)
+    {
+        if(prand() <= mobjinfo[obj->info.type].painchance)
+        {
+            level_setmobjstate(obj, mobjinfo[obj->info.type].painstate);
+        }
+    }
 }
 
 static bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
