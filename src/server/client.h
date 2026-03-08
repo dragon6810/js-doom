@@ -8,7 +8,7 @@
 #include "packets.h"
 #include "player.h"
 
-#define MAX_CLIENT 16
+#define MAX_CLIENT 11
 #define GAMESTATE_WINDOW 32
 #define CLIENT_TIMEOUT 30
 

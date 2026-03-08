@@ -1,8 +1,8 @@
 // This code is executed before the WASM module is loaded.
 // It sets the canvas element that the SDL2 backend will use for rendering.
 
-const RENDER_WIDTH = 1280;
-const RENDER_HEIGHT = 800;
+const RENDER_WIDTH = 320;
+const RENDER_HEIGHT = 200;
 
 Module['canvas'] = (function() { 
     const canvas = document.getElementById('canvas');
@@ -40,12 +40,12 @@ Module.onRuntimeInitialized = function() {
     });
 })();
 
-let peerConnection;
-let dataChannel;
-let signalingSocket;
+globalThis.peerConnection = undefined;
+globalThis.dataChannel = undefined;
+globalThis.signalingSocket = undefined;
 
 // Call this from the console: connectToGame('localhost', 8080)
-async function connectToGame(ip, port) {
+globalThis.connectToGame = async function connectToGame(ip, port) {
     signalingSocket = new WebSocket(`ws://${ip}:${port}`);
 
     signalingSocket.onopen = async () => {

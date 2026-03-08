@@ -49,6 +49,7 @@ typedef struct visthing_s
     fixed_t scale;
     int x;
     int y;
+    mc_e color;
 
     struct visthing_s *next, *prev;
 } visthing_t;
@@ -390,7 +391,10 @@ void render_drawthing(visthing_t* thing)
             continue;
         
         post = (post_t*) ((uint8_t*) thing->patch + thing->patch->postoffs[s >> FIXEDSHIFT]);
-        draw_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
+        if(!thing->color)
+            draw_postcolumn(post, thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
+        else
+            draw_transpostcolumn(post, transtbls[thing->color], thing->colormap, x, y1, y2, texmid, iscale, thing->scale);
     }
 }
 
@@ -1332,6 +1336,8 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 
     visthing->x = x;
     visthing->y = y;
+
+    visthing->color = mobj->info.color;
 
     return false;
 }

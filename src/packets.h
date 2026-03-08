@@ -15,6 +15,7 @@
 #define FIELD_XVEL 0x0080 // float
 #define FIELD_YVEL 0x0100 // float
 #define FIELD_ZVEL 0x0200 // float
+#define FIELD_COLOR 0x0400 // uint8_t
 
 #define SFIELD_FLOOR 0x01 // float
 #define SFIELD_CEIL  0x02 // float

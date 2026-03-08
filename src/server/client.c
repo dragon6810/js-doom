@@ -97,6 +97,8 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         fieldflags |= FIELD_YVEL;
     if(info->exists && (spawned || compare->zvel != info->zvel))
         fieldflags |= FIELD_ZVEL;
+    if(info->exists && (spawned || compare->color != info->color))
+        fieldflags |= FIELD_COLOR;
 
     // ent is the exact same
     if(!fieldflags)
@@ -124,6 +126,8 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         netbuf_writefloat(buf, info->yvel);
     if(fieldflags & FIELD_ZVEL)
         netbuf_writefloat(buf, info->zvel);
+    if(fieldflags & FIELD_COLOR)
+        netbuf_writeu8(buf, info->color);
 }
 
 static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
@@ -503,6 +507,7 @@ void spawnplayer(client_t* client)
     level_placemobj(client->player.mobj);
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
+    client->player.mobj->info.color = (int) (client - clients) + 1;
 
     client->player.dumb = false;
 

@@ -38,6 +38,23 @@ typedef struct sidedef_s sidedef_t;
 typedef struct vertex_s vertex_t;
 typedef struct block_s block_t;
 
+typedef enum
+{
+    MC_NONE=0,
+    MC_GRN, // green (default player, no actual remapping)
+    MC_YEL, // yellow
+    MC_RED, // red
+    MC_BLU, // blue
+    MC_BRN, // brown
+    MC_GRY, // gray
+    MC_ROS, // rose
+    MC_ORN, // orange
+    MC_WHT, // white
+    MC_FRS, // forest
+
+    NUM_MC
+} mc_e;
+
 // these fields are sent from server to client
 typedef struct objinfo_s
 {
@@ -47,6 +64,7 @@ typedef struct objinfo_s
     statenum_t state;
     mobjtype_t type;
     float xvel, yvel, zvel;
+    mc_e color;
 } objinfo_t;
 
 struct object_s

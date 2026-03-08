@@ -213,6 +213,11 @@ static void* recventdeltas(void* buf, void* curpos, int len)
             info->zvel = net_readfloat(buf, curpos, len);
             curpos += 4;
         }
+        if(fields & FIELD_COLOR)
+        {
+            info->color = net_readu8(buf, curpos, len);
+            curpos += 1;
+        }
 
         if(!info->exists)
             memset(info, 0, sizeof(*info));

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "connection.h"
+#include "draw.h"
 #include "level.h"
 #include "net.h"
 #include "player.h"
@@ -169,6 +170,7 @@ int main()
     render_init();
     stbar_init();
     player_init();
+    draw_init();
 
     keystates = SDL_GetKeyboardState(NULL);
 

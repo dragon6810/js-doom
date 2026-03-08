@@ -137,14 +137,18 @@ static void stbar_drawpic(pic_t* pic, int x, int y)
     fixed_t iscale, scale, s;
     post_t *post;
 
+    scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
+    x = (scale * x) >> FIXEDSHIFT;
+    y = (scale * y) >> FIXEDSHIFT;
+
     y += sttop;
 
     if(y >= screenheight)
         return;
 
     texmid = -((y << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT - 1)));
-    iscale = fixeddiv(200 << FIXEDSHIFT, screenheight << FIXEDSHIFT);
-    scale = fixeddiv(1 << FIXEDSHIFT, iscale);
+    iscale = 0xFFFFFFFFu / (uint32_t) scale;
+    texmid = fixedmul(texmid, iscale);
 
     if(y + (fixedmul(pic->h << FIXEDSHIFT, scale) >> FIXEDSHIFT) <= sttop)
         return;
@@ -170,14 +174,11 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
     int i;
     
     pic_t *pic;
-    fixed_t scale;
     int dig;
 
     for(i=0; i<10; i++)
         if(!digits[i])
             return;
-
-    scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
     
     if(percent)
     {
@@ -190,7 +191,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
     {
         wad_cache(digits[0]);
         pic = digits[0]->cache;
-        x -= fixedmul(pic->w << FIXEDSHIFT, scale) >> FIXEDSHIFT;
+        x -= pic->w;
         stbar_drawpic(pic, x, y);
         return;
     }
@@ -200,7 +201,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         dig = num % 10;
         wad_cache(digits[dig]);
         pic = digits[dig]->cache;
-        x -= fixedmul(pic->w << FIXEDSHIFT, scale) >> FIXEDSHIFT;
+        x -= pic->w;
         stbar_drawpic(pic, x, y);
     }
 }
