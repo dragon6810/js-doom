@@ -49,12 +49,22 @@ void gatherinput(void)
 
     sendinputs = true;
     inputcmd.flags = 0;
+    inputcmd.switchwpn = WEAPON_NONE;
 
     SDL_PumpEvents();
     if(keystates[SDL_SCANCODE_W]) inputcmd.flags |= CMD_FORWARD;
     if(keystates[SDL_SCANCODE_S]) inputcmd.flags |= CMD_BACK;
     if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
     if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
+    if(keystates[SDL_SCANCODE_RCTRL]) inputcmd.flags |= CMD_FIRE;
+
+    if(keystates[SDL_SCANCODE_1]) inputcmd.switchwpn = WEAPON_FIST;
+    if(keystates[SDL_SCANCODE_2]) inputcmd.switchwpn = WEAPON_PIST;
+    if(keystates[SDL_SCANCODE_3]) inputcmd.switchwpn = WEAPON_SHOT;
+    if(keystates[SDL_SCANCODE_4]) inputcmd.switchwpn = WEAPON_CHAIN;
+    if(keystates[SDL_SCANCODE_5]) inputcmd.switchwpn = WEAPON_ROCKET;
+    if(keystates[SDL_SCANCODE_6]) inputcmd.switchwpn = WEAPON_PLASMA;
+    if(keystates[SDL_SCANCODE_7]) inputcmd.switchwpn = WEAPON_BFG;
 
     inputcmd.angle = mobjs[serverconn.edict].info.angle;
     if(keystates[SDL_SCANCODE_LEFT]) inputcmd.angle += turnspeed;

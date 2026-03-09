@@ -25,8 +25,12 @@ void visweapon_draw(float progtime)
 
     xoffs = bob * ANGCOS(angle);
     yoffs = 16 + bob * ANGSIN(angle & (ANG180 - 1));
+    if(player.info.weapon.state == wpndefs[player.info.weapon.cur].upst)
+        yoffs += player.info.weapon.time * (6.0*35.0);
+    else if(player.info.weapon.state == wpndefs[player.info.weapon.cur].downst)
+        yoffs += 128 - player.info.weapon.time * (6.0*35.0);
     
-    lump = &lumps[sprites[states[S_PISTOL].sprite].frames[states[S_PISTOL].frame].rotlumps[0]];
+    lump = &lumps[sprites[states[player.info.weapon.state].sprite].frames[states[player.info.weapon.state].frame].rotlumps[0]];
     wad_cache(lump);
     draw_scaledpic(lump->cache, NULL, scalemap[sectorlight][SCALEBANDS-1], FLOATTOFIXED(xoffs), FLOATTOFIXED(yoffs));
 }

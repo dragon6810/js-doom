@@ -29,6 +29,10 @@
 #define PFIELD_ROCKETS 0x0020 // uint16_t
 #define PFIELD_CELLS 0x0040 // uint16_t
 #define PFIELD_FRAGS 0x0080 // uint16_t
+#define PFIELD_WPNST 0x0100 // int16_t
+#define PFIELD_CURWPN 0x0200 // uint8_t (weapon_e)
+#define PFIELD_PENDWPN 0x0400 // uint8_t (weapon_e)
+#define PFIELD_WPNTIME 0x0800 // float
 
 typedef struct
 {

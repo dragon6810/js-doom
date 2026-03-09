@@ -197,6 +197,14 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
         fields |= PFIELD_CELLS;
     if(compare->frags != info->frags)
         fields |= PFIELD_FRAGS;
+    if(compare->weapon.cur != info->weapon.cur)
+        fields |= PFIELD_CURWPN;
+    if(compare->weapon.pend != info->weapon.pend)
+        fields |= PFIELD_PENDWPN;
+    if(compare->weapon.state != info->weapon.state)
+        fields |= PFIELD_WPNST;
+    if(compare->weapon.time != info->weapon.time)
+        fields |= PFIELD_WPNTIME;
     
     if(!fields)
         return;
@@ -219,6 +227,14 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
         netbuf_writeu16(buf, info->ammo[AMMO_CELL]);
     if(fields & PFIELD_FRAGS)
         netbuf_writeu16(buf, info->frags);
+    if(fields & PFIELD_CURWPN)
+        netbuf_writeu8(buf, info->weapon.cur);
+    if(fields & PFIELD_PENDWPN)
+        netbuf_writeu8(buf, info->weapon.pend);
+    if(fields & PFIELD_WPNST)
+        netbuf_writei16(buf, info->weapon.state);
+    if(fields & PFIELD_WPNTIME)
+        netbuf_writefloat(buf, info->weapon.time);
 }
 
 static void buildunreliable(client_t* cl, netbuf_t* buf)
@@ -299,6 +315,7 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
     cmd.flags = net_readu8(buf, curpos++, len);
     cmd.angle = net_readu32(buf, curpos, len);
     curpos += 4;
+    cmd.switchwpn = net_readu8(buf, curpos++, len);
     cmd.frametime = net_readfloat(buf, curpos, len);
     curpos += 4;
     
@@ -306,7 +323,7 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
         return NULL;
 
     cl->buttons = cmd.flags;
-    player_docmd(cl->player.mobj, &cmd);
+    player_docmd(&cl->player, &cmd);
 
     if(!cmd.flags
     && cl->player.mobj->info.state == S_PLAY_RUN1
@@ -315,6 +332,8 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
         level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].spawnstate);
     else if(cmd.flags && cl->player.mobj->info.state == S_PLAY)
         level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].seestate);
+
+    weapon_docmd(&cl->player.info.weapon, cmd.flags, cmd.switchwpn);
 
     return curpos;
 }

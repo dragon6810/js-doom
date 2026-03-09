@@ -127,6 +127,26 @@ static void* recvplayerdeltas(void* buf, void* curpos, int len)
         info.frags = net_readu16(buf, curpos, len);
         curpos += 2;
     }
+    if(fields & PFIELD_CURWPN)
+    {
+        startwpn.cur = net_readu8(buf, curpos, len);
+        curpos += 1;
+    }
+    if(fields & PFIELD_PENDWPN)
+    {
+        startwpn.pend = net_readu8(buf, curpos, len);
+        curpos += 1;
+    }
+    if(fields & PFIELD_WPNST)
+    {
+        startwpn.state = net_readi16(buf, curpos, len);
+        curpos += 2;
+    }
+    if(fields & PFIELD_WPNTIME)
+    {
+        startwpn.time = net_readfloat(buf, curpos, len);
+        curpos += 4;
+    }
 
     if(netpacketfull)
         return NULL;
@@ -307,6 +327,9 @@ static void* recvshake(void* buf, void* curpos, int len)
 
     player_addthinker(&player);
 
+    weapon_initstate(&startwpn);
+    player.info.weapon = startwpn;
+
     serverconn.state = CLSTATE_CONNECTED;
     printf("[net] handshake ack, client id %d, edict id %d\n", serverconn.clientid, serverconn.edict);
 
@@ -389,6 +412,7 @@ void buildunreliable(netbuf_t* buf)
     netbuf_writeu8(buf, CSV_INPUT);
     netbuf_writeu8(buf, inputcmd.flags);
     netbuf_writeu32(buf, inputcmd.angle);
+    netbuf_writeu8(buf, inputcmd.switchwpn);
     netbuf_writefloat(buf, inputcmd.frametime);
 }
 

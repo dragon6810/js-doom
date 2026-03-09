@@ -7,12 +7,15 @@
 playercmd_t inputwindow[PRED_WINDOW] = {};
 gamestate_t oldgs = {};
 gamestate_t newgs = {};
+wpnst_t startwpn = {};
 
 void predictplayer(void)
 {
     int i;
 
     int start, end;
+
+    player.info.weapon = startwpn;
 
     level_unplacemobj(&mobjs[serverconn.edict]);
     mobjs[serverconn.edict].info = newgs.mobjs[serverconn.edict];
@@ -26,7 +29,8 @@ void predictplayer(void)
 
     for(i=start; i<=end; i++)
     {
-        player_docmd(&mobjs[serverconn.edict], &inputwindow[i % PRED_WINDOW]);
+        player_docmd(&player, &inputwindow[i % PRED_WINDOW]);
+        weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
     }
 }
 

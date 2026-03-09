@@ -48,6 +48,9 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
 
     int nukagedamage;
 
+    if(!thinker->player->dumb)
+        weapon_tickstate(&thinker->player->info.weapon, frametime);
+
     if(INRANGE(thinker->player->mobj->info.state, S_PLAY, S_PLAY_PAIN2))
     {
         if(!thinker->player->dumb
@@ -333,7 +336,7 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
         playobj->info.zvel -= GRAVITY * frametime;
 }
 
-void player_docmd(object_t* playobj, const playercmd_t* cmd)
+void player_docmd(player_t* play, const playercmd_t* cmd)
 {
     float framespeed;
     float leftmove, forwardmove;
@@ -342,14 +345,14 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
     float framefric;
     float floorz;
 
-    playobj->info.angle = cmd->angle;
+    play->mobj->info.angle = cmd->angle;
 
-    level_mobjheights(playobj);
+    level_mobjheights(play->mobj);
     floorz = mobjfloorheight;
-    if(playobj->info.z <= floorz)
+    if(play->mobj->info.z <= floorz)
     {
-        sinangle = ANGSIN(playobj->info.angle);
-        cosangle = ANGCOS(playobj->info.angle);
+        sinangle = ANGSIN(play->mobj->info.angle);
+        cosangle = ANGCOS(play->mobj->info.angle);
 
         leftmove = forwardmove = 0;
         if(cmd->flags & CMD_FORWARD)
@@ -364,15 +367,17 @@ void player_docmd(object_t* playobj, const playercmd_t* cmd)
         thrustx = (forwardmove * cosangle - leftmove * sinangle) * 35.0;
         thrusty = (forwardmove * sinangle + leftmove * cosangle) * 35.0;
 
-        playobj->info.xvel += thrustx * cmd->frametime;
-        playobj->info.yvel += thrusty * cmd->frametime;
+        play->mobj->info.xvel += thrustx * cmd->frametime;
+        play->mobj->info.yvel += thrusty * cmd->frametime;
 
         framefric = powf(TICFRIC, 35.0f * cmd->frametime);
-        playobj->info.xvel *= framefric;
-        playobj->info.yvel *= framefric;
+        play->mobj->info.xvel *= framefric;
+        play->mobj->info.yvel *= framefric;
     }
 
-    player_trymove(playobj, cmd->frametime, playobj->info.z > floorz);
+    player_trymove(play->mobj, cmd->frametime, play->mobj->info.z > floorz);
+
+    weapon_docmd(&play->info.weapon, cmd->flags, cmd->switchwpn);
 }
 
 float player_calcbobamp(object_t* playobj)

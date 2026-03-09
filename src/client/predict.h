@@ -12,6 +12,7 @@
 extern playercmd_t inputwindow[PRED_WINDOW];
 extern gamestate_t oldgs;
 extern gamestate_t newgs;
+extern wpnst_t startwpn;
 
 void predictplayer(void);
 void interpsectors(float abstime);
