@@ -39,37 +39,51 @@ void draw_init(void)
     draw_remaprange(transtbls[MC_FRS], 112, 16, 152, 8);
 }
 
-void draw_pic(pic_t* pic, uint8_t* colmap, int x, int y)
+void draw_scaledpic(pic_t* pic, uint8_t* trans, uint8_t* colmap, fixed_t x, fixed_t y)
 {
     fixed_t s;
     fixed_t iscale, scale, texmid;
     post_t *post;
-
-    x -= pic->xoffs;
-    y -= pic->yoffs;
-
+    int ix, y1, y2;
+ 
+    x -= (fixed_t)pic->xoffs << FIXEDSHIFT;
+    y -= (fixed_t)pic->yoffs << FIXEDSHIFT;
+ 
     scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
     iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
-
-    if(y >= rectheight)
+ 
+    x = fixedmul(x, scale);
+    y = fixedmul(y, scale);
+ 
+    if(y >> FIXEDSHIFT >= drawscreen->h)
         return;
-
-    texmid = -((y << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT - 1)));
-
-    if(y + (fixedmul(pic->h << FIXEDSHIFT, scale) >> FIXEDSHIFT) <= 0)
+ 
+    if(y + (fixed_t)pic->h * scale <= 0)
         return;
-
-    y = MAX(y, 0);
-
-    for(s=0; x<screenwidth && (s>>FIXEDSHIFT)<pic->w; x++, s+=iscale)
+    
+    texmid = fixedmul((((screenheight >> 1) - drawscreen->y) << FIXEDSHIFT) - y, iscale);
+ 
+    y1 = MAX(y >> FIXEDSHIFT, 0);
+    y2 = drawscreen->h - 1;
+ 
+    ix = x >> FIXEDSHIFT;
+    if(ix < 0)
     {
-        if(x < 0)
-            continue;
-        if(x >= screenwidth)
-            break;
-
+        s = fixedmul(-x, iscale);
+        ix = 0;
+    }
+    else
+    {
+        s = fixedmul(x & 0xFFFF, iscale);
+    }
+ 
+    for(; ix < drawscreen->w && (s >> FIXEDSHIFT) < pic->w; ix++, s += iscale)
+    {
         post = (post_t*) ((uint8_t*) pic + pic->postoffs[s >> FIXEDSHIFT]);
-        draw_postcolumn(post, colormap->maps[0], x, y, rectheight-1, texmid, iscale, scale);
+        if(trans)
+            draw_transpostcolumn(post, trans, colmap, ix, y1, y2, texmid, iscale, scale);
+        else
+            draw_postcolumn(post, colmap, ix, y1, y2, texmid, iscale, scale);
     }
 }
 
@@ -77,6 +91,7 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
 {
     int y;
 
+    int screeny;
     fixed_t tfrac, startfrac, lenfrac, posttop, halfyfrac;
     fixed_t y1frac, y2frac;
     int dst;
@@ -91,12 +106,9 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
         startfrac = (fixed_t) post->ystart << FIXEDSHIFT;
         lenfrac = (fixed_t) post->len << FIXEDSHIFT;
 
-        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac;
+        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac - (drawscreen->y << FIXEDSHIFT);
         if(posttop > y2frac)
-        {
-            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
-            continue;
-        }
+            break;
 
         if(posttop < y1frac)
         {
@@ -106,11 +118,11 @@ void draw_postcolumn(post_t* post, uint8_t* map, int x, int y1, int y2, fixed_t 
         }
         else
         {
-            y = (posttop + (1 << FIXEDSHIFT) - 1) >> FIXEDSHIFT;
+            y = (posttop + FIXEDUNIT - 1) >> FIXEDSHIFT;
             tfrac = fixedmul((y << FIXEDSHIFT) - posttop, iscale);
         }
 
-        for(dst=(y-drawscreen->y)*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
+        for(dst=y*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
         {
             if(tfrac >= lenfrac || y > y2)
                 break;
@@ -140,12 +152,9 @@ void draw_transpostcolumn(post_t* post, uint8_t* trans, uint8_t* map, int x, int
         startfrac = (fixed_t) post->ystart << FIXEDSHIFT;
         lenfrac = (fixed_t) post->len << FIXEDSHIFT;
 
-        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac;
+        posttop = fixedmul(startfrac - texmid, scale) + halfyfrac - (drawscreen->y << FIXEDSHIFT);
         if(posttop > y2frac)
-        {
-            post = (post_t*) (((uint8_t*) post) + sizeof(post_t) + post->len + 1);
-            continue;
-        }
+            break;
 
         if(posttop < y1frac)
         {
@@ -155,11 +164,11 @@ void draw_transpostcolumn(post_t* post, uint8_t* trans, uint8_t* map, int x, int
         }
         else
         {
-            y = (posttop + (1 << FIXEDSHIFT) - 1) >> FIXEDSHIFT;
+            y = (posttop + FIXEDUNIT - 1) >> FIXEDSHIFT;
             tfrac = fixedmul((y << FIXEDSHIFT) - posttop, iscale);
         }
 
-        for(dst=(y-drawscreen->y)*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
+        for(dst=y*drawscreen->w+x; ; tfrac+=iscale, y++, dst+=drawscreen->w)
         {
             if(tfrac >= lenfrac || y > y2)
                 break;

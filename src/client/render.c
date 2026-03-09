@@ -18,9 +18,6 @@
 #define MAX_VISTHING 256
 #define FLAT_RES 64
 
-#define LIGHTLEVELS 16
-#define LIGHTSHIFT 4 // 0-255 to 0-15
-#define SCALEBANDS 48
 #define ZBANDS 128
 
 #define SKYW 256
@@ -33,8 +30,6 @@ int frameindex = 0;
 
 uint8_t *scalemap[LIGHTLEVELS][SCALEBANDS];
 uint8_t *zmap[LIGHTLEVELS][ZBANDS];
-
-int rectwidth, rectheight;
 
 typedef struct
 {
@@ -120,9 +115,6 @@ void render_init(void)
     float scale, tangent;
     angle_t ang;
 
-    rectwidth = screenwidth;
-    rectheight = screenheight - 32.0 * (screenheight / 200.0);
-    
     wad_loadcolormap();
 
     if(topclips)
@@ -147,7 +139,7 @@ void render_init(void)
     if(spanstarts)
         free(spanstarts);
 
-    spanstarts = malloc(rectheight * sizeof(int16_t));
+    spanstarts = malloc(screens[SCR_LVL].h * sizeof(int16_t));
 
     if(clipbuff)
         free(clipbuff);
@@ -324,7 +316,7 @@ void render_clipthing(visthing_t* visthing, int w)
 
             if(!drawseg->top && !drawseg->bottom)
             {
-                visthingtop[x] = rectheight;
+                visthingtop[x] = screens[SCR_LVL].h;
                 visthingbottom[x] = -1;
                 continue;
             }
@@ -358,8 +350,8 @@ void render_drawthing(visthing_t* thing)
 
     for(x=MAX(thing->x, 0); x<thing->x+w&&x<screenwidth; x++)
     {
-        visthingtop[x] = -1;
-        visthingbottom[x] = rectheight;
+        visthingtop[x] = 0;
+        visthingbottom[x] = screens[SCR_LVL].h-1;
     }
 
     render_clipthing(thing, w);
@@ -539,8 +531,8 @@ void render_drawskyplane(visplane_t* plane)
         tstep = 200.0 / screenheight;
         // tstep *= ANGCOS(xtoangle[x]);
 
-        top = CLAMP(plane->tops[x], 0, rectheight - 1);
-        bottom = CLAMP(plane->bottoms[x], 0, rectheight - 1);
+        top = CLAMP(plane->tops[x], 0, screens[SCR_LVL].h - 1);
+        bottom = CLAMP(plane->bottoms[x], 0, screens[SCR_LVL].h - 1);
 
         a = xtoangle[x] + viewangle;
         s = (float) a / (float) ANG90 * (float) SKYW;
@@ -918,8 +910,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(pltop <= plbot)
             {
-                ceilplane->tops[x] = CLAMP(pltop, 0, rectheight - 1);
-                ceilplane->bottoms[x] = CLAMP(plbot, 0, rectheight - 1);
+                ceilplane->tops[x] = CLAMP(pltop, 0, screens[SCR_LVL].h - 1);
+                ceilplane->bottoms[x] = CLAMP(plbot, 0, screens[SCR_LVL].h - 1);
             }
             else
                 ceilplane->tops[x] = ceilplane->bottoms[x] = -1;
@@ -935,8 +927,8 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(pltop <= plbot)
             {
-                floorplane->tops[x] = CLAMP(pltop, 0, rectheight - 1);
-                floorplane->bottoms[x] = CLAMP(plbot, 0, rectheight - 1);
+                floorplane->tops[x] = CLAMP(pltop, 0, screens[SCR_LVL].h - 1);
+                floorplane->bottoms[x] = CLAMP(plbot, 0, screens[SCR_LVL].h - 1);
             }
             else
                 floorplane->tops[x] = floorplane->bottoms[x] = -1;
@@ -971,7 +963,7 @@ void render_segrange(int x1, int x2, seg_t* seg)
 
             if(!seg->backside)
             {
-                topclips[x] = rectheight;
+                topclips[x] = screens[SCR_LVL].h;
                 bottomclips[x] = -1;
 
                 if(pxtop <= pxbottom && seg->frontside->mid)
@@ -1262,8 +1254,6 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
         return true;
 
     visthing->scale = fixeddiv(projectfrac, dist);
-    if(visthing->scale > 64 << FIXEDSHIFT)
-        visthing->scale = 64 << FIXEDSHIFT;
 
     centerx = FLOATTOFIXED(halfx) + fixedmul(fixedmul(dx, sinview) - fixedmul(dy, cosview), visthing->scale);
     centery = FLOATTOFIXED(halfy) - fixedmul(dz, visthing->scale);
@@ -1303,7 +1293,7 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
     x = (centerx - fixedmul((fixed_t) pic->xoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
     y = (centery - fixedmul((fixed_t) pic->yoffs << FIXEDSHIFT, visthing->scale)) >> FIXEDSHIFT;
 
-    if(x >= screenwidth || y >= rectheight)
+    if(x >= screenwidth || y >= screens[SCR_LVL].h)
         return true;
 
     w = fixedmul((fixed_t) pic->w << FIXEDSHIFT, visthing->scale) >> FIXEDSHIFT;
@@ -1390,7 +1380,7 @@ void render_setup(void)
     for(i=0; i<screenwidth; i++)
     {
         topclips[i] = -1;
-        bottomclips[i] = rectheight;
+        bottomclips[i] = screens[SCR_LVL].h;
     }
 
     nvisplanes = 0;

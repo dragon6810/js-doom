@@ -64,7 +64,7 @@ void screen_present(void)
     {
         for(y=src=0; y<screens[i].h; y++)
         {
-            dst = (y + screens[i].y) * screenwidth;
+            dst = (y + screens[i].y) * screenwidth + screens[i].x;
             for(x=0; x<screens[i].w; x++, src++, dst++)
                 pixels[dst] = curpal[screens[i].pixels[src]];
         }

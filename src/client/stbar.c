@@ -219,7 +219,7 @@ bool stbar_think(stthink_t* thinker, float ft, float progt)
     thinker->dmgfade += dmg;
 
     palindex = 0;
-    if(thinker->dmgfade)
+    if(thinker->dmgfade > 0)
     {
         palindex = ((int) thinker->dmgfade + 7) / 8;
         if(palindex >= 8)
@@ -248,46 +248,6 @@ void stbar_makethink(void)
     addthinker(thinker);
 }
 
-// y from top of stbar
-static void stbar_drawpic(pic_t* pic, uint8_t* trans, int x, int y)
-{
-    fixed_t texmid;
-    fixed_t iscale, scale, s;
-    post_t *post;
-
-    scale = fixeddiv(screenheight << FIXEDSHIFT, 200 << FIXEDSHIFT);
-    x = (scale * (x - pic->xoffs)) >> FIXEDSHIFT;
-    y = (scale * (y - pic->yoffs)) >> FIXEDSHIFT;
-
-    y += sttop;
-
-    if(y >= screenheight)
-        return;
-
-    texmid = -((y << FIXEDSHIFT) - (screenheight << (FIXEDSHIFT - 1)));
-    iscale = 0xFFFFFFFFu / (uint32_t) scale + 1;
-    texmid = fixedmul(texmid, iscale);
-
-    if(y + (fixedmul(pic->h << FIXEDSHIFT, scale) >> FIXEDSHIFT) <= sttop)
-        return;
-
-    y = MAX(y, sttop);
-
-    for(s=0; x<screenwidth && (s>>FIXEDSHIFT)<pic->w; x++, s+=iscale)
-    {
-        if(x < 0)
-            continue;
-        if(x >= screenwidth)
-            break;
-
-        post = (post_t*) ((uint8_t*) pic + pic->postoffs[s >> FIXEDSHIFT]);
-        if(trans)
-            draw_transpostcolumn(post, trans, colormap->maps[0], x, y, screenheight-1, texmid, iscale, scale);
-        else
-            draw_postcolumn(post, colormap->maps[0], x, y, screenheight-1, texmid, iscale, scale); 
-    }
-}
-
 // right-aligned
 // percent can be NULL
 void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], lumpinfo_t* percent)
@@ -305,7 +265,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
     {
         wad_cache(percent);
         pic = percent->cache;
-        stbar_drawpic(pic, NULL, x, y);
+        draw_scaledpic(pic, NULL, colormap->maps[0], x << FIXEDSHIFT, y << FIXEDSHIFT);
     }
 
     if(!num)
@@ -313,7 +273,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         wad_cache(digits[0]);
         pic = digits[0]->cache;
         x -= pic->w;
-        stbar_drawpic(pic, NULL, x, y);
+        draw_scaledpic(pic, NULL, colormap->maps[0], x << FIXEDSHIFT, y << FIXEDSHIFT);
         return;
     }
 
@@ -323,7 +283,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         wad_cache(digits[dig]);
         pic = digits[dig]->cache;
         x -= pic->w;
-        stbar_drawpic(pic, NULL, x, y);
+        draw_scaledpic(pic, NULL, colormap->maps[0], x << FIXEDSHIFT, y << FIXEDSHIFT);
     }
 }
 
@@ -335,7 +295,7 @@ static void stbar_drawfacebg(void)
         return;
     
     wad_cache(facebg);
-    stbar_drawpic(facebg->cache, transtbls[player.mobj->info.color], ST_FACESX, ST_FACESY);
+    draw_scaledpic(facebg->cache, transtbls[player.mobj->info.color], colormap->maps[0], ST_FACESX << FIXEDSHIFT, ST_FACESY << FIXEDSHIFT);
 }
 
 void stbar_draw(void)
@@ -363,7 +323,7 @@ void stbar_draw(void)
         maxcell *= 2;
     }
 
-    stbar_drawpic(stbarlump->cache, NULL, 0, 0);
+    draw_scaledpic(stbarlump->cache, NULL, colormap->maps[0], 0, 0);
 
     // stbar_drawnumber(ST_AMMOX, ST_AMMOY, 50, ST_AMMOWIDTH, bignums, NULL);
     stbar_drawnumber(ST_HEALTHX, ST_HEALTHY, player.mobj->info.health, ST_HEALTHWIDTH, bignums, bigpercent);
@@ -384,15 +344,15 @@ void stbar_draw(void)
         wad_cache(keys[1]);
         wad_cache(keys[2]);
 
-        stbar_drawpic(keys[0]->cache, NULL, ST_KEY0X, ST_KEY0Y);
-        stbar_drawpic(keys[1]->cache, NULL, ST_KEY1X, ST_KEY1Y);
-        stbar_drawpic(keys[2]->cache, NULL, ST_KEY2X, ST_KEY2Y);
+        draw_scaledpic(keys[0]->cache, NULL, colormap->maps[0], ST_KEY0X << FIXEDSHIFT, ST_KEY0Y << FIXEDSHIFT);
+        draw_scaledpic(keys[1]->cache, NULL, colormap->maps[0], ST_KEY1X << FIXEDSHIFT, ST_KEY1Y << FIXEDSHIFT);
+        draw_scaledpic(keys[2]->cache, NULL, colormap->maps[0], ST_KEY2X << FIXEDSHIFT, ST_KEY2Y << FIXEDSHIFT);
     }
 
     stbar_drawfacebg();
     if(curface)
     {
         wad_cache(curface);
-        stbar_drawpic(curface->cache, NULL, ST_FACESX, ST_FACESY);
+        draw_scaledpic(curface->cache, NULL, colormap->maps[0], ST_FACESX << FIXEDSHIFT, ST_FACESY << FIXEDSHIFT);
     }
 }

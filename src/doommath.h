@@ -32,6 +32,7 @@
 #define ANGATAN2(y, x) RADTOANG(atan2(y, x))
 
 #define FIXEDSHIFT 16
+#define FIXEDUNIT (1 << FIXEDSHIFT)
 #define FLOATTOFIXED(f) ((fixed_t) ((f) * (float) ((fixed_t) 1 << FIXEDSHIFT)))
 #define FIXEDTOFLOAT(fixed) ((float) (fixed) / (float) ((fixed_t) 1 << FIXEDSHIFT))
 

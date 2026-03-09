@@ -59,6 +59,7 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
             {
             case 5:
                 nukagedamage = 10;
+                break;
             case 7:
                 nukagedamage = 5;
                 break;
@@ -290,6 +291,8 @@ moved:
 
 static void player_trymove(object_t* playobj, float frametime, bool airborn)
 {
+    const float stopspeed = 0.0625 * 35.0;
+
     float x, y, floorz;
 
     playobj->info.z += playobj->info.zvel * frametime;
@@ -309,6 +312,12 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
         player_slidemove(playobj, frametime);
         level_unplacemobj(playobj);
         level_placemobj(playobj);
+    }
+
+    if(fabsf(playobj->info.xvel) < stopspeed
+    && fabsf(playobj->info.yvel) < stopspeed)
+    {
+        playobj->info.xvel = playobj->info.yvel = 0;
     }
 
     level_mobjheights(playobj);
