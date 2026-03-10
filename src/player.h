@@ -39,7 +39,7 @@ typedef struct
     float frametime;
 } playercmd_t;
 
-typedef struct
+typedef struct player_s
 {
     object_t *mobj;
     playerinfo_t info;

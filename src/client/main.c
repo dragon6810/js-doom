@@ -15,6 +15,7 @@
 #include "screen.h"
 #include "stbar.h"
 #include "think.h"
+#include "visweapon.h"
 #include "wad.h"
 
 int screenwidth;
@@ -56,7 +57,7 @@ void gatherinput(void)
     if(keystates[SDL_SCANCODE_S]) inputcmd.flags |= CMD_BACK;
     if(keystates[SDL_SCANCODE_A]) inputcmd.flags |= CMD_LEFT;
     if(keystates[SDL_SCANCODE_D]) inputcmd.flags |= CMD_RIGHT;
-    if(keystates[SDL_SCANCODE_RCTRL]) inputcmd.flags |= CMD_FIRE;
+    if(keystates[SDL_SCANCODE_RALT]) inputcmd.flags |= CMD_FIRE;
 
     if(keystates[SDL_SCANCODE_1]) inputcmd.switchwpn = WEAPON_FIST;
     if(keystates[SDL_SCANCODE_2]) inputcmd.switchwpn = WEAPON_PIST;

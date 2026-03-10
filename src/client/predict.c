@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "connection.h"
+#include "visweapon.h"
 
 playercmd_t inputwindow[PRED_WINDOW] = {};
 gamestate_t oldgs = {};
@@ -27,11 +28,23 @@ void predictplayer(void)
     if(end - start >= PRED_WINDOW)
         return;
 
+    curwpnplayer = &player;
+
+    weaponprediction = true;
     for(i=start; i<=end; i++)
     {
+        player.lastcmd = inputwindow[i % PRED_WINDOW];
         player_docmd(&player, &inputwindow[i % PRED_WINDOW]);
-        weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
+        if(i < end)
+        {
+            weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
+            visweapon_tick(inputwindow[i % PRED_WINDOW].frametime);
+        }
     }
+
+    weaponprediction = false;
+    weapon_tickstate(&player.info.weapon, inputwindow[end % PRED_WINDOW].frametime);
+    visweapon_tick(inputwindow[end % PRED_WINDOW].frametime);
 }
 
 void interpent(float t, int edict)

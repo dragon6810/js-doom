@@ -330,10 +330,10 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
     && INRANGE(cl->player.mobj->info.xvel, -stopspeed, stopspeed)
     && INRANGE(cl->player.mobj->info.yvel, -stopspeed, stopspeed))
         level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].spawnstate);
-    else if(cmd.flags && cl->player.mobj->info.state == S_PLAY)
+    else if((cmd.flags & (0xF)) && cl->player.mobj->info.state == S_PLAY)
         level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].seestate);
 
-    weapon_docmd(&cl->player.info.weapon, cmd.flags, cmd.switchwpn);
+    cl->player.lastcmd = cmd;
 
     return curpos;
 }
@@ -528,6 +528,7 @@ void spawnplayer(client_t* client)
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
     client->player.mobj->info.color = (int) (client - clients) + 1;
+    weapon_initstate(&client->player.info.weapon);
 
     client->player.dumb = false;
 

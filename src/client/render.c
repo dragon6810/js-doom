@@ -1232,7 +1232,7 @@ void render_seg(seg_t* seg)
 bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 {
     fixed_t sinview, cosview;
-    fixed_t dx, dy, dz, dist, centerx, centery;
+    fixed_t dx, dy, dz, dist, centerx, centery, xpos, ypos;
     int x, y, w, h;
     pic_t *pic;
     sprite_t *sprite;
@@ -1255,8 +1255,14 @@ bool render_visthinginfo(object_t* mobj, visthing_t* visthing)
 
     visthing->scale = fixeddiv(projectfrac, dist);
 
-    centerx = FLOATTOFIXED(halfx) + fixedmul(fixedmul(dx, sinview) - fixedmul(dy, cosview), visthing->scale);
-    centery = FLOATTOFIXED(halfy) - fixedmul(dz, visthing->scale);
+    xpos = fixedmul(dx, sinview) - fixedmul(dy, cosview);
+    ypos = dz;
+
+    centerx = FLOATTOFIXED(halfx) + fixedmul(xpos, visthing->scale);
+    centery = FLOATTOFIXED(halfy) - fixedmul(ypos, visthing->scale);
+
+    if(abs(xpos)>fixedmul(dist, FLOATTOFIXED(HPLANE)))
+	    return true;
 
     if(states[mobj->info.state].frame & 0x8000)
     {

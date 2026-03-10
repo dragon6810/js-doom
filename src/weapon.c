@@ -7,6 +7,8 @@
 #define RAISETIME (64.0/105.0)
 #define LOWERTIME RAISETIME
 
+struct player_s *curwpnplayer = NULL;
+
 wpndef_t wpndefs[NUM_WEAPONS] =
 {
     { AMMO_NONE, S_PUNCHUP, S_PUNCHDOWN, S_PUNCH, S_PUNCH1 }, // WEAPON_FIST
@@ -34,6 +36,8 @@ void weapon_docmd(wpnst_t* state, int presses, int switchwpn)
     
     if(state->state == wpndefs[state->cur].readyst && presses & CMD_FIRE)
     {
+        if(curwpnplayer && curwpnplayer->mobj)
+            level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK1);
         state->state = wpndefs[state->cur].firest;
         state->time = states[state->state].tics / 35.0;
     }
@@ -99,6 +103,18 @@ void weapon_tickstate(wpnst_t* state, float ft)
         state->time += states[state->state].tics / 35.0;
 
         if(states[state->state].action)
-            states[state->state].action;
+            states[state->state].action();
     }
+}
+
+void A_ReFire()
+{
+    if(!curwpnplayer)
+        return;
+
+    if(!(curwpnplayer->lastcmd.flags & CMD_FIRE))
+        return;
+
+    curwpnplayer->info.weapon.state = wpndefs[curwpnplayer->info.weapon.cur].firest;
+    curwpnplayer->info.weapon.time = states[curwpnplayer->info.weapon.state].tics / 35.0;   
 }

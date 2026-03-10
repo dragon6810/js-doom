@@ -46,6 +46,9 @@ typedef struct
 
 extern wpndef_t wpndefs[NUM_WEAPONS];
 
+// set this before ticking
+extern struct player_s *curwpnplayer;
+
 void weapon_initstate(wpnst_t* state);
 void weapon_docmd(wpnst_t* state, int presses, int switchwpn);
 void weapon_tickstate(wpnst_t* state, float ft);

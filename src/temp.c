@@ -3,10 +3,7 @@ void A_WeaponReady() {}
 void A_Lower() {}
 void A_Raise() {}
 void A_Punch() {}
-void A_ReFire() {}
-void A_FirePistol() {}
 void A_Light1() {}
-void A_FireShotgun() {}
 void A_Light2() {}
 void A_FireShotgun2() {}
 void A_CheckReload() {}

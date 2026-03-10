@@ -48,6 +48,8 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
 
     int nukagedamage;
 
+    curwpnplayer = thinker->player;
+
     if(!thinker->player->dumb)
         weapon_tickstate(&thinker->player->info.weapon, frametime);
 
@@ -377,6 +379,7 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
 
     player_trymove(play->mobj, cmd->frametime, play->mobj->info.z > floorz);
 
+    curwpnplayer = play;
     weapon_docmd(&play->info.weapon, cmd->flags, cmd->switchwpn);
 }
 
