@@ -14,6 +14,7 @@ int net_recv_disconnect(int *dc_out);
 #include "netchan.h"
 #include "player.h"
 #include "rand.h"
+#include "snd.h"
 #include "wad.h"
 
 gamestate_t dummystate = {};
@@ -242,6 +243,7 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
     int i;
 
     addplaydeltas(cl, buf);
+    snd_addtobuf(cl, buf);
 
     netbuf_writeu8(buf, SVC_ENTDELTAS);
 
@@ -298,6 +300,8 @@ void sendtoclients(void)
             updategamestate(&clients[i]);
         netbuf_free(&unreliable);
     }
+
+    snd_clearevents();
 }
 
 void* recvuse(client_t* cl, void* buf, void* curpos, int len)

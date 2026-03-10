@@ -1,8 +1,10 @@
 #include "visweapon.h"
 
+#include "connection.h"
 #include "draw.h"
 #include "player.h"
 #include "render.h"
+#include "snd.h"
 #include "wad.h"
 
 statenum_t flashstate = S_NULL;
@@ -67,6 +69,7 @@ void A_FirePistol()
 
     flashstate = S_PISTOLFLASH;
     flashtime = 1.0/35.0;
+    snd_playsoundedict(SFX_PISTOL, serverconn.edict);
 }
 
 void A_FireShotgun()
@@ -76,4 +79,5 @@ void A_FireShotgun()
 
     flashstate = S_SGUNFLASH1;
     flashtime = 1.0/35.0;
+    snd_playsoundedict(SFX_SHOTGN, serverconn.edict);
 }

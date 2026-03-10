@@ -13,6 +13,7 @@
 #include "predict.h"
 #include "render.h"
 #include "screen.h"
+#include "snd.h"
 #include "stbar.h"
 #include "think.h"
 #include "visweapon.h"
@@ -133,6 +134,7 @@ void loop(void)
             viewy = mobjs[serverconn.edict].info.y;
             viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
             viewangle = mobjs[serverconn.edict].info.angle;
+            snd_update(viewx, viewy, viewangle);
             render(progtime);
             stbar_draw();
         }
@@ -150,9 +152,10 @@ int main()
 {
     starttime = emscripten_get_now() / 1000.0;
 
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
     net_init();
+    snd_init();
     render_init();
     stbar_init();
     player_init();

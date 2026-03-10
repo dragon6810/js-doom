@@ -34,6 +34,18 @@
 #define PFIELD_PENDWPN 0x0400 // uint8_t (weapon_e)
 #define PFIELD_WPNTIME 0x0800 // float
 
+#define SND_HASEDICT 0x01 // uint16_t edict
+#define SND_HASPOS   0x02 // float x, float y
+
+typedef enum
+{
+    SFX_PISTOL=0,
+    SFX_SHOTGN,
+    SFX_DOROPN,
+    SFX_DORCLS,
+    NUM_SFX,
+} sfxid_e;
+
 typedef struct
 {
     float floorheight;
@@ -43,13 +55,14 @@ typedef struct
 typedef enum
 {
     CVS_HANDSHAKE=0, // char username[USERNAME_LEN]
-    SVC_SERVERFULL, // 
+    SVC_SERVERFULL, //
     SVC_HANDSHAKE, // int32_t clientid, int32_t edictid, int16_t nwads, char[13][nwads] wadnames (in order)
     SVC_CHANGELEVEL, // int8_t episode, int8_t map
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF, n times (uint16_t sector, uint8_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
-    CSV_USE, // 
+    CSV_USE, //
     SVC_PLAYERDELTAS, // uint16_t fields, <fields>
+    SVC_SOUND, // uint8_t sfxid, uint8_t flags, [uint16_t edict] OR [float x, float y]
 } packet_e;
 
 typedef struct

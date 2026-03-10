@@ -15,6 +15,7 @@
 #include "packets.h"
 #include "predict.h"
 #include "render.h"
+#include "snd.h"
 #include "stbar.h"
 #include "wad.h"
 
@@ -374,6 +375,34 @@ static void recvpacket(void *buf, int len)
             if(!(curpos = recvplayerdeltas(buf, curpos, len)))
                 return;
             break;
+        case SVC_SOUND:
+        {
+            uint8_t sfxid, flags;
+            sfxid = net_readu8(buf, curpos++, len);
+            flags = net_readu8(buf, curpos++, len);
+            if(netpacketfull)
+                return;
+            if(flags & SND_HASEDICT)
+            {
+                int edict = net_readu16(buf, curpos, len);
+                curpos += 2;
+                if(netpacketfull)
+                    return;
+                if(edict != serverconn.edict)
+                    snd_playsoundedict(sfxid, edict);
+                else
+                    puts("soudn canceled");
+            }
+            else if(flags & SND_HASPOS)
+            {
+                float x = net_readfloat(buf, curpos, len); curpos += 4;
+                float y = net_readfloat(buf, curpos, len); curpos += 4;
+                if(netpacketfull)
+                    return;
+                snd_playsoundpos(sfxid, x, y);
+            }
+            break;
+        }
         default:
             fprintf(stderr, "[net] bad packet id %d from server\n", packid);
             return;

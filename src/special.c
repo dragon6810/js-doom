@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "snd.h"
 #include "think.h"
 
 typedef struct
@@ -15,6 +16,14 @@ typedef struct
     float bottom, top;
     sector_t *sector;
 } doorthink_t;
+
+static void doorsound(sector_t *sec, int sfxid)
+{
+    linedef_t *l = sec->lines[0];
+    float x = (l->v1->x + l->v2->x) * 0.5f;
+    float y = (l->v1->y + l->v2->y) * 0.5f;
+    snd_queuepos(sfxid, x, y);
+}
 
 bool doorthink(doorthink_t* thinker, float ft, float progtime)
 {
@@ -29,13 +38,16 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
             thinker->sector->ceilheight = thinker->top;
             thinker->state = 0;
         }
-        
+
         return false;
     case 0:
         thinker->opentimer -= ft;
 
         if(thinker->opentimer <= 0)
+        {
             thinker->state = -1;
+            doorsound(thinker->sector, SFX_DORCLS);
+        }
 
         return false;
     case -1:
@@ -46,6 +58,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
         {
             thinker->sector->ceilheight += thinker->speed * ft;
             thinker->state = 1;
+            doorsound(thinker->sector, SFX_DOROPN);
         }
         else if(thinker->sector->ceilheight <= thinker->bottom)
         {
@@ -87,12 +100,15 @@ void special_door(linedef_t* line)
         {
         case 1:
             think->state = -1;
+            doorsound(sec, SFX_DORCLS);
             break;
         case 0:
             think->state = -1;
+            doorsound(sec, SFX_DORCLS);
             break;
         case -1:
             think->state = 1;
+            doorsound(sec, SFX_DOROPN);
             break;
         }
         think->openduration = 150.0 / 35.0;
@@ -115,7 +131,8 @@ void special_door(linedef_t* line)
         think->bottom = sec->ceilheight;
         think->top = level_getlowestneighborceil(sec) - 4;
         think->sector = sec;
-     
+
+        doorsound(sec, SFX_DOROPN);
         addthinker(think);
     }
 }
