@@ -55,6 +55,7 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));
+    player.dumb = true;
     player.mobj->info.exists = true;
     player.mobj->info.type = MT_PLAYER;
     player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;

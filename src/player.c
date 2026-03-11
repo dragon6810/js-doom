@@ -44,6 +44,7 @@ void player_init(void)
 
 bool player_think(playerthink_t* thinker, float frametime, float progtime)
 {
+    const float stopspeed = 0.0625 * 35.0;
     const float damageperiod = 32.0 / 35.0;
 
     int nukagedamage;
@@ -97,6 +98,14 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
         else
             thinker->wasonnukage = false;
     }
+
+    if(!thinker->player->lastcmd.flags
+    && thinker->player->mobj->info.state == S_PLAY_RUN1
+    && INRANGE(thinker->player->mobj->info.xvel, -stopspeed, stopspeed)
+    && INRANGE(thinker->player->mobj->info.yvel, -stopspeed, stopspeed))
+        level_setmobjstate(thinker->player->mobj, mobjinfo[MT_PLAYER].spawnstate);
+    else if((thinker->player->lastcmd.flags & (0xF)) && thinker->player->mobj->info.state == S_PLAY)
+        level_setmobjstate(thinker->player->mobj, mobjinfo[MT_PLAYER].seestate);
 
     return false;
 }
@@ -353,11 +362,12 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
     float framefric;
     float floorz;
 
-    play->mobj->info.angle = cmd->angle;
+    if(play->mobj && play->mobj->info.health)
+        play->mobj->info.angle = cmd->angle;
 
     level_mobjheights(play->mobj);
     floorz = mobjfloorheight;
-    if(play->mobj->info.z <= floorz)
+    if(play->mobj->info.z <= floorz && play->mobj && play->mobj->info.health)
     {
         sinangle = ANGSIN(play->mobj->info.angle);
         cosangle = ANGCOS(play->mobj->info.angle);

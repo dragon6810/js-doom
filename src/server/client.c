@@ -340,8 +340,6 @@ void* recvuse(client_t* cl, void* buf, void* curpos, int len)
 
 void* recvinput(client_t* cl, void* buf, void* curpos, int len)
 {
-    const float stopspeed = 0.0625 * 35.0;
-
     playercmd_t cmd;
 
     cmd.flags = net_readu8(buf, curpos++, len);
@@ -356,14 +354,6 @@ void* recvinput(client_t* cl, void* buf, void* curpos, int len)
 
     cl->buttons = cmd.flags;
     player_docmd(&cl->player, &cmd);
-
-    if(!cmd.flags
-    && cl->player.mobj->info.state == S_PLAY_RUN1
-    && INRANGE(cl->player.mobj->info.xvel, -stopspeed, stopspeed)
-    && INRANGE(cl->player.mobj->info.yvel, -stopspeed, stopspeed))
-        level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].spawnstate);
-    else if((cmd.flags & (0xF)) && cl->player.mobj->info.state == S_PLAY)
-        level_setmobjstate(cl->player.mobj, mobjinfo[MT_PLAYER].seestate);
 
     cl->player.lastcmd = cmd;
 

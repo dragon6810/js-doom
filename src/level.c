@@ -770,10 +770,12 @@ bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
     return false;
 }
 
-void level_mobjthinkfree(mobjthink_t* thinker)
+bool level_mobjthinkfree(mobjthink_t* thinker)
 {
     if(thinker->mobj && thinker->mobj->thinker == thinker)
         thinker->mobj->thinker = NULL;
+
+    return false;
 }
 
 void level_addmobjthinker(object_t* obj)
