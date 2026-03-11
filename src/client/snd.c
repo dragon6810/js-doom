@@ -215,7 +215,6 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
 
 void snd_playsoundedict(int sfxid, int edict)
 {
-    puts("sound\n");
     decodesound(sfxid);
     startchannel(sfxid, true, edict, 0, 0);
 }

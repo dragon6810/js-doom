@@ -516,7 +516,7 @@ bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit
 
                 if(bestline && linecol && linecol(x1, y1, x2, y2, bestline, bestt) && !noearlyexit)
                     return true;
-                if(bestmobj && mobjcol && mobjcol(x1, y1, x2, y2, mobj, bestt) && !noearlyexit)
+                if(bestmobj && mobjcol && mobjcol(x1, y1, x2, y2, bestmobj, bestt) && !noearlyexit)
                     return true;
             }
         }
@@ -658,6 +658,28 @@ float level_getlowestneighborceil(sector_t* sec)
     }
 
     return ceil;
+}
+
+float level_linelower(linedef_t* line)
+{
+    float lower;
+
+    lower = line->front->sector->floorheight;
+    if(line->back && line->back->sector && line->back->sector->floorheight > lower)
+        lower = line->back->sector->floorheight;
+    
+    return lower;
+}
+
+float level_lineupper(linedef_t* line)
+{
+    float upper;
+
+    upper = line->front->sector->ceilheight;
+    if(line->back && line->back->sector && line->back->sector->ceilheight < upper)
+        upper = line->back->sector->ceilheight;
+    
+    return upper;
 }
 
 bool level_mobjstuckinblock(int bx, int by)

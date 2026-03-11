@@ -227,6 +227,8 @@ float level_getlowestneighborceil(sector_t* sec);
 bool level_mobjstuckinblock(int bx, int by);
 void level_setmobjstate(object_t* obj, statenum_t state);
 void level_damagemobj(object_t* obj, int dmg);
+float level_linelower(linedef_t* line);
+float level_lineupper(linedef_t* line);
 bool level_mobjstuckinsector(sector_t* sector);
 void level_addmobjthinker(object_t* obj);
 void level_killmobj(object_t* obj);
