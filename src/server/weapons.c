@@ -3,6 +3,7 @@
 #include "level.h"
 #include "lineatk.h"
 #include "player.h"
+#include "rand.h"
 #include "snd.h"
 
 void A_FirePistol()
@@ -18,7 +19,7 @@ void A_FirePistol()
     level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK2);
 
     slope = lineatk_findslope(curwpnplayer->mobj, curwpnplayer->mobj->info.angle);
-    printf("atk slope: %f\n", slope);
+    lineatk(5 * (prand() % 3 + 1), curwpnplayer->mobj, curwpnplayer->mobj->info.angle, 2048, slope);
 }
 
 void A_FireShotgun()
