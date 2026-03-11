@@ -124,6 +124,8 @@ blockmap_t blockmap = {};
 int numdmstarts = 0;
 startloc_t dmstarts[MAX_DMSTART];
 
+object_t *curmobj = NULL;
+
 texture_t* levelskytex = NULL;
 const char *episodeskies[] =
 {
@@ -376,7 +378,7 @@ bool level_checksquareobj(int bx, int by, float x, float y, float radius, object
     {
         if(mobj == ignore)
             continue;
-        if(!(mobjinfo[mobj->info.type].flags & MF_SOLID))
+        if(!(mobj->info.flags & MF_SOLID))
             continue;
 
         if(mobj->info.x - mobjinfo[mobj->info.type].radius > xmax)
@@ -751,6 +753,8 @@ void level_damagemobj(object_t* obj, int dmg)
 
 bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
 {
+    curmobj = thinker->mobj;
+
     thinker->timeinstate += ft;
 
     while(states[thinker->mobj->info.state].nextstate != S_NULL
@@ -759,6 +763,8 @@ bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
     {
         thinker->timeinstate -= states[thinker->mobj->info.state].tics / 35.0;
         thinker->mobj->info.state = states[thinker->mobj->info.state].nextstate;
+        if(states[thinker->mobj->info.state].action)
+            states[thinker->mobj->info.state].action();
     }
 
     return false;
@@ -848,6 +854,8 @@ void level_loadthings(lumpinfo_t* header)
         mobj->info.y = mapthings[i].y;
         mobj->info.angle = mapthings[i].angle * ANG1;
         mobj->spawnflags = mapthings[i].flags;
+        mobj->info.flags = mobjinfo[type].flags;
+        mobj->info.height = mobjinfo[type].height;
 
         mobj->info.state = mobjinfo[mobj->info.type].spawnstate;
 

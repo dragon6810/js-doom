@@ -66,6 +66,8 @@ typedef struct objinfo_s
     float xvel, yvel, zvel;
     mc_e color;
     int health;
+    int flags;
+    int height;
 } objinfo_t;
 
 struct object_s
@@ -208,6 +210,8 @@ extern texture_t* levelskytex;
 extern float linerangebottom, linerangetop, linerange;
 
 extern float mobjfloorheight, mobjceilheight;
+
+extern object_t *curmobj;
 
 // return true if actual collision
 typedef bool (*linelinecol_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);

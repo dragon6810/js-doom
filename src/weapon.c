@@ -8,6 +8,7 @@
 #define LOWERTIME RAISETIME
 
 struct player_s *curwpnplayer = NULL;
+bool refiring = false;
 
 wpndef_t wpndefs[NUM_WEAPONS] =
 {
@@ -78,6 +79,7 @@ void weapon_tickstate(wpnst_t* state, float ft)
 
     if(state->state == def->readyst)
     {
+        refiring = false;
         if(state->pend != WEAPON_NONE)
         {
             state->state = def->downst;
@@ -116,5 +118,6 @@ void A_ReFire()
         return;
 
     curwpnplayer->info.weapon.state = wpndefs[curwpnplayer->info.weapon.cur].firest;
-    curwpnplayer->info.weapon.time = states[curwpnplayer->info.weapon.state].tics / 35.0;   
+    curwpnplayer->info.weapon.time = states[curwpnplayer->info.weapon.state].tics / 35.0;
+    refiring = true;
 }

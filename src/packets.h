@@ -17,6 +17,8 @@
 #define FIELD_ZVEL 0x0200 // float
 #define FIELD_COLOR 0x0400 // uint8_t
 #define FIELD_HEALTH 0x0800 // int16_t
+#define FIELD_FLAGS 0x1000 // int32_t
+#define FIELD_HEIGHT 0x2000 // int16_t
 
 #define SFIELD_FLOOR 0x01 // float
 #define SFIELD_CEIL  0x02 // float
@@ -56,13 +58,14 @@ typedef enum
 {
     CVS_HANDSHAKE=0, // char username[USERNAME_LEN]
     SVC_SERVERFULL, //
-    SVC_HANDSHAKE, // int32_t clientid, int32_t edictid, int16_t nwads, char[13][nwads] wadnames (in order)
+    SVC_HANDSHAKE, // int32_t clientid, int16_t nwads, char[13][nwads] wadnames (in order)
     SVC_CHANGELEVEL, // int8_t episode, int8_t map
     SVC_ENTDELTAS, // n times (uint16_t edict, uint16_t fields, <fields>) 0xFFFF, n times (uint16_t sector, uint8_t fields, <fields>) 0xFFFF
     CSV_INPUT, // uint8_t flags, uint32_t (angle_t) angle, float frametime
     CSV_USE, //
     SVC_PLAYERDELTAS, // uint16_t fields, <fields>
     SVC_SOUND, // uint8_t sfxid, uint8_t flags, [uint16_t edict] OR [float x, float y]
+    SVC_SETPLAYEDICT, // int32_t newedict
 } packet_e;
 
 typedef struct

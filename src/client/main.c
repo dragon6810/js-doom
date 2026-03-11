@@ -114,7 +114,7 @@ void loop(void)
     if(serverconn.state == CLSTATE_CONNECTED)
     {
         sendinputs = false;
-        if(level_episode != -1 && level_map != -1)
+        if(level_episode != -1 && level_map != -1 && player.mobj)
         {
             predictplayer();
             interpsectors(curtime / 1000.0);

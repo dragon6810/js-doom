@@ -43,7 +43,7 @@ static bool aimmobjcol(float x1, float y1, float x2, float y2, object_t* mobj, f
     if(mobj == atkmobj)
         return false;
 
-    if(!(mobjinfo[mobj->info.type].flags & MF_SHOOTABLE))
+    if(!(mobj->info.flags & MF_SHOOTABLE))
         return false;
 
     dist = aimdst * t;
@@ -129,7 +129,7 @@ static bool atkmobjcol(float x1, float y1, float x2, float y2, object_t* mobj, f
     if(mobj == atkmobj)
         return false;
 
-    if(!(mobjinfo[mobj->info.type].flags & MF_SHOOTABLE))
+    if(!(mobj->info.flags & MF_SHOOTABLE))
         return false;
 
     dist = aimdst * t;

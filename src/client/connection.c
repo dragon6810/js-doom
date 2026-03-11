@@ -38,6 +38,36 @@ static void connect(void)
     netbuf_free(&buf);
 }
 
+static void* recvsetplayedict(void* buf, void* curpos, int len)
+{
+    int edict;
+
+    edict = net_readi32(buf, curpos, len);
+    curpos += 4;
+    if(netpacketfull)
+        return NULL;
+
+    if(!INRANGE(edict, 0, MAX_MOBJ-1))
+        return curpos;
+
+    serverconn.edict = edict;
+    player.mobj = &mobjs[edict];
+    player_initinfo(&player.info);
+
+    memset(player.mobj, 0, sizeof(object_t));
+    mobjs[serverconn.edict].info.type = MT_PLAYER;
+    mobjs[serverconn.edict].info.exists = true;
+
+    if(player.thinker)
+        freethinker(player.thinker);
+    player_addthinker(&player);
+
+    weapon_initstate(&startwpn);
+    player.info.weapon = startwpn;
+
+    return curpos;
+}
+
 static void* recvsectordeltas(void* buf, void* curpos, int len)
 {
     int sectornum;
@@ -239,6 +269,16 @@ static void* recventdeltas(void* buf, void* curpos, int len)
             info->health = net_readi16(buf, curpos, len);
             curpos += 2;
         }
+        if(fields & FIELD_FLAGS)
+        {
+            info->flags = net_readi32(buf, curpos, len);
+            curpos += 4;
+        }
+        if(fields & FIELD_HEIGHT)
+        {
+            info->height = net_readi16(buf, curpos, len);
+            curpos += 2;
+        }
 
         if(!info->exists)
             memset(info, 0, sizeof(*info));
@@ -292,10 +332,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     if(netpacketfull)
         return NULL;
 
-    serverconn.edict = net_readi32(buf, curpos, len);
-    curpos += 4;
-    if(netpacketfull)
-        return NULL;
+    serverconn.edict = -1;
 
     nwads = net_readi16(buf, curpos, len);
     curpos += 2;
@@ -319,17 +356,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     memset(&player, 0, sizeof(player));
     player.dumb = true;
 
-    player.mobj = &mobjs[serverconn.edict];
-    player_initinfo(&player.info);
-
-    memset(player.mobj, 0, sizeof(object_t));
-    mobjs[serverconn.edict].info.type = MT_PLAYER;
-    mobjs[serverconn.edict].info.exists = true;
-
-    player_addthinker(&player);
-
-    weapon_initstate(&startwpn);
-    player.info.weapon = startwpn;
+    player.mobj = NULL;
 
     serverconn.state = CLSTATE_CONNECTED;
     printf("[net] handshake ack, client id %d, edict id %d\n", serverconn.clientid, serverconn.edict);
@@ -378,6 +405,7 @@ static void recvpacket(void *buf, int len)
         case SVC_SOUND:
         {
             uint8_t sfxid, flags;
+
             sfxid = net_readu8(buf, curpos++, len);
             flags = net_readu8(buf, curpos++, len);
             if(netpacketfull)
@@ -403,8 +431,12 @@ static void recvpacket(void *buf, int len)
             }
             break;
         }
+        case SVC_SETPLAYEDICT:
+            if(!(curpos = recvsetplayedict(buf, curpos, len)))
+                return;
+            break;
         default:
-            fprintf(stderr, "[net] bad packet id %d from server\n", packid);
+            fprintf(stderr, "bad packet id %d from server\n", packid);
             return;
         }
     }

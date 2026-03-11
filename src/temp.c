@@ -21,7 +21,6 @@ void A_BFGSpray() {}
 void A_Explode() {}
 void A_Pain() {}
 void A_PlayerScream() {}
-void A_Fall() {}
 void A_XScream() {}
 void A_Look() {}
 void A_Chase() {}

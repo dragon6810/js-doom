@@ -102,6 +102,10 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         fieldflags |= FIELD_COLOR;
     if(info->exists && (spawned || compare->health != info->health))
         fieldflags |= FIELD_HEALTH;
+    if(info->exists && (spawned || compare->flags != info->flags))
+        fieldflags |= FIELD_FLAGS;
+    if(info->exists && (spawned || compare->height != info->height))
+        fieldflags |= FIELD_HEIGHT;
 
     // ent is the exact same
     if(!fieldflags)
@@ -133,6 +137,10 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
         netbuf_writeu8(buf, info->color);
     if(fieldflags & FIELD_HEALTH)
         netbuf_writei16(buf, info->health);
+    if(fieldflags & FIELD_FLAGS)
+        netbuf_writei32(buf, info->flags);
+    if(fieldflags & FIELD_HEIGHT)
+        netbuf_writei16(buf, info->height);
 }
 
 static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
@@ -447,7 +455,6 @@ static void processhandshake(int dc, void* buf, int len)
     netbuf_init(&reply);
     netbuf_writeu8(&reply, SVC_HANDSHAKE);
     netbuf_writei32(&reply, i);
-    netbuf_writei32(&reply, edict);
 
     netbuf_writei16(&reply, nwads);
     for(j=0; j<nwads; j++)
@@ -459,6 +466,12 @@ static void processhandshake(int dc, void* buf, int len)
     netbuf_writeu8(&reply, SVC_CHANGELEVEL);
     netbuf_writeu8(&reply, level_episode);
     netbuf_writeu8(&reply, level_map);
+    netchan_queue(&clients[i].chan, &reply);
+    netbuf_free(&reply);
+
+    netbuf_init(&reply);
+    netbuf_writeu8(&reply, SVC_SETPLAYEDICT);
+    netbuf_writei32(&reply, edict);
     netchan_queue(&clients[i].chan, &reply);
     netbuf_free(&reply);
 }
@@ -528,6 +541,7 @@ void spawnplayer(client_t* client)
     client->player.mobj->info.y = start->y;
     client->player.mobj->info.angle = start->angle;
     client->player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;
+    client->player.mobj->info.flags = mobjinfo[MT_PLAYER].flags;
     level_placemobj(client->player.mobj);
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
