@@ -66,6 +66,7 @@ typedef enum
     SVC_PLAYERDELTAS, // uint16_t fields, <fields>
     SVC_SOUND, // uint8_t sfxid, uint8_t flags, [uint16_t edict] OR [float x, float y]
     SVC_SETPLAYEDICT, // int32_t newedict
+    CSV_RESPAWN, // 
 } packet_e;
 
 typedef struct

@@ -58,10 +58,17 @@ void weapon_tickstate(wpnst_t* state, float ft)
         state->time -= ft;
         if(state->time <= 0)
         {
-            state->cur = state->pend;
-            state->pend = WEAPON_NONE;
-            state->state = wpndefs[state->cur].upst;
-            state->time = RAISETIME;
+            if(curwpnplayer->mobj && curwpnplayer->mobj->info.health)
+            {
+                state->cur = state->pend;
+                state->pend = WEAPON_NONE;
+                state->state = wpndefs[state->cur].upst;
+                state->time = RAISETIME;
+            }
+            else
+            {
+                state->time = 0;
+            }
         }
         return;
     }
@@ -107,6 +114,12 @@ void weapon_tickstate(wpnst_t* state, float ft)
         if(states[state->state].action)
             states[state->state].action();
     }
+}
+
+void weapon_dropweapon(wpnst_t* state)
+{
+    state->state = wpndefs[state->cur].downst;
+    state->time = LOWERTIME;
 }
 
 void A_ReFire()

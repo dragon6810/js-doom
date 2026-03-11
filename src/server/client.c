@@ -312,6 +312,26 @@ void sendtoclients(void)
     snd_clearevents();
 }
 
+void* recvrespawn(client_t* cl, void* buf, void* curpos, int len)
+{
+    netbuf_t netbuf;
+
+    if(!cl->player.mobj)
+        return curpos;
+    if(cl->player.mobj->info.health)
+        return curpos;
+
+    spawnplayer(cl);
+
+    netbuf_init(&netbuf);
+    netbuf_writeu8(&netbuf, SVC_SETPLAYEDICT);
+    netbuf_writei32(&netbuf, (int) (cl->player.mobj - mobjs));
+    netchan_queue(&cl->chan, &netbuf);
+    netbuf_free(&netbuf);
+
+    return curpos;
+}
+
 void* recvuse(client_t* cl, void* buf, void* curpos, int len)
 {
     player_use(&cl->player);
@@ -379,6 +399,10 @@ static void recvpacket(client_t* cl, void* buf, int len)
             break;
         case CSV_USE:
             if(!(curpos = recvuse(cl, buf, curpos, len)))
+                return;
+            break;
+        case CSV_RESPAWN:
+            if(!(curpos = recvrespawn(cl, buf, curpos, len)))
                 return;
             break;
         default:

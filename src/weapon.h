@@ -1,6 +1,8 @@
 #ifndef _WEAPON_H
 #define _WEAPON_H
 
+#include <stdbool.h>
+
 #include "info.h"
 
 typedef enum
@@ -53,5 +55,6 @@ extern bool refiring;
 void weapon_initstate(wpnst_t* state);
 void weapon_docmd(wpnst_t* state, int presses, int switchwpn);
 void weapon_tickstate(wpnst_t* state, float ft);
+void weapon_dropweapon(wpnst_t* state);
 
 #endif

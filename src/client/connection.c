@@ -55,8 +55,13 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));
-    mobjs[serverconn.edict].info.type = MT_PLAYER;
-    mobjs[serverconn.edict].info.exists = true;
+    player.mobj->info.exists = true;
+    player.mobj->info.type = MT_PLAYER;
+    player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;
+    player.mobj->info.flags = mobjinfo[MT_PLAYER].flags;
+    level_placemobj(player.mobj);
+    player.mobj->info.z = player.mobj->ssector->sector->floorheight;
+    player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 
     if(player.thinker)
         freethinker(player.thinker);

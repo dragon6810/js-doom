@@ -50,6 +50,10 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
 
     curwpnplayer = thinker->player;
 
+    if(curwpnplayer->mobj && !curwpnplayer->mobj->info.health 
+    && curwpnplayer->info.weapon.state != wpndefs[curwpnplayer->info.weapon.cur].downst)
+        weapon_dropweapon(&curwpnplayer->info.weapon);
+
     if(!thinker->player->dumb)
         weapon_tickstate(&thinker->player->info.weapon, frametime);
 
@@ -97,10 +101,12 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
     return false;
 }
 
-void player_freethink(playerthink_t* thinker)
+bool player_freethink(thinker_t* thinker)
 {
-    if(thinker->player && thinker->player->thinker == thinker)
-        thinker->player->thinker = NULL;
+    if(((playerthink_t*)thinker)->player && ((playerthink_t*)thinker)->player->thinker == thinker)
+        ((playerthink_t*)thinker)->player->thinker = NULL;
+    
+    return false;
 }
 
 void player_addthinker(player_t* player)
@@ -408,22 +414,33 @@ float player_getviewheight(object_t* playobj, float time, float frametime)
 {
     float bob;
 
-    pviewheight += deltaviewheight * frametime * 35.0;
-    if(pviewheight >= VIEWHEIGHT)
+    if(playobj->info.health)
     {
-        pviewheight = VIEWHEIGHT;
-        deltaviewheight = 0;
-    }
-    if(pviewheight < VIEWHEIGHT / 2.0)
-    {
-        pviewheight = VIEWHEIGHT / 2.0;
-        if(deltaviewheight <= 0)
-            deltaviewheight = 1;
-    }
-    if(pviewheight < VIEWHEIGHT)
-        deltaviewheight += 0.25 * frametime * 35.0;
+        pviewheight += deltaviewheight * frametime * 35.0;
+        if(pviewheight >= VIEWHEIGHT)
+        {
+            pviewheight = VIEWHEIGHT;
+            deltaviewheight = 0;
+        }
+        if(pviewheight < VIEWHEIGHT / 2.0)
+        {
+            pviewheight = VIEWHEIGHT / 2.0;
+            if(deltaviewheight <= 0)
+                deltaviewheight = 1;
+        }
+        if(pviewheight < VIEWHEIGHT)
+            deltaviewheight += 0.25 * frametime * 35.0;
 
-    bob = player_calcheadbob(playobj, time);
+        bob = player_calcheadbob(playobj, time);
+    }
+    else
+    {
+        pviewheight -= frametime * 35.0;
+        if(pviewheight < 6)
+            pviewheight = 6;
+        bob = 0;
+    }
+
     return bob + pviewheight + playobj->info.z;
 }
 

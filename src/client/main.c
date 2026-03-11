@@ -43,6 +43,16 @@ void douse(void)
     netbuf_free(&netbuf);
 }
 
+void dorespawn(void)
+{
+    netbuf_t netbuf;
+
+    netbuf_init(&netbuf);
+    netbuf_writeu8(&netbuf, CSV_RESPAWN);
+    netchan_queue(&serverconn.chan, &netbuf);
+    netbuf_free(&netbuf);
+}
+
 bool uselastframe = false;
 
 void gatherinput(void)
@@ -76,7 +86,13 @@ void gatherinput(void)
     {
         if(!uselastframe)
         {
-            douse();
+            if(level_episode != -1 && level_map != -1 && player.mobj)
+            {
+                if(player.mobj->info.health)
+                    douse();
+                else
+                    dorespawn();
+            }
             uselastframe = true;
         }
     }
