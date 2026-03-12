@@ -97,6 +97,13 @@ void weapon_tickstate(wpnst_t* state, float ft)
 
     // in animation (firing)
 
+    if(curwpnplayer->mobj && !curwpnplayer->mobj->info.health)
+    {
+        state->state = def->downst;
+        state->time = LOWERTIME;
+        return;
+    }
+
     state->time -= ft;
     while(state->time < 0)
     {

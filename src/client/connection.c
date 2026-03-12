@@ -40,6 +40,7 @@ static void connect(void)
 
 static void* recvsetplayedict(void* buf, void* curpos, int len)
 {
+    int i;
     int edict;
 
     edict = net_readi32(buf, curpos, len);
@@ -70,6 +71,9 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
 
     weapon_initstate(&startwpn);
     player.info.weapon = startwpn;
+
+    for(i = serverconn.chan.inack + 1; i <= serverconn.chan.outseq; i++)
+        memset(&inputwindow[i % PRED_WINDOW], 0, sizeof(playercmd_t));
 
     return curpos;
 }

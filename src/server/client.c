@@ -544,6 +544,9 @@ void spawnplayer(client_t* client)
 
     start = &dmstarts[prand() % numdmstarts];
 
+    if(client->player.thinker)
+        freethinker(client->player.thinker);
+
     memset(&client->player, 0, sizeof(player_t));
     player_initinfo(&client->player.info);
     player_addthinker(&client->player);
