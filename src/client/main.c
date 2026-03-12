@@ -138,6 +138,12 @@ void loop(void)
 
             gatherinput();
 
+            weaponprediction = false;
+            player.lastcmd = inputcmd;
+            player_docmd(&player, &inputcmd);
+            weapon_tickstate(&player.info.weapon, inputcmd.frametime);
+            visweapon_tick(inputcmd.frametime);
+
             playerz = mobjs[serverconn.edict].info.z;
             if(lastplayerz != INFINITY && playerz > lastplayerz)
             {

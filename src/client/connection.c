@@ -415,6 +415,8 @@ static void recvpacket(void *buf, int len)
         case SVC_SOUND:
         {
             uint8_t sfxid, flags;
+            int edict;
+            float x, y;
 
             sfxid = net_readu8(buf, curpos++, len);
             flags = net_readu8(buf, curpos++, len);
@@ -422,22 +424,22 @@ static void recvpacket(void *buf, int len)
                 return;
             if(flags & SND_HASEDICT)
             {
-                int edict = net_readu16(buf, curpos, len);
+                edict = net_readu16(buf, curpos, len);
                 curpos += 2;
                 if(netpacketfull)
                     return;
                 if(edict != serverconn.edict)
                     snd_playsoundedict(sfxid, edict);
-                else
-                    puts("soudn canceled");
+                printf("edict: %d\n", edict);
             }
             else if(flags & SND_HASPOS)
             {
-                float x = net_readfloat(buf, curpos, len); curpos += 4;
-                float y = net_readfloat(buf, curpos, len); curpos += 4;
+                x = net_readfloat(buf, curpos, len); curpos += 4;
+                y = net_readfloat(buf, curpos, len); curpos += 4;
                 if(netpacketfull)
                     return;
                 snd_playsoundpos(sfxid, x, y);
+                printf("pos: %f %f\n", x, y);
             }
             break;
         }

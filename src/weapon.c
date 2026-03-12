@@ -140,4 +140,6 @@ void A_ReFire()
     curwpnplayer->info.weapon.state = wpndefs[curwpnplayer->info.weapon.cur].firest;
     curwpnplayer->info.weapon.time = states[curwpnplayer->info.weapon.state].tics / 35.0;
     refiring = true;
+    if(states[curwpnplayer->info.weapon.state].action)
+        states[curwpnplayer->info.weapon.state].action();
 }

@@ -10,7 +10,6 @@ void A_CheckReload() {}
 void A_OpenShotgun2() {}
 void A_LoadShotgun2() {}
 void A_CloseShotgun2() {}
-void A_FireCGun() {}
 void A_GunFlash() {}
 void A_FireMissile() {}
 void A_Saw() {}

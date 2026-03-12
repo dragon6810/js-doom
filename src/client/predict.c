@@ -35,16 +35,9 @@ void predictplayer(void)
     {
         player.lastcmd = inputwindow[i % PRED_WINDOW];
         player_docmd(&player, &inputwindow[i % PRED_WINDOW]);
-        if(i < end)
-        {
-            weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
-            visweapon_tick(inputwindow[i % PRED_WINDOW].frametime);
-        }
+        weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
+        visweapon_tick(inputwindow[i % PRED_WINDOW].frametime);
     }
-
-    weaponprediction = false;
-    weapon_tickstate(&player.info.weapon, inputwindow[end % PRED_WINDOW].frametime);
-    visweapon_tick(inputwindow[end % PRED_WINDOW].frametime);
 }
 
 void interpent(float t, int edict)

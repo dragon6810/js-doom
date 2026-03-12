@@ -387,11 +387,11 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
 
         play->mobj->info.xvel += thrustx * cmd->frametime;
         play->mobj->info.yvel += thrusty * cmd->frametime;
-
-        framefric = powf(TICFRIC, 35.0f * cmd->frametime);
-        play->mobj->info.xvel *= framefric;
-        play->mobj->info.yvel *= framefric;
     }
+
+    framefric = powf(TICFRIC, 35.0f * cmd->frametime);
+    play->mobj->info.xvel *= framefric;
+    play->mobj->info.yvel *= framefric;
 
     player_trymove(play->mobj, cmd->frametime, play->mobj->info.z > floorz);
 

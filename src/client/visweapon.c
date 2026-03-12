@@ -1,5 +1,7 @@
 #include "visweapon.h"
 
+#include <assert.h>
+
 #include "connection.h"
 #include "draw.h"
 #include "player.h"
@@ -80,4 +82,14 @@ void A_FireShotgun()
     flashstate = S_SGUNFLASH1;
     flashtime = 1.0/35.0;
     snd_playsoundedict(SFX_SHOTGN, serverconn.edict);
+}
+
+void A_FireCGun()
+{
+    if(weaponprediction)
+        return;
+
+    flashstate = S_CHAINFLASH1 + player.info.weapon.state - S_CHAIN1;
+    flashtime = 1.0/35.0;
+    snd_playsoundedict(SFX_PISTOL, serverconn.edict);
 }
