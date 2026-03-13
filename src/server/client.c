@@ -547,10 +547,14 @@ void spawnplayer(client_t* client)
     if(client->player.thinker)
         freethinker(client->player.thinker);
 
+    if(client->player.mobj)
+        client->player.mobj->player = NULL;
+
     memset(&client->player, 0, sizeof(player_t));
     player_initinfo(&client->player.info);
     player_addthinker(&client->player);
     client->player.mobj = &mobjs[edict];
+    client->player.mobj->player = &client->player;
     memset(client->player.mobj, 0, sizeof(object_t));
     client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;

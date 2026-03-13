@@ -14,6 +14,8 @@ float flashtime = 0;
 
 bool weaponprediction = false;
 
+static statenum_t lastfiredstate = S_NULL;
+
 void visweapon_draw(float progtime)
 {
     int sectorlight, level;
@@ -53,6 +55,12 @@ void visweapon_draw(float progtime)
 
 void visweapon_tick(float ft)
 {
+    wpndef_t *def = &wpndefs[player.info.weapon.cur];
+    if(player.info.weapon.state == def->readyst)
+        lastfiredstate = S_NULL;
+    else if(refiring && player.info.weapon.state == def->firest && !states[def->firest].action)
+        lastfiredstate = S_NULL;
+
     if(flashstate != S_NULL && !weaponprediction)
     {
         flashtime += ft;
@@ -68,28 +76,43 @@ void A_FirePistol()
 {
     if(weaponprediction)
         return;
+    if(lastfiredstate == player.info.weapon.state)
+        return;
+    lastfiredstate = player.info.weapon.state;
 
     flashstate = S_PISTOLFLASH;
-    flashtime = 1.0/35.0;
+    flashtime = 0;
     snd_playsoundedict(SFX_PISTOL, serverconn.edict);
+
+    printf("fire pistol\n");
 }
 
 void A_FireShotgun()
 {
     if(weaponprediction)
         return;
+    if(lastfiredstate == player.info.weapon.state)
+        return;
+    lastfiredstate = player.info.weapon.state;
 
     flashstate = S_SGUNFLASH1;
-    flashtime = 1.0/35.0;
+    flashtime = 0;
     snd_playsoundedict(SFX_SHOTGN, serverconn.edict);
+
+    printf("fire shotgun\n");
 }
 
 void A_FireCGun()
 {
     if(weaponprediction)
         return;
+    if(lastfiredstate == player.info.weapon.state)
+        return;
+    lastfiredstate = player.info.weapon.state;
 
     flashstate = S_CHAINFLASH1 + player.info.weapon.state - S_CHAIN1;
-    flashtime = 1.0/35.0;
+    flashtime = 0;
     snd_playsoundedict(SFX_PISTOL, serverconn.edict);
+
+    printf("fire chaingun\n");
 }

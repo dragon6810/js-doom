@@ -87,3 +87,16 @@ float segmentsquare(float x1, float y1, float x2, float y2, float x, float y, fl
 
     return mint;
 }
+
+bool boxbox(float xmin1, float ymin1, float xmax1, float ymax1, float xmin2, float ymin2, float xmax2, float ymax2)
+{
+    if(xmin2 > xmax1)
+        return false;
+    if(ymin1 > xmax2)
+        return false;
+    if(ymin2 > ymax1)
+        return false;
+    if(ymin1 > ymax2)
+        return false;
+    return true;
+}

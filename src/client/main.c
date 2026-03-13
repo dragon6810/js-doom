@@ -132,16 +132,16 @@ void loop(void)
         sendinputs = false;
         if(level_episode != -1 && level_map != -1 && player.mobj)
         {
+            gatherinput();
+
             predictplayer();
             interpsectors(curtime / 1000.0);
             interpentities(curtime / 1000.0);
 
-            gatherinput();
-
             weaponprediction = false;
-            player.lastcmd = inputcmd;
             player_docmd(&player, &inputcmd);
-            weapon_tickstate(&player.info.weapon, inputcmd.frametime);
+            weapon_tickstate(&player.info.weapon, frametime);
+            
             visweapon_tick(inputcmd.frametime);
 
             playerz = mobjs[serverconn.edict].info.z;

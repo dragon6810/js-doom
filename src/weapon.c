@@ -35,7 +35,10 @@ void weapon_docmd(wpnst_t* state, int presses, int switchwpn)
     if(state->cur != switchwpn && INRANGE(switchwpn, 0, NUM_WEAPONS-1))
         state->pend = switchwpn;
     
-    if(state->state == wpndefs[state->cur].readyst && presses & CMD_FIRE)
+    if (state->state != wpndefs[state->cur].readyst)
+        return;
+
+    if(presses & CMD_FIRE)
     {
         if(curwpnplayer && curwpnplayer->mobj)
             level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK1);
@@ -112,6 +115,12 @@ void weapon_tickstate(wpnst_t* state, float ft)
         {
             state->state = def->readyst;
             state->time = 0;
+            refiring = false;
+            if(state->pend != WEAPON_NONE)
+            {
+                state->state = def->downst;
+                state->time = LOWERTIME;
+            }
             return;
         }
 
@@ -135,6 +144,9 @@ void A_ReFire()
         return;
 
     if(!(curwpnplayer->lastcmd.flags & CMD_FIRE))
+        return;
+
+    if(curwpnplayer->info.weapon.pend != WEAPON_NONE)
         return;
 
     curwpnplayer->info.weapon.state = wpndefs[curwpnplayer->info.weapon.cur].firest;

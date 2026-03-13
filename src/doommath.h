@@ -3,6 +3,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #define ANG360 0xFFFFFFFFu
@@ -60,5 +61,6 @@ float segmentsegment(float v1x1, float v1y1, float v1x2, float v1y2, float v2x1,
 // t can be < 0 or > 1 but that means its not on the segment
 // INFINITY means line didnt touch square
 float segmentsquare(float x1, float y1, float x2, float y2, float x, float y, float radius);
+bool boxbox(float xmin1, float ymin1, float xmax1, float ymax1, float xmin2, float ymin2, float xmax2, float ymax2);
 
 #endif

@@ -82,6 +82,7 @@ struct object_s
     block_t *blk;
 
     thinker_t *thinker;
+    struct player_s *player;
 
     object_t *snext, *sprev; // sector list
     object_t *bnext, *bprev; // block list
@@ -215,14 +216,17 @@ extern object_t *curmobj;
 
 // return true if actual collision
 typedef bool (*linelinecol_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);
-typedef bool (*mobjlinecol_t)(float x1, float y1, float x2, float y2, object_t* mobj, float t);
+typedef bool (*linemobjcol_t)(float x1, float y1, float x2, float y2, object_t* mobj, float t);
+typedef void (*mobjlinecol_t)(linedef_t* line);
+typedef void (*mobjmobjcol_t)(object_t* obj);
 
 void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
 // finds an index to put a new mobj. -1 if edict full
 int level_findnewedict(void);
 bool level_validobjpos(object_t* mobj, float x, float y);
-bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, mobjlinecol_t mobjcol);
+bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, linemobjcol_t mobjcol);
+bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol, mobjmobjcol_t mobjcol);
 void level_mobjheights(object_t* mobj);
 int level_nodeside(node_t* node, float x, float y);
 int level_lineside(linedef_t* line, float x, float y);

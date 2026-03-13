@@ -51,8 +51,12 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     if(!INRANGE(edict, 0, MAX_MOBJ-1))
         return curpos;
 
+    if(player.mobj)
+        player.mobj->player = NULL;
+    
     serverconn.edict = edict;
     player.mobj = &mobjs[edict];
+    player.mobj->player = &player;
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));

@@ -309,6 +309,18 @@ moved:
     playobj->info.yvel = (tryy - y) / frametime;
 }
 
+static player_t *curplayer;
+
+void player_pickupcol(object_t* obj)
+{
+    switch(obj->info.type)
+    {
+    //case MT_
+    default:
+        break;
+    }
+}
+
 static void player_trymove(object_t* playobj, float frametime, bool airborn)
 {
     const float stopspeed = 0.0625 * 35.0;
@@ -319,6 +331,9 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
 
     x = playobj->info.x + playobj->info.xvel * frametime;
     y = playobj->info.y + playobj->info.yvel * frametime;
+    
+    curplayer = playobj->player;
+    level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
 
     if(level_validobjpos(playobj, x, y))
     {
@@ -389,9 +404,12 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
         play->mobj->info.yvel += thrusty * cmd->frametime;
     }
 
-    framefric = powf(TICFRIC, 35.0f * cmd->frametime);
-    play->mobj->info.xvel *= framefric;
-    play->mobj->info.yvel *= framefric;
+    if(play->mobj->info.z <= floorz)
+    {
+        framefric = powf(TICFRIC, 35.0f * cmd->frametime);
+        play->mobj->info.xvel *= framefric;
+        play->mobj->info.yvel *= framefric;
+    }
 
     player_trymove(play->mobj, cmd->frametime, play->mobj->info.z > floorz);
 

@@ -13,8 +13,8 @@ wpnst_t startwpn = {};
 void predictplayer(void)
 {
     int i;
-
     int start, end;
+    wpnst_t savewpn;
 
     player.info.weapon = startwpn;
 
@@ -36,7 +36,6 @@ void predictplayer(void)
         player.lastcmd = inputwindow[i % PRED_WINDOW];
         player_docmd(&player, &inputwindow[i % PRED_WINDOW]);
         weapon_tickstate(&player.info.weapon, inputwindow[i % PRED_WINDOW].frametime);
-        visweapon_tick(inputwindow[i % PRED_WINDOW].frametime);
     }
 }
 

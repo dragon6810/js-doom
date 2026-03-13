@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "player.h"
 #include "rand.h"
 #include "wad.h"
 
@@ -395,6 +396,15 @@ bool level_checksquareobj(int bx, int by, float x, float y, float radius, object
     return false;
 }
 
+static void level_playerpickup(player_t* p, float x, float y, int bminx, int bminy, int bmaxx, int bmaxy)
+{
+    float radius;
+
+    radius = mobjinfo[MT_PLAYER].radius;
+
+    
+}
+
 bool level_validobjpos(object_t* mobj, float x, float y)
 {
     int bx, by;
@@ -429,7 +439,7 @@ bool level_validobjpos(object_t* mobj, float x, float y)
     return true;
 }
 
-bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, mobjlinecol_t mobjcol)
+bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, linemobjcol_t mobjcol)
 {
     int i;
     object_t *mobj;
@@ -546,6 +556,59 @@ bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit
     }
 
     return false;
+}
+
+bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol, mobjmobjcol_t mobjcol)
+{
+    int bx, by;
+    int l, m;
+
+    float xmin, ymin, xmax, ymax;
+    int bminx, bminy, bmaxx, bmaxy;
+    block_t *blk;
+    object_t *mobj;
+    float mx, my, mr;
+
+    xmin = x - radius;
+    ymin = y - radius;
+    xmax = x + radius;
+    ymax = y + radius;
+
+    bminx = floorf((xmin - blockmap.xorg) / 128.0);
+    bminy = floorf((ymin - blockmap.yorg) / 128.0);
+    bmaxx = floorf((xmax - blockmap.xorg) / 128.0);
+    bmaxy = floorf((ymax - blockmap.yorg) / 128.0);
+
+    for(bx=bminx; bx<=bmaxx; bx++)
+    {
+        for(by=bminy; by<=bmaxy; by++)
+        {
+            if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
+                continue;
+            blk = &blockmap.blks[by * blockmap.w + bx];
+
+            if(linecol)
+            {
+                for(l=0; l<blk->nlines; l++)
+                {
+                    if(level_linesquare(blk->lines[l], radius, x, y))
+                        linecol(blk->lines[l]);
+                }
+            }
+
+            if(mobjcol)
+            {
+                for(mobj=blk->mobjs; mobj; mobj=mobj->bnext)
+                {
+                    mx = mobj->info.x;
+                    my = mobj->info.y;
+                    mr = mobjinfo[mobj->info.type].radius;
+                    if(boxbox(x-radius, y-radius, x+radius, y+radius, mx-mr, my-mr, mx+mr, my+mr))
+                        mobjcol(mobj);
+                }
+            }
+        }
+    }
 }
 
 float mobjfloorheight, mobjceilheight;
@@ -730,11 +793,31 @@ void level_setmobjstate(object_t* obj, statenum_t state)
         ((mobjthink_t*)obj->thinker)->timeinstate = 0;
 }
 
+// considers armor
+static void level_damageplayer(object_t* obj, int dmg)
+{
+    int deflected;
+
+    if(obj->player->info.flags & PFLAG_BLUARMOR)
+        deflected = dmg / 2;
+    else
+        deflected = dmg / 3;
+    
+    if(deflected > obj->player->info.armor)
+        deflected = obj->player->info.armor;
+
+    obj->info.health -= dmg - deflected;
+    obj->player->info.armor -= deflected;
+}
+
 void level_damagemobj(object_t* obj, int dmg)
 {
     int rng;
 
-    obj->info.health -= dmg;
+    if(obj->player)
+        level_damageplayer(obj, dmg);
+    else
+        obj->info.health -= dmg;
     if(obj->info.health <= 0)
     {
         obj->info.health = 0;
