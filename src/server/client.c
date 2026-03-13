@@ -289,18 +289,29 @@ void sendtoclients(void)
     int i;
 
     netbuf_t unreliable;
+    netbuf_t reliable;
 
     for(i=0; i<MAX_CLIENT; i++)
     {
         if(clients[i].state == CLSTATE_DC)
             continue;
         
-        #if 1
         if(clients[i].chan.outseq > clients[i].chan.lastseen)
             continue;
-        else
-            clients[i].chan.outseq = clients[i].chan.lastseen;
-        #endif
+        clients[i].chan.outseq = clients[i].chan.lastseen;
+
+        if(clients[i].player.pickupcnt != 0)
+        {
+            netbuf_init(&reliable);
+            while(clients[i].player.pickupcnt > 0)
+            {
+                netbuf_writeu8(&reliable, SVC_PICKUP);
+                clients[i].player.pickupcnt -= 6;
+            }
+            clients[i].player.pickupcnt = 0;
+            netchan_queue(&clients[i].chan, &reliable);
+            netbuf_free(&reliable);
+        }
 
         netbuf_init(&unreliable);
         buildunreliable(&clients[i], &unreliable);
@@ -554,8 +565,8 @@ void spawnplayer(client_t* client)
     player_initinfo(&client->player.info);
     player_addthinker(&client->player);
     client->player.mobj = &mobjs[edict];
-    client->player.mobj->player = &client->player;
     memset(client->player.mobj, 0, sizeof(object_t));
+    client->player.mobj->player = &client->player;
     client->player.mobj->info.exists = true;
     client->player.mobj->info.type = MT_PLAYER;
     client->player.mobj->info.x = start->x;

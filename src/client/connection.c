@@ -56,10 +56,10 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     
     serverconn.edict = edict;
     player.mobj = &mobjs[edict];
-    player.mobj->player = &player;
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));
+    player.mobj->player = &player;
     player.dumb = true;
     player.mobj->info.exists = true;
     player.mobj->info.type = MT_PLAYER;
@@ -450,6 +450,9 @@ static void recvpacket(void *buf, int len)
         case SVC_SETPLAYEDICT:
             if(!(curpos = recvsetplayedict(buf, curpos, len)))
                 return;
+            break;
+        case SVC_PICKUP:
+            player.pickupcnt += 6;
             break;
         default:
             fprintf(stderr, "bad packet id %d from server\n", packid);

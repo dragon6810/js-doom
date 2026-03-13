@@ -67,6 +67,7 @@ typedef enum
     SVC_SOUND, // uint8_t sfxid, uint8_t flags, [uint16_t edict] OR [float x, float y]
     SVC_SETPLAYEDICT, // int32_t newedict
     CSV_RESPAWN, // 
+    SVC_PICKUP, // (use purely for sound and fade, doesn't say what you got)
 } packet_e;
 
 typedef struct

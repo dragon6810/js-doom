@@ -396,15 +396,6 @@ bool level_checksquareobj(int bx, int by, float x, float y, float radius, object
     return false;
 }
 
-static void level_playerpickup(player_t* p, float x, float y, int bminx, int bminy, int bmaxx, int bmaxy)
-{
-    float radius;
-
-    radius = mobjinfo[MT_PLAYER].radius;
-
-    
-}
-
 bool level_validobjpos(object_t* mobj, float x, float y)
 {
     int bx, by;
@@ -561,12 +552,12 @@ bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit
 bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol, mobjmobjcol_t mobjcol)
 {
     int bx, by;
-    int l, m;
+    int l;
+    object_t *mobj, *next;
 
     float xmin, ymin, xmax, ymax;
     int bminx, bminy, bmaxx, bmaxy;
     block_t *blk;
-    object_t *mobj;
     float mx, my, mr;
 
     xmin = x - radius;
@@ -598,8 +589,10 @@ bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol
 
             if(mobjcol)
             {
-                for(mobj=blk->mobjs; mobj; mobj=mobj->bnext)
+                for(mobj=blk->mobjs; mobj; mobj=next)
                 {
+                    next = mobj->bnext;
+
                     mx = mobj->info.x;
                     my = mobj->info.y;
                     mr = mobjinfo[mobj->info.type].radius;
@@ -808,6 +801,9 @@ static void level_damageplayer(object_t* obj, int dmg)
 
     obj->info.health -= dmg - deflected;
     obj->player->info.armor -= deflected;
+
+    if(!obj->player->info.armor)
+        obj->player->info.flags &= ~PFLAG_BLUARMOR;
 }
 
 void level_damagemobj(object_t* obj, int dmg)
@@ -871,8 +867,10 @@ void level_addmobjthinker(object_t* obj)
     addthinker(obj->thinker);
 }
 
-void level_killmobj(object_t* obj)
+// TODO: respawning because deathmatch
+void level_removemobj(object_t* obj)
 {
+    level_unplacemobj(obj);
     if(obj->thinker)
         freethinker(obj->thinker);
     obj->info.exists = false;

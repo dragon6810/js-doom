@@ -313,12 +313,56 @@ static player_t *curplayer;
 
 void player_pickupcol(object_t* obj)
 {
-    switch(obj->info.type)
+    if(curplayer->mobj->info.z > obj->info.z + obj->info.height)
+        return;
+
+    if(curplayer->mobj->info.z + curplayer->mobj->info.height < obj->info.z)
+        return;
+
+    switch(states[obj->info.state].sprite)
     {
-    //case MT_
-    default:
+    case SPR_ARM1:
+        if(curplayer->info.armor >= 100)
+            return;
+        curplayer->info.flags &= ~PFLAG_BLUARMOR;
+        curplayer->info.armor = 100;
         break;
+    case SPR_ARM2:
+        if(curplayer->info.armor >= 200)
+            return;
+        curplayer->info.flags |= PFLAG_BLUARMOR;
+        curplayer->info.armor = 200;
+        break;
+    case SPR_BON1:
+        curplayer->mobj->info.health++;
+        if(curplayer->mobj->info.health > 200)
+            curplayer->mobj->info.health = 200;
+        break;
+    case SPR_BON2:
+        curplayer->info.armor++;
+        if(curplayer->info.armor > 200)
+            curplayer->info.armor = 200;
+        break;
+    case SPR_STIM:
+        if(curplayer->mobj->info.health >= 100)
+            return;
+        curplayer->mobj->info.health += 10;
+        if(curplayer->mobj->info.health > 100)
+            curplayer->mobj->info.health = 100;
+        break;
+    case SPR_MEDI:
+        if(curplayer->mobj->info.health >= 100)
+            return;
+        curplayer->mobj->info.health += 25;
+        if(curplayer->mobj->info.health > 100)
+            curplayer->mobj->info.health = 100;
+        break;
+    default:
+        return;
     }
+
+    level_removemobj(obj);
+    curplayer->pickupcnt += 6;
 }
 
 static void player_trymove(object_t* playobj, float frametime, bool airborn)
@@ -333,7 +377,8 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
     y = playobj->info.y + playobj->info.yvel * frametime;
     
     curplayer = playobj->player;
-    level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
+    if(curplayer && !curplayer->dumb && curplayer->mobj->info.health)
+        level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
 
     if(level_validobjpos(playobj, x, y))
     {

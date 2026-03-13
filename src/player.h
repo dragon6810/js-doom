@@ -45,6 +45,7 @@ typedef struct player_s
     playerinfo_t info;
     thinker_t *thinker;
     playercmd_t lastcmd;
+    float pickupcnt;
 
     bool dumb; // 'dumb' player, true for client, false for server
 } player_t;

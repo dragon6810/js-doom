@@ -239,7 +239,7 @@ float level_linelower(linedef_t* line);
 float level_lineupper(linedef_t* line);
 bool level_mobjstuckinsector(sector_t* sector);
 void level_addmobjthinker(object_t* obj);
-void level_killmobj(object_t* obj);
+void level_removemobj(object_t* obj);
 void level_load(int episode, int map);
 
 #endif

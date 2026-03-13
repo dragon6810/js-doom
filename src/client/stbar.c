@@ -182,6 +182,7 @@ typedef struct
     int lasthealth;
     float dmgfade;
     float lastglance;
+    object_t *lastmobj;
 } stthink_t;
 
 int glanceface = 0;
@@ -206,13 +207,19 @@ bool stbar_think(stthink_t* thinker, float ft, float progt)
 {
     int palindex;
     int dmg;
+    bool spawned;
 
     if(!player.mobj)
+    {
+        thinker->lastmobj = NULL;
         return false;
+    }
+
+    spawned = thinker->lastmobj != player.mobj;
 
     stbar_calcface(thinker, ft, progt);
 
-    if(thinker->lasthealth >= 0)
+    if(!spawned && thinker->lasthealth >= 0)
         dmg = CLAMP(thinker->lasthealth - player.mobj->info.health, 0, 100);
     else
         dmg = 0;
@@ -230,10 +237,22 @@ bool stbar_think(stthink_t* thinker, float ft, float progt)
         if(thinker->dmgfade < 0)
             thinker->dmgfade = 0;
     }
+    else if(player.pickupcnt >= 1)
+    {
+        palindex = ((int) player.pickupcnt + 7) / 8;
+        if(palindex >= 4)
+            palindex = 3;
+        palindex += 9;
+    }
+
+    player.pickupcnt -= ft * 35;
+    if(player.pickupcnt < 0)
+        player.pickupcnt = 0;
 
     screen_setpal(palettes[palindex]);
 
     thinker->lasthealth = player.mobj->info.health;
+    thinker->lastmobj = player.mobj;
 
     return false;
 }
