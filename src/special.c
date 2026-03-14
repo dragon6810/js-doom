@@ -14,6 +14,7 @@ typedef struct
     float opentimer;
     float speed;
     float bottom, top;
+    bool stayopen;
     sector_t *sector;
 } doorthink_t;
 
@@ -47,7 +48,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
     case 0:
         thinker->opentimer -= ft;
 
-        if(thinker->opentimer <= 0)
+        if(thinker->opentimer <= 0 && !thinker->stayopen)
         {
             thinker->state = -1;
             doorsound(thinker->sector, sfx_dorcls);
@@ -85,18 +86,28 @@ void doorthinkfree(doorthink_t* thinker)
         thinker->sector->thinker = NULL;
 }
 
-void special_door(linedef_t* line)
+void special_doorsec(sector_t* sec, int special)
 {
-    sector_t *sec;
     doorthink_t *think;
+    bool stayopen;
 
-    assert(line->front && line->front->sector && line->back && line->back->sector && "door special on one-sided line");
-
-    sec = line->back->sector;
+    stayopen = false;
+    switch (special)
+    {
+    case 2:
+    case 31:
+        stayopen = true;
+        break;
+    default:
+        break;
+    }
 
     if(sec->thinker && sec->thinker->func == doorthink)
     {
         think = (doorthink_t*) sec->thinker;
+
+        if(think->stayopen)
+            return;
 
         think->thinker.func = (thinkfunc_t) doorthink;
         think->thinker.freefunc = (thinkfreefunc_t) doorthinkfree;
@@ -104,7 +115,6 @@ void special_door(linedef_t* line)
         {
         case 1:
             think->state = -1;
-            doorsound(sec, sfx_dorcls);
             break;
         case 0:
             think->state = -1;
@@ -135,8 +145,19 @@ void special_door(linedef_t* line)
         think->bottom = sec->ceilheight;
         think->top = level_getlowestneighborceil(sec) - 4;
         think->sector = sec;
+        think->stayopen = stayopen;
 
         doorsound(sec, sfx_doropn);
         addthinker(think);
     }
+}
+
+void special_door(linedef_t* line, int special)
+{
+    sector_t *sec;
+
+    assert(line->front && line->front->sector && line->back && line->back->sector && "door special on one-sided line");
+
+    sec = line->back->sector;
+    special_doorsec(sec, special);
 }

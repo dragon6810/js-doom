@@ -233,10 +233,11 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
     ch->pos      = 0;
     ch->leftvol  = lv;
     ch->rightvol = rv;
-    ch->hasedict = hasedict;
-    ch->edict    = edict;
-    ch->srcx     = x;
-    ch->srcy     = y;
+    ch->hasedict  = hasedict;
+    ch->edict     = edict;
+    ch->srcx      = x;
+    ch->srcy      = y;
+    ch->priority  = newpri;
     SDL_UnlockAudioDevice(audiodev);
 }
 

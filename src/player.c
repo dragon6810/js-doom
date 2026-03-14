@@ -6,6 +6,7 @@
 
 #include "snd.h"
 #include "special.h"
+#include "level.h"
 
 #define FORWARDTHRUST 50.0
 #define SIDETHRUST 40.0
@@ -92,7 +93,7 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
 
             if(nukagedamage && progtime - thinker->lastdamage >= damageperiod)
             {
-                level_damagemobj(thinker->player->mobj, nukagedamage);
+                level_damagemobj(thinker->player->mobj, nukagedamage, NULL);
                 thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
             }
         }
@@ -295,14 +296,23 @@ tryaxis:
     tryx = x + velx;
     tryy = y;
     if(level_validobjpos(playobj, tryx, tryy))
-        goto moved;
+    {
+        playobj->info.x = tryx;
+        playobj->info.y = tryy;
+        return;
+    }
+    
     tryx = x;
     tryy = y + vely;
     if(level_validobjpos(playobj, tryx, tryy))
-        goto moved;
+    {
+        playobj->info.x = tryx;
+        playobj->info.y = tryy;
+        return;
+    }
+
     tryx = x;
     tryy = y;
-
 moved:
     playobj->info.x = tryx;
     playobj->info.y = tryy;
@@ -349,6 +359,16 @@ static bool player_pickupwpn(weapon_e type)
     }
 
     return gaveammo || gavewpn;
+}
+
+bool player_walkovercol(float x1, float y1, float x2, float y2, linedef_t* line, float t)
+{
+    if(!line->special || !line->tag)
+        return false;
+    
+    level_walkover(line->tag, line->special);
+
+    return false;
 }
 
 void player_pickupcol(object_t* obj)
@@ -488,7 +508,10 @@ static void player_trymove(object_t* playobj, float frametime, bool airborn)
     
     curplayer = playobj->player;
     if(curplayer && !curplayer->dumb && curplayer->mobj->info.health)
+    {
         level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
+        level_traverseline(playobj->info.x, playobj->info.y, x, y, true, player_walkovercol, NULL);
+    }
 
     if(level_validobjpos(playobj, x, y))
     {
@@ -627,6 +650,8 @@ float player_getviewheight(object_t* playobj, float time, float frametime)
     return bob + pviewheight + playobj->info.z;
 }
 
+object_t *usemobj;
+
 static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, float t)
 {
     float top, bottom;
@@ -639,7 +664,8 @@ static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, floa
         switch(line->special)
         {
         case 1:
-            special_door(line);
+        case 31:
+            special_door(line, line->special);
             break;
         };
         
@@ -647,12 +673,18 @@ static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, floa
     }
 
     if(!line->front || !line->back)
+    {
+        snd_queueedict(sfx_noway, usemobj - mobjs);
         return true;
+    }
 
     top = MIN(line->front->sector->ceilheight, line->back->sector->ceilheight);
     bottom = MAX(line->front->sector->floorheight, line->back->sector->floorheight);
     if(bottom >= top)
+    {
+        snd_queueedict(sfx_noway, usemobj - mobjs);
         return true;
+    }
 
     return false;
 }
@@ -692,6 +724,8 @@ void player_use(player_t* player)
 
     x2 = x1 + dx;
     y2 = y1 + dy;
+
+    usemobj = player->mobj;
 
     level_traverseline(x1, y1, x2, y2, false, usecol, NULL);
 }

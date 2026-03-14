@@ -8,6 +8,8 @@
 
 #include "player.h"
 #include "rand.h"
+#include "snd.h"
+#include "special.h"
 #include "wad.h"
 
 #define LUMPOFFS_THINGS 1
@@ -786,10 +788,20 @@ void level_setmobjstate(object_t* obj, statenum_t state)
         ((mobjthink_t*)obj->thinker)->timeinstate = 0;
 }
 
+// TODO: for rockets, return the rocket shooter
+static player_t* level_findplayersrc(object_t* obj)
+{
+    if(!obj)
+        return NULL;
+
+    return obj->player;
+}
+
 // considers armor
-static void level_damageplayer(object_t* obj, int dmg)
+static void level_damageplayer(object_t* obj, int dmg, object_t* src)
 {
     int deflected;
+    player_t *damager;
 
     if(obj->player->info.flags & PFLAG_BLUARMOR)
         deflected = dmg / 2;
@@ -804,20 +816,32 @@ static void level_damageplayer(object_t* obj, int dmg)
 
     if(!obj->player->info.armor)
         obj->player->info.flags &= ~PFLAG_BLUARMOR;
+
+    if(obj->info.health < 0)
+    {
+        damager = level_findplayersrc(src);
+        if(damager)
+            damager->info.frags++;
+    }
 }
 
-void level_damagemobj(object_t* obj, int dmg)
+void level_damagemobj(object_t* obj, int dmg, object_t* src)
 {
     int rng;
 
+    if(obj->info.health <= 0)
+        return;
+
     if(obj->player)
-        level_damageplayer(obj, dmg);
+        level_damageplayer(obj, dmg, src);
     else
         obj->info.health -= dmg;
+
     if(obj->info.health <= 0)
     {
         obj->info.health = 0;
         level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
+        snd_queueedict(mobjinfo[obj->info.type].deathsound, obj - mobjs);
         return;
     }
 
@@ -826,6 +850,7 @@ void level_damagemobj(object_t* obj, int dmg)
         if(prand() <= mobjinfo[obj->info.type].painchance)
         {
             level_setmobjstate(obj, mobjinfo[obj->info.type].painstate);
+            snd_queueedict(mobjinfo[obj->info.type].painsound, obj - mobjs);
         }
     }
 }
@@ -865,6 +890,30 @@ void level_addmobjthinker(object_t* obj)
     ((mobjthink_t*)obj->thinker)->timeinstate = 0;
     ((mobjthink_t*)obj->thinker)->mobj = obj;
     addthinker(obj->thinker);
+}
+
+void level_walkover(int sectag, int special)
+{
+    int i;
+    sector_t *sec;
+
+    if(!sectag)
+        return;
+
+    for(i=0, sec=sectors; i<nsectors; i++, sec++)
+    {
+        if(sec->tag != sectag)
+            continue;
+
+        switch(special)
+        {
+        case 2:
+            special_doorsec(sec, special);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 // TODO: respawning because deathmatch
@@ -931,6 +980,7 @@ void level_loadthings(lumpinfo_t* header)
         }
 
         mobj = &mobjs[++mobjmax];
+        memset(mobj, 0, sizeof(*mobj));
         mobj->info.exists = true;
         mobj->info.type = type;
         mobj->info.x = mapthings[i].x;

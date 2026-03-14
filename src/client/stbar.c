@@ -337,18 +337,10 @@ void stbar_draw(void)
         return;
     wad_cache(stbarlump);
 
-    maxbul = 200;
-    maxshel = 50;
-    maxrock = 50;
-    maxcell = 300;
-
-    if(player.info.flags & PFLAG_BACKPACK)
-    {
-        maxbul *= 2;
-        maxshel *= 2;
-        maxrock *= 2;
-        maxcell *= 2;
-    }
+    maxbul = player_maxammo(&player, AMMO_BUL);
+    maxshel = player_maxammo(&player, AMMO_SHEL);
+    maxrock = player_maxammo(&player, AMMO_ROCK);
+    maxcell = player_maxammo(&player, AMMO_CELL);
 
     draw_scaledpic(stbarlump->cache, NULL, colormap->maps[0], 0, 0);
 
@@ -360,12 +352,12 @@ void stbar_draw(void)
     stbar_drawnumber(ST_ARMORX, ST_ARMORY, player.info.armor, ST_ARMORWIDTH, bignums, bigpercent);
     stbar_drawnumber(ST_AMMO0X, ST_AMMO0Y, player.info.ammo[AMMO_BUL], ST_AMMO0WIDTH, yellownums, NULL);
     stbar_drawnumber(ST_AMMO1X, ST_AMMO1Y, player.info.ammo[AMMO_SHEL], ST_AMMO1WIDTH, yellownums, NULL);
-    stbar_drawnumber(ST_AMMO2X, ST_AMMO2Y, player.info.ammo[AMMO_ROCK], ST_AMMO2WIDTH, yellownums, NULL);
-    stbar_drawnumber(ST_AMMO3X, ST_AMMO3Y, player.info.ammo[AMMO_CELL], ST_AMMO3WIDTH, yellownums, NULL);
+    stbar_drawnumber(ST_AMMO3X, ST_AMMO3Y, player.info.ammo[AMMO_ROCK], ST_AMMO3WIDTH, yellownums, NULL);
+    stbar_drawnumber(ST_AMMO2X, ST_AMMO2Y, player.info.ammo[AMMO_CELL], ST_AMMO2WIDTH, yellownums, NULL);
     stbar_drawnumber(ST_MAXAMMO0X, ST_MAXAMMO0Y, maxbul, ST_MAXAMMO0WIDTH, yellownums, NULL);
     stbar_drawnumber(ST_MAXAMMO1X, ST_MAXAMMO1Y, maxshel, ST_MAXAMMO1WIDTH, yellownums, NULL);
-    stbar_drawnumber(ST_MAXAMMO2X, ST_MAXAMMO2Y, maxrock, ST_MAXAMMO2WIDTH, yellownums, NULL);
-    stbar_drawnumber(ST_MAXAMMO3X, ST_MAXAMMO3Y, maxcell, ST_MAXAMMO3WIDTH, yellownums, NULL);
+    stbar_drawnumber(ST_MAXAMMO3X, ST_MAXAMMO3Y, maxrock, ST_MAXAMMO3WIDTH, yellownums, NULL);
+    stbar_drawnumber(ST_MAXAMMO2X, ST_MAXAMMO2Y, maxcell, ST_MAXAMMO2WIDTH, yellownums, NULL);
 
     if(keys[0] && keys[1] && keys[2])
     {

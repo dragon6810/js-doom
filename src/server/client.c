@@ -65,7 +65,7 @@ static void addentdeltas(int edict, client_t* cl, netbuf_t* buf)
 
     info = &mobjs[edict].info;
 
-    if(!cl->chan.inack)
+    if(cl->chan.inack < cl->firstdeltaseq)
         gs = &dummystate;
     else
         gs = &cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
@@ -154,7 +154,7 @@ static void addsectordeltas(int sectornum, client_t* cl, netbuf_t* buf)
     info.floorheight = sectors[sectornum].floorheight;
     info.ceilheight = sectors[sectornum].ceilheight;
 
-    if(!cl->chan.inack)
+    if(cl->chan.inack < cl->firstdeltaseq)
         gs = &dummystate;
     else
         gs = &cl->gamestates[cl->chan.inack % GAMESTATE_WINDOW];
@@ -184,7 +184,7 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
     playerinfo_t *compare, *info;
 
     info = &cl->player.info;
-    if(!cl->chan.inack)
+    if(cl->chan.inack < cl->firstdeltaseq)
         compare = &dummystate;
     else
         compare = &cl->playstates[cl->chan.inack % GAMESTATE_WINDOW];
@@ -250,19 +250,25 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
 {
     int i;
 
-    addplaydeltas(cl, buf);
+    if(cl->state == CLSTATE_CONNECTED)
+    {
+        addplaydeltas(cl, buf);
 
-    netbuf_writeu8(buf, SVC_ENTDELTAS);
+        netbuf_writeu8(buf, SVC_ENTDELTAS);
 
-    for(i=0; i<=mobjmax; i++)
-        addentdeltas(i, cl, buf);
+        for(i=0; i<=mobjmax; i++)
+            addentdeltas(i, cl, buf);
 
-    netbuf_writeu16(buf, 0xFFFF);
+        netbuf_writeu16(buf, 0xFFFF);
 
-    for(i=0; i<nsectors; i++)
-        addsectordeltas(i, cl, buf);
+        for(i=0; i<nsectors; i++)
+            addsectordeltas(i, cl, buf);
 
-    netbuf_writeu16(buf, 0xFFFF);
+        netbuf_writeu16(buf, 0xFFFF);
+
+        if(cl->firstdeltaseq == INT32_MAX)
+            cl->firstdeltaseq = cl->chan.outseq + 1;
+    }
 }
 
 void disconnectclient(int i)
@@ -466,6 +472,7 @@ static void processhandshake(int dc, void* buf, int len)
     clients[i].state = CLSTATE_SHAKING;
     clients[i].dc = dc;
     clients[i].lastrecv = (uint32_t)time(NULL);
+    clients[i].firstdeltaseq = INT_MAX;
     strcpy(clients[i].username, username);
     
     memset(&clients[i].chan, 0, sizeof(netchan_t));
@@ -481,20 +488,16 @@ static void processhandshake(int dc, void* buf, int len)
     netbuf_writei16(&reply, nwads);
     for(j=0; j<nwads; j++)
         netbuf_writedata(&reply, wadnames[j], 13);
-    netchan_queue(&clients[i].chan, &reply);
-    netbuf_free(&reply);
 
-    netbuf_init(&reply);
     netbuf_writeu8(&reply, SVC_CHANGELEVEL);
     netbuf_writeu8(&reply, level_episode);
     netbuf_writeu8(&reply, level_map);
-    netchan_queue(&clients[i].chan, &reply);
-    netbuf_free(&reply);
 
-    netbuf_init(&reply);
     netbuf_writeu8(&reply, SVC_SETPLAYEDICT);
     netbuf_writei32(&reply, edict);
+
     netchan_queue(&clients[i].chan, &reply);
+    
     netbuf_free(&reply);
 }
 

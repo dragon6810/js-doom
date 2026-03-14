@@ -150,7 +150,7 @@ static bool atkmobjcol(float x1, float y1, float x2, float y2, object_t* mobj, f
         return false;
 
     dealtdamage = true;
-    level_damagemobj(mobj, linedmg);
+    level_damagemobj(mobj, linedmg, atkmobj);
     return true;
 }
 

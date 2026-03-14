@@ -40,10 +40,15 @@ static void filldummygs(void)
 {
     int i;
 
-    memset(&dummystate, 0, sizeof(dummystate));
     dummystate.maxmobj = mobjmax;
     for(i=0; i<=mobjmax; i++)
         dummystate.mobjs[i] = mobjs[i].info;
+
+    for(i=0; i<nsectors; i++)
+    {
+        dummystate.sectorinfos[i].ceilheight = sectors[i].ceilheight;
+        dummystate.sectorinfos[i].floorheight = sectors[i].floorheight;
+    }
 }
 
 static void parseargs(int argc, char** argv)
@@ -64,8 +69,6 @@ static void parseargs(int argc, char** argv)
             i += 2;
             if(ep < 1 || ep > 4 || map < 1 || map > 9)
                 ep = map = -1;
-
-            filldummygs();
         }
     }
 }
@@ -84,6 +87,7 @@ int main(int argc, char** argv)
 
     level_load(ep, map);
     allocgamestatesectors();
+    filldummygs();
 
     net_init();
     player_init();

@@ -57,6 +57,7 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     
     serverconn.edict = edict;
     player.mobj = &mobjs[edict];
+    level_unplacemobj(player.mobj);
     player_initinfo(&player.info);
 
     memset(player.mobj, 0, sizeof(object_t));

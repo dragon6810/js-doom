@@ -34,6 +34,7 @@ typedef struct
     char username[USERNAME_LEN];
     int dc;
     uint32_t lastrecv;
+    int firstdeltaseq;
 } client_t;
 
 extern gamestate_t dummystate;
