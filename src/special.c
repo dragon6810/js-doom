@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "player.h"
 #include "snd.h"
 #include "think.h"
 
@@ -86,16 +87,29 @@ void doorthinkfree(doorthink_t* thinker)
         thinker->sector->thinker = NULL;
 }
 
-void special_doorsec(sector_t* sec, int special)
+bool special_doorsec(object_t* user, sector_t* sec, int special)
 {
     doorthink_t *think;
     bool stayopen;
+
+    if(special == 26 || special == 32)
+        if(!user->player || (!(user->player->info.flags & PFLAG_BLUCARD) && !(user->player->info.flags & PFLAG_BLUSKUL)))
+            return false;
+    if(special == 27 || special == 33)
+        if(!user->player || (!(user->player->info.flags & PFLAG_YELCARD) && !(user->player->info.flags & PFLAG_YELSKUL)))
+            return false;
+    if(special == 28 || special == 34)
+        if(!user->player || (!(user->player->info.flags & PFLAG_REDCARD) && !(user->player->info.flags & PFLAG_REDSKUL)))
+            return false;
 
     stayopen = false;
     switch (special)
     {
     case 2:
     case 31:
+    case 32:
+    case 33:
+    case 34:
         stayopen = true;
         break;
     default:
@@ -107,7 +121,7 @@ void special_doorsec(sector_t* sec, int special)
         think = (doorthink_t*) sec->thinker;
 
         if(think->stayopen)
-            return;
+            return false;
 
         think->thinker.func = (thinkfunc_t) doorthink;
         think->thinker.freefunc = (thinkfreefunc_t) doorthinkfree;
@@ -150,14 +164,16 @@ void special_doorsec(sector_t* sec, int special)
         doorsound(sec, sfx_doropn);
         addthinker(think);
     }
+
+    return true;
 }
 
-void special_door(linedef_t* line, int special)
+bool special_door(object_t* user, linedef_t* line, int special)
 {
     sector_t *sec;
 
     assert(line->front && line->front->sector && line->back && line->back->sector && "door special on one-sided line");
 
     sec = line->back->sector;
-    special_doorsec(sec, special);
+    return special_doorsec(user, sec, special);
 }

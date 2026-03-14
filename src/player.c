@@ -365,8 +365,8 @@ bool player_walkovercol(float x1, float y1, float x2, float y2, linedef_t* line,
 {
     if(!line->special || !line->tag)
         return false;
-    
-    level_walkover(line->tag, line->special);
+
+    level_trigger(curplayer->mobj, line->tag, line->special);
 
     return false;
 }
@@ -664,8 +664,14 @@ static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, floa
         switch(line->special)
         {
         case 1:
+        case 26:
+        case 27:
+        case 28:
         case 31:
-            special_door(line, line->special);
+        case 32:
+        case 33:
+        case 34:
+            special_door(usemobj, line, line->special);
             break;
         };
         

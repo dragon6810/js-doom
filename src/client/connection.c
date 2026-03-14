@@ -71,6 +71,10 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     player.mobj->info.z = player.mobj->ssector->sector->floorheight;
     player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
 
+    newgs.mobjs[edict] = player.mobj->info;
+    if(newgs.maxmobj < edict)
+        newgs.maxmobj = edict;
+
     if(player.thinker)
         freethinker(player.thinker);
     player_addthinker(&player);
@@ -365,6 +369,9 @@ static void* recvclev(void* buf, void* curpos, int len)
         newgs.sectorinfos[i].floorheight = sectors[i].floorheight;
         newgs.sectorinfos[i].ceilheight = sectors[i].ceilheight;
     }
+
+    for(i=0; i<=mobjmax; i++)
+        oldgs.mobjs[i] = newgs.mobjs[i] = mobjs[i].info;
 
     return curpos;
 }

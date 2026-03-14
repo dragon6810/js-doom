@@ -92,7 +92,7 @@ bool boxbox(float xmin1, float ymin1, float xmax1, float ymax1, float xmin2, flo
 {
     if(xmin2 > xmax1)
         return false;
-    if(ymin1 > xmax2)
+    if(xmin1 > xmax2)
         return false;
     if(ymin2 > ymax1)
         return false;

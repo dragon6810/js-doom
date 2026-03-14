@@ -562,10 +562,10 @@ bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol
     block_t *blk;
     float mx, my, mr;
 
-    xmin = x - radius;
-    ymin = y - radius;
-    xmax = x + radius;
-    ymax = y + radius;
+    xmin = x - radius - 32;
+    ymin = y - radius - 32;
+    xmax = x + radius + 32;
+    ymax = y + radius + 32;
 
     bminx = floorf((xmin - blockmap.xorg) / 128.0);
     bminy = floorf((ymin - blockmap.yorg) / 128.0);
@@ -626,10 +626,10 @@ void level_mobjheights(object_t* mobj)
     maxx = mobj->info.x + radius;
     maxy = mobj->info.y + radius;
 
-    bminx = (minx - blockmap.xorg) / BLOCK_SIZE;
-    bminy = (miny - blockmap.yorg) / BLOCK_SIZE;
-    bmaxx = (maxx - blockmap.xorg) / BLOCK_SIZE;
-    bmaxy = (maxy - blockmap.yorg) / BLOCK_SIZE;
+    bminx = floorf(minx - blockmap.xorg) / BLOCK_SIZE;
+    bminy = floorf(miny - blockmap.yorg) / BLOCK_SIZE;
+    bmaxx = floorf(maxx - blockmap.xorg) / BLOCK_SIZE;
+    bmaxy = floorf(maxy - blockmap.yorg) / BLOCK_SIZE;
 
     if(mobj->ssector)
         ssector = mobj->ssector;
@@ -892,7 +892,7 @@ void level_addmobjthinker(object_t* obj)
     addthinker(obj->thinker);
 }
 
-void level_walkover(int sectag, int special)
+void level_trigger(object_t* user, int sectag, int special)
 {
     int i;
     sector_t *sec;
@@ -908,7 +908,7 @@ void level_walkover(int sectag, int special)
         switch(special)
         {
         case 2:
-            special_doorsec(sec, special);
+            special_doorsec(user, sec, special);
             break;
         default:
             break;

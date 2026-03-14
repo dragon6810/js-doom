@@ -179,8 +179,6 @@ int main()
 
     net_init();
     snd_init();
-    render_init();
-    stbar_init();
     player_init();
     draw_init();
 

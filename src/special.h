@@ -3,7 +3,7 @@
 
 #include "level.h"
 
-void special_doorsec(sector_t* sec, int special);
-void special_door(linedef_t* line, int special);
+bool special_doorsec(object_t* user, sector_t* sec, int special);
+bool special_door(object_t* user, linedef_t* line, int special);
 
 #endif

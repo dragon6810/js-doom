@@ -238,7 +238,7 @@ void level_damagemobj(object_t* obj, int dmg, object_t* src);
 float level_linelower(linedef_t* line);
 float level_lineupper(linedef_t* line);
 bool level_mobjstuckinsector(sector_t* sector);
-void level_walkover(int sectag, int special);
+void level_trigger(object_t* user, int sectag, int special);
 void level_addmobjthinker(object_t* obj);
 void level_removemobj(object_t* obj);
 void level_load(int episode, int map);
