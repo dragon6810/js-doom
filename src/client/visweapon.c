@@ -84,7 +84,7 @@ void A_FirePistol()
     flashtime = 0;
     snd_playsoundedict(SFX_PISTOL, serverconn.edict);
 
-    printf("fire pistol\n");
+    curwpnplayer->info.ammo[wpndefs[WEAPON_PIST].ammo]--;
 }
 
 void A_FireShotgun()
@@ -99,7 +99,7 @@ void A_FireShotgun()
     flashtime = 0;
     snd_playsoundedict(SFX_SHOTGN, serverconn.edict);
 
-    printf("fire shotgun\n");
+    curwpnplayer->info.ammo[wpndefs[WEAPON_SHOT].ammo]--;
 }
 
 void A_FireCGun()
@@ -114,5 +114,5 @@ void A_FireCGun()
     flashtime = 0;
     snd_playsoundedict(SFX_PISTOL, serverconn.edict);
 
-    printf("fire chaingun\n");
+    curwpnplayer->info.ammo[wpndefs[WEAPON_CHAIN].ammo]--;
 }

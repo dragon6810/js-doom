@@ -32,13 +32,17 @@ void weapon_initstate(wpnst_t* state)
 
 void weapon_docmd(wpnst_t* state, int presses, int switchwpn)
 {
-    if(state->cur != switchwpn && INRANGE(switchwpn, 0, NUM_WEAPONS-1))
+    wpndef_t *def;
+
+    def = &wpndefs[state->cur];
+
+    if(state->cur != switchwpn && INRANGE(switchwpn, 0, NUM_WEAPONS-1) && (curwpnplayer->info.weapons & (1 << switchwpn)))
         state->pend = switchwpn;
     
     if (state->state != wpndefs[state->cur].readyst)
         return;
 
-    if(presses & CMD_FIRE)
+    if(presses & CMD_FIRE && weapon_enoughammo(state))
     {
         if(curwpnplayer && curwpnplayer->mobj)
             level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK1);
@@ -138,6 +142,23 @@ void weapon_dropweapon(wpnst_t* state)
     state->time = LOWERTIME;
 }
 
+bool weapon_enoughammo(wpnst_t* state)
+{
+    switch(state->cur)
+    {
+    case WEAPON_PIST:
+    case WEAPON_SHOT:
+    case WEAPON_CHAIN:
+    case WEAPON_ROCKET:
+    case WEAPON_PLASMA:
+        return curwpnplayer->info.ammo[wpndefs[state->cur].ammo] > 0;
+    case WEAPON_BFG:
+        return curwpnplayer->info.ammo[wpndefs[state->cur].ammo] >= 40;
+    default:
+        return true;
+    }
+}
+
 void A_ReFire()
 {
     if(!curwpnplayer)
@@ -147,6 +168,9 @@ void A_ReFire()
         return;
 
     if(curwpnplayer->info.weapon.pend != WEAPON_NONE)
+        return;
+
+    if(!weapon_enoughammo(&curwpnplayer->info.weapon))
         return;
 
     curwpnplayer->info.weapon.state = wpndefs[curwpnplayer->info.weapon.cur].firest;

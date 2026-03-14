@@ -311,6 +311,44 @@ moved:
 
 static player_t *curplayer;
 
+static bool player_pickupwpn(weapon_e type)
+{
+    bool gavewpn, gaveammo;
+
+    gavewpn = gaveammo = false;
+
+    if(wpndefs[type].ammo != AMMO_NONE
+    && curplayer->info.ammo[wpndefs[type].ammo] < player_maxammo(curplayer, wpndefs[type].ammo))
+    {
+        gaveammo = true;
+        switch(wpndefs[type].ammo)
+        {
+        case AMMO_BUL:
+            curplayer->info.ammo[AMMO_BUL] = MIN(curplayer->info.ammo[AMMO_BUL] + 20, player_maxammo(curplayer, AMMO_BUL));
+            break;
+        case AMMO_SHEL:
+            curplayer->info.ammo[AMMO_SHEL] = MIN(curplayer->info.ammo[AMMO_SHEL] + 8, player_maxammo(curplayer, AMMO_SHEL));
+            break;
+        case AMMO_ROCK:
+            curplayer->info.ammo[AMMO_ROCK] = MIN(curplayer->info.ammo[AMMO_ROCK] + 2, player_maxammo(curplayer, AMMO_ROCK));
+            break;
+        case AMMO_CELL:
+            curplayer->info.ammo[AMMO_CELL] = MIN(curplayer->info.ammo[AMMO_CELL] + 60, player_maxammo(curplayer, AMMO_CELL));
+            break;
+        default:
+            break;
+        }
+    }
+
+    if(!(curplayer->info.weapons & (1 << type)))
+    {
+        gavewpn = true;
+        curplayer->info.weapons |= 1 << type;
+    }
+
+    return gaveammo || gavewpn;
+}
+
 void player_pickupcol(object_t* obj)
 {
     if(curplayer->mobj->info.z > obj->info.z + obj->info.height)
@@ -356,6 +394,70 @@ void player_pickupcol(object_t* obj)
         curplayer->mobj->info.health += 25;
         if(curplayer->mobj->info.health > 100)
             curplayer->mobj->info.health = 100;
+        break;
+    case SPR_CLIP:
+        if(curplayer->info.ammo[AMMO_BUL] >= player_maxammo(curplayer, AMMO_BUL))
+            return;
+        curplayer->info.ammo[AMMO_BUL] += 10;
+        if(curplayer->info.ammo[AMMO_BUL] > player_maxammo(curplayer, AMMO_BUL))
+            curplayer->info.ammo[AMMO_BUL] = player_maxammo(curplayer, AMMO_BUL);
+        break;
+    case SPR_AMMO:
+        if(curplayer->info.ammo[AMMO_BUL] >= player_maxammo(curplayer, AMMO_BUL))
+            return;
+        curplayer->info.ammo[AMMO_BUL] += 50;
+        if(curplayer->info.ammo[AMMO_BUL] > player_maxammo(curplayer, AMMO_BUL))
+            curplayer->info.ammo[AMMO_BUL] = player_maxammo(curplayer, AMMO_BUL);
+        break;
+    case SPR_SHEL:
+        if(curplayer->info.ammo[AMMO_SHEL] >= player_maxammo(curplayer, AMMO_SHEL))
+            return;
+        curplayer->info.ammo[AMMO_SHEL] += 4;
+        if(curplayer->info.ammo[AMMO_SHEL] > player_maxammo(curplayer, AMMO_SHEL))
+            curplayer->info.ammo[AMMO_SHEL] = player_maxammo(curplayer, AMMO_SHEL);
+        break;
+    case SPR_SBOX:
+        if(curplayer->info.ammo[AMMO_SHEL] >= player_maxammo(curplayer, AMMO_SHEL))
+            return;
+        curplayer->info.ammo[AMMO_SHEL] += 20;
+        if(curplayer->info.ammo[AMMO_SHEL] > player_maxammo(curplayer, AMMO_SHEL))
+            curplayer->info.ammo[AMMO_SHEL] = player_maxammo(curplayer, AMMO_SHEL);
+        break;
+    case SPR_ROCK:
+        if(curplayer->info.ammo[AMMO_ROCK] >= player_maxammo(curplayer, AMMO_ROCK))
+            return;
+        curplayer->info.ammo[AMMO_ROCK] += 1;
+        if(curplayer->info.ammo[AMMO_ROCK] > player_maxammo(curplayer, AMMO_ROCK))
+            curplayer->info.ammo[AMMO_ROCK] = player_maxammo(curplayer, AMMO_ROCK);
+        break;
+    case SPR_BROK:
+        if(curplayer->info.ammo[AMMO_ROCK] >= player_maxammo(curplayer, AMMO_ROCK))
+            return;
+        curplayer->info.ammo[AMMO_ROCK] += 5;
+        if(curplayer->info.ammo[AMMO_ROCK] > player_maxammo(curplayer, AMMO_ROCK))
+            curplayer->info.ammo[AMMO_ROCK] = player_maxammo(curplayer, AMMO_ROCK);
+        break;
+    case SPR_CELL:
+        if(curplayer->info.ammo[AMMO_CELL] >= player_maxammo(curplayer, AMMO_CELL))
+            return;
+        curplayer->info.ammo[AMMO_CELL] += 20;
+        if(curplayer->info.ammo[AMMO_CELL] > player_maxammo(curplayer, AMMO_CELL))
+            curplayer->info.ammo[AMMO_CELL] = player_maxammo(curplayer, AMMO_CELL);
+        break;
+    case SPR_CELP:
+        if(curplayer->info.ammo[AMMO_CELL] >= player_maxammo(curplayer, AMMO_CELL))
+            return;
+        curplayer->info.ammo[AMMO_CELL] += 100;
+        if(curplayer->info.ammo[AMMO_CELL] > player_maxammo(curplayer, AMMO_CELL))
+            curplayer->info.ammo[AMMO_CELL] = player_maxammo(curplayer, AMMO_CELL);
+        break;
+    case SPR_SHOT:
+        if(!player_pickupwpn(WEAPON_SHOT))
+            return;
+        break;
+    case SPR_MGUN:
+        if(!player_pickupwpn(WEAPON_CHAIN))
+            return;
         break;
     default:
         return;
@@ -545,6 +647,29 @@ static bool usecol(float x1, float y1, float x2, float y2, linedef_t* line, floa
         return true;
 
     return false;
+}
+
+int player_maxammo(player_t* player, ammo_e ammo)
+{
+    int multiplier;
+
+    multiplier = 1;
+    if(player->info.flags & PFLAG_BACKPACK)
+        multiplier = 2;
+
+    switch(ammo)
+    {
+    case AMMO_BUL:
+        return 200 * multiplier;
+    case AMMO_SHEL:
+        return 50 * multiplier;
+    case AMMO_ROCK:
+        return 50 * multiplier;
+    case AMMO_CELL:
+        return 300 * multiplier;
+    default:
+        return 0;
+    }
 }
 
 void player_use(player_t* player)

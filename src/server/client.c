@@ -225,7 +225,7 @@ static void addplaydeltas(client_t* cl, netbuf_t* buf)
     if(fields & PFIELD_ARMOR)
         netbuf_writeu16(buf, info->armor);
     if(fields & PFIELD_WEAPONS)
-        netbuf_writeu8(buf, info->weapons);
+        netbuf_writeu16(buf, info->weapons);
     if(fields & PFIELD_BULLETS)
         netbuf_writeu16(buf, info->ammo[AMMO_BUL]);
     if(fields & PFIELD_SHELLS)

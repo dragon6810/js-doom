@@ -24,6 +24,8 @@ void A_FirePistol()
     if(refiring)
         angle += ((prand() - prand()) << 18);
     lineatk(5 * (prand() % 3 + 1), curwpnplayer->mobj, angle, 2048, slope);
+
+    curwpnplayer->info.ammo[wpndefs[WEAPON_PIST].ammo]--;
 }
 
 void A_FireShotgun()
@@ -43,6 +45,8 @@ void A_FireShotgun()
     slope = lineatk_findslope(curwpnplayer->mobj, curwpnplayer->mobj->info.angle);
     for(i=0; i<7; i++)
         lineatk(5 * (prand() % 3 + 1), curwpnplayer->mobj, curwpnplayer->mobj->info.angle + ((prand() - prand()) << 18), 2048, slope);
+
+    curwpnplayer->info.ammo[wpndefs[WEAPON_SHOT].ammo]--;
 }
 
 void A_FireCGun()
@@ -63,4 +67,6 @@ void A_FireCGun()
     if(refiring)
         angle += ((prand() - prand()) << 18);
     lineatk(5 * (prand() % 3 + 1), curwpnplayer->mobj, angle, 2048, slope);
+
+    curwpnplayer->info.ammo[wpndefs[WEAPON_CHAIN].ammo]--;
 }

@@ -275,6 +275,14 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
     
     pic_t *pic;
     int dig;
+    bool wasnegative;
+
+    wasnegative = false;
+    if(num < 0)
+    {
+        num = -num;
+        wasnegative = true;
+    }
 
     for(i=0; i<10; i++)
         if(!digits[i])
@@ -301,7 +309,7 @@ void stbar_drawnumber(int x, int y, int num, int width, lumpinfo_t* digits[10], 
         dig = num % 10;
         wad_cache(digits[dig]);
         pic = digits[dig]->cache;
-        x -= pic->w;
+        x -= pic->w - pic->xoffs;
         draw_scaledpic(pic, NULL, colormap->maps[0], x << FIXEDSHIFT, y << FIXEDSHIFT);
     }
 }
@@ -344,7 +352,9 @@ void stbar_draw(void)
 
     draw_scaledpic(stbarlump->cache, NULL, colormap->maps[0], 0, 0);
 
-    // stbar_drawnumber(ST_AMMOX, ST_AMMOY, 50, ST_AMMOWIDTH, bignums, NULL);
+    if(wpndefs[player.info.weapon.cur].ammo != AMMO_NONE)
+        stbar_drawnumber(ST_AMMOX, ST_AMMOY, player.info.ammo[wpndefs[player.info.weapon.cur].ammo], ST_AMMOWIDTH, bignums, NULL);
+    
     stbar_drawnumber(ST_HEALTHX, ST_HEALTHY, player.mobj->info.health, ST_HEALTHWIDTH, bignums, bigpercent);
     stbar_drawnumber(ST_FRAGSX, ST_FRAGSY, player.info.frags, ST_FRAGSWIDTH, bignums, NULL);
     stbar_drawnumber(ST_ARMORX, ST_ARMORY, player.info.armor, ST_ARMORWIDTH, bignums, bigpercent);

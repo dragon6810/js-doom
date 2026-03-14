@@ -25,7 +25,7 @@
 
 #define PFIELD_FLAGS 0x0001 // uint8_t
 #define PFIELD_ARMOR 0x0002 // uint16_t
-#define PFIELD_WEAPONS 0x0004 // uint8_t
+#define PFIELD_WEAPONS 0x0004 // uint16_t
 #define PFIELD_BULLETS 0x0008 // uint16_t
 #define PFIELD_SHELLS 0x0010 // uint16_t
 #define PFIELD_ROCKETS 0x0020 // uint16_t

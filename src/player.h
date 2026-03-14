@@ -64,6 +64,7 @@ void player_docmd(player_t* play, const playercmd_t* cmd);
 float player_calcbobamp(object_t* playobj);
 float player_calcheadbob(object_t* playobj, float time);
 float player_getviewheight(object_t* playobj, float time, float frametime);
+int player_maxammo(player_t* player, ammo_e ammo);
 void player_use(player_t* player);
 
 #endif

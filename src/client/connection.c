@@ -144,8 +144,8 @@ static void* recvplayerdeltas(void* buf, void* curpos, int len)
     }
     if(fields & PFIELD_WEAPONS)
     {
-        info.weapons = net_readu8(buf, curpos, len);
-        curpos += 1;
+        info.weapons = net_readu16(buf, curpos, len);
+        curpos += 2;
     }
     if(fields & PFIELD_BULLETS)
     {

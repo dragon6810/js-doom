@@ -15,6 +15,7 @@ typedef enum
     WEAPON_PLASMA,
     WEAPON_BFG,
     WEAPON_SAW,
+    
     NUM_WEAPONS,
 
     WEAPON_NONE,
@@ -56,5 +57,7 @@ void weapon_initstate(wpnst_t* state);
 void weapon_docmd(wpnst_t* state, int presses, int switchwpn);
 void weapon_tickstate(wpnst_t* state, float ft);
 void weapon_dropweapon(wpnst_t* state);
+// curwpnplayer must be set
+bool weapon_enoughammo(wpnst_t* state);
 
 #endif
