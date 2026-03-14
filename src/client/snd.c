@@ -7,23 +7,16 @@
 #include <string.h>
 
 #include "connection.h"
-#include "../doommath.h"
-#include "../level.h"
-#include "../packets.h"
-#include "../wad.h"
+#include "doommath.h"
+#include "level.h"
+#include "packets.h"
+#include "snd.h"
+#include "wad.h"
 
 #define SND_CHANNELS   16
 #define SND_FREQ       44100
 #define SND_CLIPDIST   1200.0f
 #define SND_CLOSEDIST  160.0f
-
-static const char *sfxnames[NUM_SFX] =
-{
-    "DSPISTOL",
-    "DSSHOTGN",
-    "DSDOROPN",
-    "DSDORCLS",
-};
 
 typedef struct
 {
@@ -44,7 +37,7 @@ typedef struct
     float srcx, srcy;
 } sndchan_t;
 
-static sndcache_t cache[NUM_SFX];
+static sndcache_t cache[NUMSFX];
 static sndchan_t channels[SND_CHANNELS];
 
 static float listenerx, listenery;
@@ -89,40 +82,57 @@ static void audiocallback(void *udata, uint8_t *stream, int len)
 
 static void decodesound(int sfxid)
 {
+    snddef_t *def;
     lumpinfo_t *lump;
     uint8_t *data;
-    int i, rawcount, outcount;
+    int i, linkid, rawcount, outcount;
     int srcfreq;
     float ratio;
     int16_t *out;
+    int src;
 
     if(cache[sfxid].samples)
         return;
+    def = &sounds[sfxid];
+    if(!def->lump)
+        return;
 
-    lump = wad_findlump(sfxnames[sfxid], true);
+    wad_cache(def->lump);
+
+    if(def->link)
+    {
+        linkid = (int)(def->link - sounds);
+        decodesound(linkid);
+        cache[sfxid].samples  = cache[linkid].samples;
+        cache[sfxid].nsamples = cache[linkid].nsamples;
+        return;
+    }
+
+    lump = def->lump;
     if(!lump || lump->size < 25)
         return;
 
     data = (uint8_t*)lump->cache;
 
-    srcfreq = *(uint16_t*)(data + 2);
+    srcfreq  = *(uint16_t*)(data + 2);
     rawcount = *(uint32_t*)(data + 4);
     rawcount = MIN(rawcount, lump->size - 24);
 
-    // upsample to SND_FREQ using nearest-neighbour
-    ratio = (float)SND_FREQ / (float)srcfreq;
+    ratio    = (float)SND_FREQ / (float)srcfreq;
     outcount = (int)(rawcount * ratio);
 
     out = malloc(outcount * sizeof(int16_t));
     for(i=0; i<outcount; i++)
     {
-        int src = (int)(i / ratio);
+        src = (int)(i / ratio);
         if(src >= rawcount) src = rawcount - 1;
         out[i] = ((int16_t)data[24 + src] - 128) * 256;
     }
 
-    cache[sfxid].samples = out;
+    cache[sfxid].samples  = out;
     cache[sfxid].nsamples = outcount;
+
+    wad_decache(def->lump);
 }
 
 void snd_init(void)
@@ -174,6 +184,21 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
     if(!cache[sfxid].samples)
         return;
 
+    // Doom channel rule: one active sound per origin — kill the old one
+    if(hasedict)
+    {
+        for(i=0; i<SND_CHANNELS; i++)
+        {
+            if(channels[i].active && channels[i].hasedict && channels[i].edict == edict)
+            {
+                SDL_LockAudioDevice(audiodev);
+                channels[i].active = false;
+                SDL_UnlockAudioDevice(audiodev);
+                break;
+            }
+        }
+    }
+
     // find a free channel; if none, steal the one furthest through playback
     ch = NULL;
     oldest = &channels[0];
@@ -216,12 +241,16 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
 void snd_playsoundedict(int sfxid, int edict)
 {
     decodesound(sfxid);
+    if(!cache[sfxid].samples)
+        return;
     startchannel(sfxid, true, edict, 0, 0);
 }
 
 void snd_playsoundpos(int sfxid, float x, float y)
 {
     decodesound(sfxid);
+    if(!cache[sfxid].samples)
+        return;
     startchannel(sfxid, false, -1, x, y);
 }
 
@@ -231,15 +260,15 @@ void snd_update(float lx, float ly, angle_t lang)
     sndchan_t *ch;
     float x, y, lv, rv;
 
-    listenerx  = lx;
-    listenery  = ly;
+    listenerx   = lx;
+    listenery   = ly;
     listenerang = lang;
 
     SDL_LockAudioDevice(audiodev);
     for(i=0; i<SND_CHANNELS; i++)
     {
         ch = &channels[i];
-        if(!ch->active || ch->edict == serverconn.edict)
+        if(!ch->active || (ch->hasedict && ch->edict == serverconn.edict))
             continue;
 
         x = ch->srcx;

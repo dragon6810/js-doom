@@ -16,7 +16,7 @@ void A_FirePistol()
         return;
 
     edict = (int)(curwpnplayer->mobj - mobjs);
-    snd_queueedict(SFX_PISTOL, edict);
+    snd_queueedict(sfx_pistol, edict);
     level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK2);
 
     angle = curwpnplayer->mobj->info.angle;
@@ -39,7 +39,7 @@ void A_FireShotgun()
         return;
 
     edict = (int)(curwpnplayer->mobj - mobjs);
-    snd_queueedict(SFX_SHOTGN, edict);
+    snd_queueedict(sfx_shotgn, edict);
     level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK2);
 
     slope = lineatk_findslope(curwpnplayer->mobj, curwpnplayer->mobj->info.angle);
@@ -59,7 +59,7 @@ void A_FireCGun()
         return;
 
     edict = (int)(curwpnplayer->mobj - mobjs);
-    snd_queueedict(SFX_PISTOL, edict);
+    snd_queueedict(sfx_pistol, edict);
     level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK2);
 
     angle = curwpnplayer->mobj->info.angle;

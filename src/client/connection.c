@@ -9,6 +9,7 @@
 #define RETRY_DELAY_MS       3000.0
 
 #include "client.h"
+#include "clsnd.h"
 #include "level.h"
 #include "net.h"
 #include "netchan.h"
@@ -117,6 +118,39 @@ static void* recvsectordeltas(void* buf, void* curpos, int len)
 
     if(netpacketfull)
         return NULL;
+
+    return curpos;
+}
+
+static void* recvsound(void* buf, void* curpos, int len)
+{
+    uint8_t sfxid, flags;
+    int edict;
+    float x, y;
+
+    sfxid = net_readu8(buf, curpos++, len);
+    flags = net_readu8(buf, curpos++, len);
+    if(netpacketfull)
+        return NULL;
+    if(flags & SND_HASEDICT)
+    {
+        edict = net_readu16(buf, curpos, len);
+        curpos += 2;
+        if(netpacketfull)
+            return NULL;
+        if(edict == serverconn.edict && (sfxid == sfx_pistol || sfxid == sfx_shotgn))
+            return curpos;
+
+        snd_playsoundedict(sfxid, edict);
+    }
+    else if(flags & SND_HASPOS)
+    {
+        x = net_readfloat(buf, curpos, len); curpos += 4;
+        y = net_readfloat(buf, curpos, len); curpos += 4;
+        if(netpacketfull)
+            return NULL;
+        snd_playsoundpos(sfxid, x, y);
+    }
 
     return curpos;
 }
@@ -366,6 +400,7 @@ static void* recvshake(void* buf, void* curpos, int len)
 
     render_init();
     stbar_init();
+    snd_findlumps();
 
     memset(&player, 0, sizeof(player));
     player.dumb = true;
@@ -417,36 +452,9 @@ static void recvpacket(void *buf, int len)
                 return;
             break;
         case SVC_SOUND:
-        {
-            uint8_t sfxid, flags;
-            int edict;
-            float x, y;
-
-            sfxid = net_readu8(buf, curpos++, len);
-            flags = net_readu8(buf, curpos++, len);
-            if(netpacketfull)
+            if(!(curpos = recvsound(buf, curpos, len)))
                 return;
-            if(flags & SND_HASEDICT)
-            {
-                edict = net_readu16(buf, curpos, len);
-                curpos += 2;
-                if(netpacketfull)
-                    return;
-                if(edict != serverconn.edict)
-                    snd_playsoundedict(sfxid, edict);
-                printf("edict: %d\n", edict);
-            }
-            else if(flags & SND_HASPOS)
-            {
-                x = net_readfloat(buf, curpos, len); curpos += 4;
-                y = net_readfloat(buf, curpos, len); curpos += 4;
-                if(netpacketfull)
-                    return;
-                snd_playsoundpos(sfxid, x, y);
-                printf("pos: %f %f\n", x, y);
-            }
             break;
-        }
         case SVC_SETPLAYEDICT:
             if(!(curpos = recvsetplayedict(buf, curpos, len)))
                 return;

@@ -1,8 +1,8 @@
 #ifndef _CLIENT_SND_H
 #define _CLIENT_SND_H
 
-#include "../doommath.h"
-#include "../packets.h"
+#include "doommath.h"
+#include "packets.h"
 
 void snd_init(void);
 void snd_playsoundedict(int sfxid, int edict);

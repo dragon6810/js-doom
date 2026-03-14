@@ -39,15 +39,6 @@
 #define SND_HASEDICT 0x01 // uint16_t edict
 #define SND_HASPOS   0x02 // float x, float y
 
-typedef enum
-{
-    SFX_PISTOL=0,
-    SFX_SHOTGN,
-    SFX_DOROPN,
-    SFX_DORCLS,
-    NUM_SFX,
-} sfxid_e;
-
 typedef struct
 {
     float floorheight;

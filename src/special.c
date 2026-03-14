@@ -17,11 +17,15 @@ typedef struct
     sector_t *sector;
 } doorthink_t;
 
-static void doorsound(sector_t *sec, int sfxid)
+static void doorsound(sector_t *sec, sound_e sfxid)
 {
-    linedef_t *l = sec->lines[0];
-    float x = (l->v1->x + l->v2->x) * 0.5f;
-    float y = (l->v1->y + l->v2->y) * 0.5f;
+    linedef_t *line;
+    float x, y;
+
+    line = sec->lines[0];
+    x = (line->v1->x + line->v2->x) * 0.5f;
+    y = (line->v1->y + line->v2->y) * 0.5f;
+
     snd_queuepos(sfxid, x, y);
 }
 
@@ -46,7 +50,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
         if(thinker->opentimer <= 0)
         {
             thinker->state = -1;
-            doorsound(thinker->sector, SFX_DORCLS);
+            doorsound(thinker->sector, sfx_dorcls);
         }
 
         return false;
@@ -58,7 +62,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
         {
             thinker->sector->ceilheight += thinker->speed * ft;
             thinker->state = 1;
-            doorsound(thinker->sector, SFX_DOROPN);
+            doorsound(thinker->sector, sfx_doropn);
         }
         else if(thinker->sector->ceilheight <= thinker->bottom)
         {
@@ -100,15 +104,15 @@ void special_door(linedef_t* line)
         {
         case 1:
             think->state = -1;
-            doorsound(sec, SFX_DORCLS);
+            doorsound(sec, sfx_dorcls);
             break;
         case 0:
             think->state = -1;
-            doorsound(sec, SFX_DORCLS);
+            doorsound(sec, sfx_dorcls);
             break;
         case -1:
             think->state = 1;
-            doorsound(sec, SFX_DOROPN);
+            doorsound(sec, sfx_doropn);
             break;
         }
         think->openduration = 150.0 / 35.0;
@@ -132,7 +136,7 @@ void special_door(linedef_t* line)
         think->top = level_getlowestneighborceil(sec) - 4;
         think->sector = sec;
 
-        doorsound(sec, SFX_DOROPN);
+        doorsound(sec, sfx_doropn);
         addthinker(think);
     }
 }

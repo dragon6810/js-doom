@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "clsnd.h"
 #include "connection.h"
 #include "draw.h"
 #include "level.h"

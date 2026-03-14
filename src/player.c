@@ -344,6 +344,7 @@ static bool player_pickupwpn(weapon_e type)
     {
         gavewpn = true;
         curplayer->info.weapons |= 1 << type;
+        curplayer->info.weapon.pend = type;
     }
 
     return gaveammo || gavewpn;

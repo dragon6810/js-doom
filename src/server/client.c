@@ -251,7 +251,6 @@ static void buildunreliable(client_t* cl, netbuf_t* buf)
     int i;
 
     addplaydeltas(cl, buf);
-    snd_addtobuf(cl, buf);
 
     netbuf_writeu8(buf, SVC_ENTDELTAS);
 
@@ -319,8 +318,6 @@ void sendtoclients(void)
             updategamestate(&clients[i]);
         netbuf_free(&unreliable);
     }
-
-    snd_clearevents();
 }
 
 void* recvrespawn(client_t* cl, void* buf, void* curpos, int len)

@@ -1,78 +1,44 @@
 #include "snd.h"
 
-#include "../net.h"
-#include "../packets.h"
-
-#define MAX_SNDEVENTS 64
-
-typedef struct
-{
-    uint8_t sfxid;
-    uint8_t flags;
-    uint16_t edict;
-    float x, y;
-} sndevent_t;
-
-static sndevent_t events[MAX_SNDEVENTS];
-static int nevents;
+#include "client.h"
+#include "net.h"
+#include "packets.h"
 
 void snd_queueedict(int sfxid, int edict)
 {
-    sndevent_t *ev;
+    int i;
 
-    if(nevents >= MAX_SNDEVENTS)
-        return;
+    netbuf_t buf;
+    
+    netbuf_init(&buf);
+    netbuf_writeu8(&buf, SVC_SOUND);
+    netbuf_writeu8(&buf, sfxid);
+    netbuf_writeu8(&buf, SND_HASEDICT);
+    netbuf_writeu16(&buf, edict);
 
-    ev = &events[nevents++];
-    ev->sfxid = (uint8_t)sfxid;
-    ev->flags = SND_HASEDICT;
-    ev->edict = (uint16_t)edict;
+    for(i=0; i<MAX_CLIENT; i++)
+        if(clients[i].state == CLSTATE_CONNECTED)
+            netchan_queue(&clients[i].chan, &buf);
+
+    netbuf_free(&buf);
 }
 
 void snd_queuepos(int sfxid, float x, float y)
 {
-    sndevent_t *ev;
-
-    if(nevents >= MAX_SNDEVENTS)
-        return;
-
-    ev = &events[nevents++];
-    ev->sfxid = (uint8_t)sfxid;
-    ev->flags = SND_HASPOS;
-    ev->x = x;
-    ev->y = y;
-}
-
-void snd_addtobuf(client_t *cl, netbuf_t *buf)
-{
     int i;
-    int myedict;
-    sndevent_t *ev;
 
-    myedict = (cl->player.mobj) ? (int)(cl->player.mobj - mobjs) : -1;
+    netbuf_t buf;
+    
+    netbuf_init(&buf);
+    netbuf_writeu8(&buf, SVC_SOUND);
+    netbuf_writeu8(&buf, sfxid);
+    netbuf_writeu8(&buf, SND_HASPOS);
+    netbuf_writefloat(&buf, x);
+    netbuf_writefloat(&buf, y);
 
-    for(i=0; i<nevents; i++)
-    {
-        ev = &events[i];
+    for(i=0; i<MAX_CLIENT; i++)
+        if(clients[i].state == CLSTATE_CONNECTED)
+            netchan_queue(&clients[i].chan, &buf);
 
-        // skip own-edict weapon sounds — client plays those locally
-        if((ev->flags & SND_HASEDICT) && ev->edict == myedict)
-            continue;
-
-        netbuf_writeu8(buf, SVC_SOUND);
-        netbuf_writeu8(buf, ev->sfxid);
-        netbuf_writeu8(buf, ev->flags);
-        if(ev->flags & SND_HASEDICT)
-            netbuf_writeu16(buf, ev->edict);
-        if(ev->flags & SND_HASPOS)
-        {
-            netbuf_writefloat(buf, ev->x);
-            netbuf_writefloat(buf, ev->y);
-        }
-    }
-}
-
-void snd_clearevents(void)
-{
-    nevents = 0;
+    netbuf_free(&buf);
 }

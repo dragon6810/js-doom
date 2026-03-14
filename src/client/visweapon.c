@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "connection.h"
+#include "clsnd.h"
 #include "draw.h"
 #include "player.h"
 #include "render.h"
@@ -82,7 +83,7 @@ void A_FirePistol()
 
     flashstate = S_PISTOLFLASH;
     flashtime = 0;
-    snd_playsoundedict(SFX_PISTOL, serverconn.edict);
+    snd_playsoundedict(sfx_pistol, serverconn.edict);
 
     curwpnplayer->info.ammo[wpndefs[WEAPON_PIST].ammo]--;
 }
@@ -97,7 +98,7 @@ void A_FireShotgun()
 
     flashstate = S_SGUNFLASH1;
     flashtime = 0;
-    snd_playsoundedict(SFX_SHOTGN, serverconn.edict);
+    snd_playsoundedict(sfx_shotgn, serverconn.edict);
 
     curwpnplayer->info.ammo[wpndefs[WEAPON_SHOT].ammo]--;
 }
@@ -112,7 +113,7 @@ void A_FireCGun()
 
     flashstate = S_CHAINFLASH1 + player.info.weapon.state - S_CHAIN1;
     flashtime = 0;
-    snd_playsoundedict(SFX_PISTOL, serverconn.edict);
+    snd_playsoundedict(sfx_pistol, serverconn.edict);
 
     curwpnplayer->info.ammo[wpndefs[WEAPON_CHAIN].ammo]--;
 }
