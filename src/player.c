@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "snd.h"
 #include "special.h"
 
 #define FORWARDTHRUST 50.0
@@ -352,12 +353,15 @@ static bool player_pickupwpn(weapon_e type)
 
 void player_pickupcol(object_t* obj)
 {
+    sound_e sound;
+
     if(curplayer->mobj->info.z > obj->info.z + obj->info.height)
         return;
 
     if(curplayer->mobj->info.z + curplayer->mobj->info.height < obj->info.z)
         return;
 
+    sound = sfx_itemup;
     switch(states[obj->info.state].sprite)
     {
     case SPR_ARM1:
@@ -455,10 +459,12 @@ void player_pickupcol(object_t* obj)
     case SPR_SHOT:
         if(!player_pickupwpn(WEAPON_SHOT))
             return;
+        sound = sfx_wpnup;
         break;
     case SPR_MGUN:
         if(!player_pickupwpn(WEAPON_CHAIN))
             return;
+        sound = sfx_wpnup;
         break;
     default:
         return;
@@ -466,6 +472,7 @@ void player_pickupcol(object_t* obj)
 
     level_removemobj(obj);
     curplayer->pickupcnt += 6;
+    snd_queueedict(sound, curplayer->mobj - mobjs);
 }
 
 static void player_trymove(object_t* playobj, float frametime, bool airborn)

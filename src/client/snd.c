@@ -35,6 +35,7 @@ typedef struct
     bool hasedict;
     int edict;
     float srcx, srcy;
+    int priority;
 } sndchan_t;
 
 static sndcache_t cache[NUMSFX];
@@ -93,11 +94,8 @@ static void decodesound(int sfxid)
 
     if(cache[sfxid].samples)
         return;
-    def = &sounds[sfxid];
-    if(!def->lump)
-        return;
 
-    wad_cache(def->lump);
+    def = &sounds[sfxid];
 
     if(def->link)
     {
@@ -112,6 +110,7 @@ static void decodesound(int sfxid)
     if(!lump || lump->size < 25)
         return;
 
+    wad_cache(lump);
     data = (uint8_t*)lump->cache;
 
     srcfreq  = *(uint16_t*)(data + 2);
@@ -132,7 +131,7 @@ static void decodesound(int sfxid)
     cache[sfxid].samples  = out;
     cache[sfxid].nsamples = outcount;
 
-    wad_decache(def->lump);
+    wad_decache(lump);
 }
 
 void snd_init(void)
@@ -177,14 +176,15 @@ static void calcsepvol(float srcx, float srcy, float *lv, float *rv)
 
 static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
 {
-    int i;
-    sndchan_t *ch, *oldest;
+    int i, newpri;
+    sndchan_t *ch, *lowest;
     float lv, rv;
 
     if(!cache[sfxid].samples)
         return;
 
-    // Doom channel rule: one active sound per origin — kill the old one
+    newpri = sounds[sfxid].priority;
+
     if(hasedict)
     {
         for(i=0; i<SND_CHANNELS; i++)
@@ -199,21 +199,23 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
         }
     }
 
-    // find a free channel; if none, steal the one furthest through playback
     ch = NULL;
-    oldest = &channels[0];
+    lowest = NULL;
     for(i=0; i<SND_CHANNELS; i++)
     {
         if(!channels[i].active) { ch = &channels[i]; break; }
-        if(channels[i].pos > oldest->pos) oldest = &channels[i];
+        if(!lowest || channels[i].priority < lowest->priority)
+            lowest = &channels[i];
     }
-    if(!ch) ch = oldest;
+    if(!ch)
+    {
+        if(newpri < lowest->priority)
+            return;
+        ch = lowest;
+    }
 
     if(hasedict && edict == serverconn.edict)
-    {
-        // own sounds: full volume, center pan
         lv = rv = 1.0f;
-    }
     else
     {
         if(hasedict)
