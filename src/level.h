@@ -224,7 +224,6 @@ void level_unplacemobj(object_t* mobj);
 void level_placemobj(object_t* mobj);
 // finds an index to put a new mobj. -1 if edict full
 int level_findnewedict(void);
-bool level_validobjpos(object_t* mobj, float x, float y);
 bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, linemobjcol_t mobjcol);
 bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol, mobjmobjcol_t mobjcol);
 void level_mobjheights(object_t* mobj);
@@ -232,6 +231,8 @@ int level_nodeside(node_t* node, float x, float y);
 int level_lineside(linedef_t* line, float x, float y);
 ssector_t* level_getpointssector(float x, float y);
 float level_getlowestneighborceil(sector_t* sec);
+float level_getlowestneighborfloor(sector_t* sec);
+float level_gethighestneighborfloor(sector_t* sec);
 bool level_mobjstuckinblock(int bx, int by);
 void level_setmobjstate(object_t* obj, statenum_t state);
 void level_damagemobj(object_t* obj, int dmg, object_t* src);

@@ -398,40 +398,6 @@ bool level_checksquareobj(int bx, int by, float x, float y, float radius, object
     return false;
 }
 
-bool level_validobjpos(object_t* mobj, float x, float y)
-{
-    int bx, by;
-
-    float radius;
-    float minx, miny, maxx, maxy;
-    int bminx, bminy, bmaxx, bmaxy;
-
-    radius = mobjinfo[mobj->info.type].radius;
-    
-    minx = x - radius;
-    miny = y - radius;
-    maxx = x + radius;
-    maxy = y + radius;
-
-    bminx = floorf((minx - blockmap.xorg) / BLOCK_SIZE);
-    bminy = floorf((miny - blockmap.yorg) / BLOCK_SIZE);
-    bmaxx = floorf((maxx - blockmap.xorg) / BLOCK_SIZE);
-    bmaxy = floorf((maxy - blockmap.yorg) / BLOCK_SIZE);
-
-    for(bx=bminx; bx<=bmaxx; bx++)
-    {
-        for(by=bminy; by<=bmaxy; by++)
-        {
-            if(level_checkobjline(bx, by, x, y, mobj, linechecker_mobjmove))
-                return false;
-            if(level_checksquareobj(bx, by, x, y, radius, mobj))
-                return false;
-        }
-    }
-
-    return true;
-}
-
 bool level_traverseline(float x1, float y1, float x2, float y2, bool noearlyexit, linelinecol_t linecol, linemobjcol_t mobjcol)
 {
     int i;
@@ -608,62 +574,24 @@ bool level_thingcollisions(float x, float y, float radius, mobjlinecol_t linecol
 
 float mobjfloorheight, mobjceilheight;
 
+static void level_mobjheightscol(linedef_t* line)
+{
+    if(!line->back && !line->front)
+        return;
+
+    mobjfloorheight = MAX(mobjfloorheight, level_linelower(line));
+    mobjceilheight = MIN(mobjceilheight, level_lineupper(line));
+}
+
 void level_mobjheights(object_t* mobj)
 {
-    int bx, by, l;
+    if(!mobj->ssector)
+        mobj->ssector = level_getpointssector(mobj->info.x, mobj->info.y);
 
-    float radius;
-    float minx, miny, maxx, maxy;
-    int bminx, bminy, bmaxx, bmaxy;
-    block_t *blk;
-    linedef_t *line;
-    ssector_t *ssector;
+    mobjfloorheight = mobj->ssector->sector->floorheight;
+    mobjceilheight = mobj->ssector->sector->ceilheight;
 
-    radius = mobjinfo[mobj->info.type].radius;
-    
-    minx = mobj->info.x - radius;
-    miny = mobj->info.y - radius;
-    maxx = mobj->info.x + radius;
-    maxy = mobj->info.y + radius;
-
-    bminx = floorf(minx - blockmap.xorg) / BLOCK_SIZE;
-    bminy = floorf(miny - blockmap.yorg) / BLOCK_SIZE;
-    bmaxx = floorf(maxx - blockmap.xorg) / BLOCK_SIZE;
-    bmaxy = floorf(maxy - blockmap.yorg) / BLOCK_SIZE;
-
-    if(mobj->ssector)
-        ssector = mobj->ssector;
-    ssector = level_getpointssector(mobj->info.x, mobj->info.y);
-
-    mobjfloorheight = ssector->sector->floorheight;
-    mobjceilheight = ssector->sector->ceilheight;
-    for(bx=bminx; bx<=bmaxx; bx++)
-    {
-        for(by=bminy; by<=bmaxy; by++)
-        {
-            if(bx < 0 || by < 0 || bx >= blockmap.w || by >= blockmap.h)
-                continue;
-            blk = &blockmap.blks[by * blockmap.w + bx];
-
-            for(l=0; l<blk->nlines; l++)
-            {
-                line = blk->lines[l];
-                if(!level_linesquare(line, radius, mobj->info.x, mobj->info.y))
-                    continue;
-                
-                if(line->front)
-                {
-                    mobjfloorheight = MAX(mobjfloorheight, line->front->sector->floorheight);
-                    mobjceilheight = MIN(mobjceilheight, line->front->sector->ceilheight);
-                }
-                if(line->back)
-                {
-                    mobjfloorheight = MAX(mobjfloorheight, line->back->sector->floorheight);
-                    mobjceilheight = MIN(mobjceilheight, line->back->sector->ceilheight);
-                }
-            }
-        }
-    }
+    level_thingcollisions(mobj->info.x, mobj->info.y, mobjinfo[mobj->info.type].radius, level_mobjheightscol, NULL);
 }
 
 int level_nodeside(node_t* node, float x, float y)
@@ -704,7 +632,6 @@ float level_getlowestneighborceil(sector_t* sec)
     int i;
 
     linedef_t *line;
-
     float ceil;
 
     ceil = INFINITY;
@@ -718,6 +645,46 @@ float level_getlowestneighborceil(sector_t* sec)
     }
 
     return ceil;
+}
+
+float level_getlowestneighborfloor(sector_t* sec)
+{
+    int i; 
+
+    linedef_t *line;
+    float floor;
+
+    floor = INFINITY;
+    for(i=0; i<sec->nlines; i++)
+    {
+        line = sec->lines[i];
+        if(line->front && line->front->sector && line->front->sector != sec)
+            floor = MIN(floor, line->front->sector->floorheight);
+        if(line->back && line->back->sector && line->back->sector != sec)
+            floor = MIN(floor, line->back->sector->floorheight);
+    }
+
+    return floor;
+}
+
+float level_gethighestneighborfloor(sector_t* sec)
+{
+    int i; 
+
+    linedef_t *line;
+    float floor;
+
+    floor = -INFINITY;
+    for(i=0; i<sec->nlines; i++)
+    {
+        line = sec->lines[i];
+        if(line->front && line->front->sector && line->front->sector != sec)
+            floor = MAX(floor, line->front->sector->floorheight);
+        if(line->back && line->back->sector && line->back->sector != sec)
+            floor = MAX(floor, line->back->sector->floorheight);
+    }
+
+    return floor;
 }
 
 float level_linelower(linedef_t* line)
@@ -909,6 +876,12 @@ void level_trigger(object_t* user, int sectag, int special)
         {
         case 2:
             special_doorsec(user, sec, special);
+            break;
+        case 36:
+            special_floorlower(user, sec, special);
+            break;
+        case 88:
+            special_plat(user, sec, special);
             break;
         default:
             break;

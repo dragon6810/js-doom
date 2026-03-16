@@ -4,14 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "move.h"
 #include "snd.h"
 #include "special.h"
 #include "level.h"
 
 #define FORWARDTHRUST 50.0
 #define SIDETHRUST 40.0
-#define TICFRIC 0.90625
-#define GRAVITY 1225.0
 
 #define VIEWHEIGHT 41
 
@@ -22,10 +21,6 @@ typedef struct
     float lastdamage;
     bool wasonnukage;
 } playerthink_t;
-
-object_t *slideobj;
-angle_t slideangle;
-float disttowall;
 
 float pviewheight = VIEWHEIGHT, deltaviewheight = 0;
 playerinfo_t defaultplayerinfo;
@@ -140,184 +135,6 @@ void player_free(player_t* player)
 void player_initinfo(playerinfo_t* info)
 {
     *info = defaultplayerinfo;
-}
-
-static bool player_slidecollider(float x1, float y1, float x2, float y2, linedef_t* line, float t)
-{
-    float ldx, ldy;
-    float floorheight, ceilheight;
-
-    if(line->flags & LINEDEF_BLOCKALL)
-        goto hit;
-
-    if(!line->front && !line->back)
-        return false;
-
-    if(line->front)
-    {
-        floorheight = line->front->sector->floorheight;
-        ceilheight = line->front->sector->ceilheight;
-        if(line->back)
-        {
-            floorheight = MAX(floorheight, line->back->sector->floorheight);
-            ceilheight = MIN(ceilheight, line->back->sector->ceilheight);
-        }
-    }
-    else
-    {
-        floorheight = line->back->sector->floorheight;
-        ceilheight = line->back->sector->ceilheight;
-    }
-
-    if(floorheight - slideobj->info.z > 24)
-        goto hit;
-
-    if(ceilheight - floorheight < mobjinfo[slideobj->info.type].height)
-        goto hit;
-
-    return false;
-
-hit:
-    ldx = line->v2->x - line->v1->x;
-    ldy = line->v2->y - line->v1->y;
-    slideangle = ANGATAN2(ldy, ldx);
-    disttowall = t;
-
-    return true;
-}
-
-// just copying the way doom does it to get the same feel,
-// jank included
-static void player_slidemove(object_t* playobj, float frametime)
-{
-    int trycount;
-    float leadx, leady, trailx, traily;
-    float bestdist;
-    float velx, vely, x, y, tryx, tryy;
-    float tox, toy, remx, remy, projx, projy;
-    float linex, liney, dot;
-    angle_t bestslideang;
-    bool hitanything;
-
-    slideobj = playobj;
-    velx = playobj->info.xvel * frametime;
-    vely = playobj->info.yvel * frametime;
-    x = playobj->info.x;
-    y = playobj->info.y;
-
-    trycount = 0;
-attempt:
-    if(++trycount >= 3)
-        goto tryaxis;
-
-    leadx = playobj->info.x;
-    trailx = playobj->info.x;
-    if(playobj->info.xvel > 0)
-    {
-        leadx += mobjinfo[playobj->info.type].radius;
-        trailx -= mobjinfo[playobj->info.type].radius;
-    }
-    else
-    {
-        leadx -= mobjinfo[playobj->info.type].radius;
-        trailx += mobjinfo[playobj->info.type].radius;
-    }
-    leady = playobj->info.y;
-    traily = playobj->info.y;
-    if(playobj->info.yvel > 0)
-    {
-        leady += mobjinfo[playobj->info.type].radius;
-        traily -= mobjinfo[playobj->info.type].radius;
-    }
-    else
-    {
-        leady -= mobjinfo[playobj->info.type].radius;
-        traily += mobjinfo[playobj->info.type].radius;
-    }
-
-    hitanything = false;
-    bestdist = INFINITY;
-    bestslideang = 0;
-
-    if(level_traverseline(leadx, leady, leadx+velx, leady+vely, false, player_slidecollider, NULL))
-    {
-        hitanything = true;
-        if(disttowall < bestdist)
-        {
-            bestdist = disttowall;
-            bestslideang = slideangle;
-        }
-    }
-    if(level_traverseline(trailx, leady, trailx+velx, leady+vely, false, player_slidecollider, NULL))
-    {
-        hitanything = true;
-        if(disttowall < bestdist)
-        {
-            bestdist = disttowall;
-            bestslideang = slideangle;
-        }
-    }
-    if(level_traverseline(leadx, traily, leadx+velx, traily+vely, false, player_slidecollider, NULL))
-    {
-        hitanything = true;
-        if(disttowall < bestdist)
-        {
-            bestdist = disttowall;
-            bestslideang = slideangle;
-        }
-    }
-
-    if(!hitanything)
-        goto tryaxis;
-
-    bestdist -= 0.01;
-    tox = velx * bestdist;
-    toy = vely * bestdist;
-    remx = velx - tox;
-    remy = vely - toy;
-
-    linex = ANGCOS(bestslideang);
-    liney = ANGSIN(bestslideang);
-
-    dot = remx * linex + remy * liney;
-    projx = linex * dot;
-    projy = liney * dot;
-
-    velx = tox + projx;
-    vely = toy + projy;
-    
-    tryx = x + velx;
-    tryy = y + vely;
-    if(level_validobjpos(playobj, tryx, tryy))
-        goto moved;
-    goto attempt;
-
-tryaxis:
-    tryx = x + velx;
-    tryy = y;
-    if(level_validobjpos(playobj, tryx, tryy))
-    {
-        playobj->info.x = tryx;
-        playobj->info.y = tryy;
-        return;
-    }
-    
-    tryx = x;
-    tryy = y + vely;
-    if(level_validobjpos(playobj, tryx, tryy))
-    {
-        playobj->info.x = tryx;
-        playobj->info.y = tryy;
-        return;
-    }
-
-    tryx = x;
-    tryy = y;
-moved:
-    playobj->info.x = tryx;
-    playobj->info.y = tryy;
-    playobj->info.xvel = (tryx - x) / frametime;
-    playobj->info.yvel = (tryy - y) / frametime;
 }
 
 static player_t *curplayer;
@@ -495,57 +312,6 @@ void player_pickupcol(object_t* obj)
     snd_queueedict(sound, curplayer->mobj - mobjs);
 }
 
-static void player_trymove(object_t* playobj, float frametime, bool airborn)
-{
-    const float stopspeed = 0.0625 * 35.0;
-
-    float x, y, floorz;
-
-    playobj->info.z += playobj->info.zvel * frametime;
-
-    x = playobj->info.x + playobj->info.xvel * frametime;
-    y = playobj->info.y + playobj->info.yvel * frametime;
-    
-    curplayer = playobj->player;
-    if(curplayer && !curplayer->dumb && curplayer->mobj->info.health)
-    {
-        level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
-        level_traverseline(playobj->info.x, playobj->info.y, x, y, true, player_walkovercol, NULL);
-    }
-
-    if(level_validobjpos(playobj, x, y))
-    {
-        playobj->info.x = x;
-        playobj->info.y = y;
-        level_unplacemobj(playobj);
-        level_placemobj(playobj);
-    }
-    else
-    {
-        player_slidemove(playobj, frametime);
-        level_unplacemobj(playobj);
-        level_placemobj(playobj);
-    }
-
-    if(fabsf(playobj->info.xvel) < stopspeed
-    && fabsf(playobj->info.yvel) < stopspeed)
-    {
-        playobj->info.xvel = playobj->info.yvel = 0;
-    }
-
-    level_mobjheights(playobj);
-    floorz = mobjfloorheight;
-    if(playobj->info.z <= floorz)
-    {
-        if(airborn)
-            deltaviewheight = playobj->info.zvel / 35.0 / 8;
-        playobj->info.z = floorz;
-        playobj->info.zvel = 0;
-    }
-    else
-        playobj->info.zvel -= GRAVITY * frametime;
-}
-
 void player_docmd(player_t* play, const playercmd_t* cmd)
 {
     float framespeed;
@@ -554,6 +320,7 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
     float thrustx, thrusty;
     float framefric;
     float floorz;
+    float x, y;
 
     if(play->mobj && play->mobj->info.health)
         play->mobj->info.angle = cmd->angle;
@@ -582,14 +349,17 @@ void player_docmd(player_t* play, const playercmd_t* cmd)
         play->mobj->info.yvel += thrusty * cmd->frametime;
     }
 
-    if(play->mobj->info.z <= floorz)
+    if(play->mobj && !play->dumb && play->mobj->info.health)
     {
-        framefric = powf(TICFRIC, 35.0f * cmd->frametime);
-        play->mobj->info.xvel *= framefric;
-        play->mobj->info.yvel *= framefric;
-    }
+        x = play->mobj->info.x + play->mobj->info.xvel * cmd->frametime;
+        y = play->mobj->info.y + play->mobj->info.yvel * cmd->frametime;
 
-    player_trymove(play->mobj, cmd->frametime, play->mobj->info.z > floorz);
+        curplayer = play;
+        level_thingcollisions(x, y, mobjinfo[MT_PLAYER].radius, NULL, player_pickupcol);
+        level_traverseline(play->mobj->info.x, play->mobj->info.y, x, y, true, player_walkovercol, NULL);
+    }
+    
+    move(play->mobj, cmd->frametime);
 
     curwpnplayer = play;
     weapon_docmd(&play->info.weapon, cmd->flags, cmd->switchwpn);

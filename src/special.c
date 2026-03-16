@@ -19,7 +19,27 @@ typedef struct
     sector_t *sector;
 } doorthink_t;
 
-static void doorsound(sector_t *sec, sound_e sfxid)
+typedef struct
+{
+    thinker_t thinker;
+    int state; // 1 -> raising, 0 -> open, -1 -> lowering
+    float waitduration;
+    float waittimer;
+    float speed;
+    float bottom, top;
+    sector_t *sector;
+} platthink_t;
+
+typedef struct
+{
+    thinker_t thinker;
+    float speed;
+    float bottom;
+    float lastsndtime;
+    sector_t* sector;
+} floorthink_t;
+
+static void sectorsound(sector_t *sec, sound_e sfxid)
 {
     linedef_t *line;
     float x, y;
@@ -52,7 +72,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
         if(thinker->opentimer <= 0 && !thinker->stayopen)
         {
             thinker->state = -1;
-            doorsound(thinker->sector, sfx_dorcls);
+            sectorsound(thinker->sector, sfx_dorcls);
         }
 
         return false;
@@ -64,7 +84,7 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
         {
             thinker->sector->ceilheight += thinker->speed * ft;
             thinker->state = 1;
-            doorsound(thinker->sector, sfx_doropn);
+            sectorsound(thinker->sector, sfx_doropn);
         }
         else if(thinker->sector->ceilheight <= thinker->bottom)
         {
@@ -82,6 +102,83 @@ bool doorthink(doorthink_t* thinker, float ft, float progtime)
 }
 
 void doorthinkfree(doorthink_t* thinker)
+{
+    if(thinker->sector && thinker->sector->thinker == thinker)
+        thinker->sector->thinker = NULL;
+}
+
+bool platthink(platthink_t* thinker, float ft, float progtime)
+{
+    switch(thinker->state)
+    {
+    case -1:
+        thinker->sector->floorheight -= thinker->speed * ft;
+        if(thinker->sector->floorheight <= thinker->bottom)
+        {
+            thinker->state = 0;
+            thinker->waittimer = thinker->waitduration;
+            thinker->sector->floorheight = thinker->bottom;
+            sectorsound(thinker->sector, sfx_pstop);
+        }
+
+        return false;
+    case 0:
+        thinker->waittimer -= ft;
+
+        if(thinker->waittimer <= 0)
+        {
+            thinker->state = 1;
+            sectorsound(thinker->sector, sfx_pstart);
+        }
+
+        return false;
+    case 1:
+        thinker->sector->floorheight += thinker->speed * ft;
+
+        if(thinker->sector->floorheight >= thinker->top)
+        {
+            thinker->sector->floorheight = thinker->top;
+            sectorsound(thinker->sector, sfx_pstop);
+            return true;
+        }
+
+        return false;
+    default:
+        assert(0 && "bad platthink_t state");
+        break;
+    }
+
+    return false;
+}
+
+void platthinkfree(platthink_t* thinker)
+{
+    if(thinker->sector && thinker->sector->thinker == thinker)
+        thinker->sector->thinker = NULL;
+}
+
+bool floorthink(floorthink_t* thinker, float ft, float progtime)
+{
+    const float soundperiod = 8.0 / 35.0;
+
+    if(progtime - thinker->lastsndtime >= soundperiod)
+    {
+        sectorsound(thinker->sector, sfx_stnmov);
+        thinker->lastsndtime = floorf(progtime / soundperiod) * soundperiod;
+    }
+    
+    thinker->sector->floorheight -= thinker->speed * ft;
+    if(thinker->sector->floorheight <= thinker->bottom)
+    {
+        thinker->sector->floorheight = thinker->bottom;
+        sectorsound(thinker->sector, sfx_pstop);
+        return true;
+    }
+
+    return false;
+}
+
+void floorthinkfree(floorthink_t* thinker)
 {
     if(thinker->sector && thinker->sector->thinker == thinker)
         thinker->sector->thinker = NULL;
@@ -132,11 +229,11 @@ bool special_doorsec(object_t* user, sector_t* sec, int special)
             break;
         case 0:
             think->state = -1;
-            doorsound(sec, sfx_dorcls);
+            sectorsound(sec, sfx_dorcls);
             break;
         case -1:
             think->state = 1;
-            doorsound(sec, sfx_doropn);
+            sectorsound(sec, sfx_doropn);
             break;
         }
         think->openduration = 150.0 / 35.0;
@@ -161,7 +258,7 @@ bool special_doorsec(object_t* user, sector_t* sec, int special)
         think->sector = sec;
         think->stayopen = stayopen;
 
-        doorsound(sec, sfx_doropn);
+        sectorsound(sec, sfx_doropn);
         addthinker(think);
     }
 
@@ -176,4 +273,58 @@ bool special_door(object_t* user, linedef_t* line, int special)
 
     sec = line->back->sector;
     return special_doorsec(user, sec, special);
+}
+
+bool special_plat(object_t* user, sector_t* sec, int special)
+{
+    platthink_t *think;
+
+    if(sec->thinker)
+        return false;
+
+    think = calloc(1, sizeof(platthink_t));
+    sec->thinker = think;
+
+    think->thinker.func = (thinkfunc_t) platthink;
+    think->thinker.freefunc = (thinkfreefunc_t) platthinkfree;
+    think->state = -1;
+    think->waitduration = 105.0 / 35.0;
+    think->speed = 4.0 * 35.0;
+    think->bottom = level_getlowestneighborfloor(sec);
+    think->top = sec->floorheight;
+    think->sector = sec;
+
+    sectorsound(sec, sfx_pstart);
+    addthinker(think);
+
+    return true;
+}
+
+bool special_floorlower(object_t* user, sector_t* sec, int special)
+{
+    floorthink_t *think;
+
+    if(sec->thinker)
+        return false;
+
+    think = calloc(1, sizeof(floorthink_t));
+    sec->thinker = think;
+
+    think->thinker.func = (thinkfunc_t) floorthink;
+    think->thinker.freefunc = (thinkfreefunc_t) floorthinkfree;
+    think->speed = 35.0;
+    switch(special)
+    {
+    case 36:
+        think->speed *= 4;
+        break;
+    default:
+        break;
+    }
+    think->bottom = level_gethighestneighborfloor(sec) + 8;
+    think->sector = sec;
+
+    addthinker(think);
+
+    return true;
 }

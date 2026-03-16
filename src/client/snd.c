@@ -185,15 +185,27 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
 
     newpri = sounds[sfxid].priority;
 
+    if(hasedict && edict == serverconn.edict)
+        lv = rv = 1.0f;
+    else
+    {
+        if(hasedict)
+        {
+            x = mobjs[edict].info.x;
+            y = mobjs[edict].info.y;
+        }
+        calcsepvol(x, y, &lv, &rv);
+    }
+
+    SDL_LockAudioDevice(audiodev);
+
     if(hasedict)
     {
         for(i=0; i<SND_CHANNELS; i++)
         {
             if(channels[i].active && channels[i].hasedict && channels[i].edict == edict)
             {
-                SDL_LockAudioDevice(audiodev);
                 channels[i].active = false;
-                SDL_UnlockAudioDevice(audiodev);
                 break;
             }
         }
@@ -210,23 +222,13 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
     if(!ch)
     {
         if(newpri < lowest->priority)
+        {
+            SDL_UnlockAudioDevice(audiodev);
             return;
+        }
         ch = lowest;
     }
 
-    if(hasedict && edict == serverconn.edict)
-        lv = rv = 1.0f;
-    else
-    {
-        if(hasedict)
-        {
-            x = mobjs[edict].info.x;
-            y = mobjs[edict].info.y;
-        }
-        calcsepvol(x, y, &lv, &rv);
-    }
-
-    SDL_LockAudioDevice(audiodev);
     ch->active   = true;
     ch->samples  = cache[sfxid].samples;
     ch->nsamples = cache[sfxid].nsamples;
@@ -238,6 +240,7 @@ static void startchannel(int sfxid, bool hasedict, int edict, float x, float y)
     ch->srcx      = x;
     ch->srcy      = y;
     ch->priority  = newpri;
+
     SDL_UnlockAudioDevice(audiodev);
 }
 
