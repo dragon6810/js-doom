@@ -84,6 +84,8 @@ struct object_s
     thinker_t *thinker;
     struct player_s *player;
 
+    object_t *target;
+
     object_t *snext, *sprev; // sector list
     object_t *bnext, *bprev; // block list
 };
@@ -213,6 +215,7 @@ extern float linerangebottom, linerangetop, linerange;
 extern float mobjfloorheight, mobjceilheight;
 
 extern object_t *curmobj;
+extern bool level_isclient;
 
 // return true if actual collision
 typedef bool (*linelinecol_t)(float x1, float y1, float x2, float y2, linedef_t* line, float t);
@@ -235,7 +238,7 @@ float level_getlowestneighborfloor(sector_t* sec);
 float level_gethighestneighborfloor(sector_t* sec);
 bool level_mobjstuckinblock(int bx, int by);
 void level_setmobjstate(object_t* obj, statenum_t state);
-void level_damagemobj(object_t* obj, int dmg, object_t* src);
+void level_damagemobj(object_t* obj, int dmg, object_t* inflictor, object_t* src);
 float level_linelower(linedef_t* line);
 float level_lineupper(linedef_t* line);
 bool level_mobjstuckinsector(sector_t* sector);

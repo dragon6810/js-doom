@@ -16,7 +16,7 @@ LDC_BUILD_DIR = $(LDC_DIR)/build
 PREJS = src/client/pre.js
 
 # --- Compiler Flags ---
-EMCC_FLAGS = -O0 -g4 -Isrc -I$(NUKED_DIR) -s USE_SDL=2 --pre-js $(PREJS) --preload-file doom.wad
+EMCC_FLAGS = -O3 -Isrc -I$(NUKED_DIR) -s USE_SDL=2 --pre-js $(PREJS) --preload-file doom.wad
 
 # Server needs the include paths (-I) for both submodules
 CFLAGS = -fsanitize=address -g -O0 -Wall -Isrc -I$(CJSON_DIR) -I$(LDC_DIR)/include

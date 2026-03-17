@@ -49,31 +49,34 @@ SDL_AudioDeviceID audiodev;
 
 static void audiocallback(void *udata, uint8_t *stream, int len)
 {
+    static int32_t lbuf[2048], rbuf[2048];
     int i, s, n;
-    int32_t l, r;
     int16_t *out = (int16_t*)stream;
     sndchan_t *ch;
 
-    n = len / 4; // stereo int16 pairs
+    n = len / 4;
+
+    memset(lbuf, 0, n * sizeof(int32_t));
+    memset(rbuf, 0, n * sizeof(int32_t));
+
+    for(i=0; i<SND_CHANNELS; i++)
+    {
+        ch = &channels[i];
+        if(!ch->active) continue;
+        for(s=0; s<n; s++)
+        {
+            if(ch->pos >= ch->nsamples) { ch->active = false; break; }
+            lbuf[s] += (int32_t)(ch->samples[ch->pos] * ch->leftvol);
+            rbuf[s] += (int32_t)(ch->samples[ch->pos] * ch->rightvol);
+            ch->pos++;
+        }
+    }
+
+    mus_mixbuf(lbuf, rbuf, n);
 
     for(s=0; s<n; s++)
     {
-        l = r = 0;
-        for(i=0; i<SND_CHANNELS; i++)
-        {
-            ch = &channels[i];
-            if(!ch->active)
-                continue;
-            if(ch->pos >= ch->nsamples)
-            {
-                ch->active = false;
-                continue;
-            }
-            l += (int32_t)(ch->samples[ch->pos] * ch->leftvol);
-            r += (int32_t)(ch->samples[ch->pos] * ch->rightvol);
-            ch->pos++;
-        }
-        mus_samplemix(&l, &r);
+        int32_t l = lbuf[s], r = rbuf[s];
         if(l >  32767) l =  32767;
         if(l < -32768) l = -32768;
         if(r >  32767) r =  32767;

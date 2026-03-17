@@ -174,6 +174,7 @@ void loop(void)
 int main()
 {
     starttime = emscripten_get_now() / 1000.0;
+    level_isclient = true;
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 

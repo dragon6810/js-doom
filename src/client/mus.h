@@ -5,6 +5,6 @@
 
 void    mus_init(void);
 void    mus_start(int episode, int map);
-void    mus_samplemix(int32_t *l, int32_t *r);
+void    mus_mixbuf(int32_t *lbuf, int32_t *rbuf, int n);
 
 #endif

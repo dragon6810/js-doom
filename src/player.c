@@ -88,7 +88,7 @@ bool player_think(playerthink_t* thinker, float frametime, float progtime)
 
             if(nukagedamage && progtime - thinker->lastdamage >= damageperiod)
             {
-                level_damagemobj(thinker->player->mobj, nukagedamage, NULL);
+                level_damagemobj(thinker->player->mobj, nukagedamage, NULL, NULL);
                 thinker->lastdamage = floorf(progtime / damageperiod) * damageperiod;
             }
         }
@@ -300,6 +300,11 @@ void player_pickupcol(object_t* obj)
         break;
     case SPR_MGUN:
         if(!player_pickupwpn(WEAPON_CHAIN))
+            return;
+        sound = sfx_wpnup;
+        break;
+    case SPR_LAUN:
+        if(!player_pickupwpn(WEAPON_ROCKET))
             return;
         sound = sfx_wpnup;
         break;

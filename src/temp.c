@@ -11,13 +11,11 @@ void A_OpenShotgun2() {}
 void A_LoadShotgun2() {}
 void A_CloseShotgun2() {}
 void A_GunFlash() {}
-void A_FireMissile() {}
 void A_Saw() {}
 void A_FirePlasma() {}
 void A_BFGsound() {}
 void A_FireBFG() {}
 void A_BFGSpray() {}
-void A_Explode() {}
 void A_Pain() {}
 void A_PlayerScream() {}
 void A_XScream() {}

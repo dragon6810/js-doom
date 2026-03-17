@@ -16,6 +16,8 @@
 #define MUS_SRATE    44100
 #define MUS_TICRATE  140
 #define SPT          (MUS_SRATE / MUS_TICRATE)
+#define OPL_GENRATE  (MUS_SRATE / 2)   /* synthesise at 22050 Hz, hold for 2 output samples */
+#define OPL_STEP     (MUS_SRATE / OPL_GENRATE)
 
 /* OPL2 operator slot offsets for channels 0-8 */
 static const int modoff[9] = {  0,  1,  2,  8,  9, 10, 16, 17, 18 };
@@ -134,7 +136,7 @@ static void opl_noteon(int ci, int mschan, int note_opl, int vol,
     freq_to_block(440.0f * powf(2.0f, (note_opl - 69) / 12.0f), &fnum, &block);
 
     /* carrier TL scaled by velocity: at vol=127 use raw TL, at vol=0 use 63 */
-    raw_tl = gv->car.scale & 0x3F;
+    raw_tl = gv->car.level & 0x3F;
     tl     = raw_tl + ((63 - raw_tl) * (127 - vol) / 127);
     if(tl > 63) tl = 63;
 
@@ -313,7 +315,7 @@ void mus_init(void)
     genmidi_ok = 1;
     printf("[mus] GENMIDI loaded\n");
 
-    OPL3_Reset(&chip, MUS_SRATE);
+    OPL3_Reset(&chip, OPL_GENRATE);
     wreg(0x01, 0x20); /* enable OPL2 waveform select */
 
     for(i = 0; i < OPL_VOICES; i++)
@@ -390,21 +392,29 @@ void mus_start(int episode, int map)
     printf("[mus] playing %s\n", name);
 }
 
-void mus_samplemix(int32_t *l, int32_t *r)
+void mus_mixbuf(int32_t *lbuf, int32_t *rbuf, int n)
 {
-    int16_t buf[2];
+    static int16_t oplsamp[2];
+    static int     oplphase = 0;
+    int i;
 
     if(!mus_active) return;
 
-    mus_samp++;
-    if(mus_samp >= SPT)
+    for(i = 0; i < n; i++)
     {
-        mus_samp = 0;
-        if(mus_delay > 0) mus_delay--;
-        if(mus_delay == 0) mus_process_events();
-    }
+        mus_samp++;
+        if(mus_samp >= SPT)
+        {
+            mus_samp = 0;
+            if(mus_delay > 0) mus_delay--;
+            if(mus_delay == 0) mus_process_events();
+        }
 
-    OPL3_GenerateResampled(&chip, buf);
-    *l += buf[0];
-    *r += buf[1];
+        if(oplphase == 0)
+            OPL3_GenerateResampled(&chip, oplsamp);
+        oplphase = (oplphase + 1) % OPL_STEP;
+
+        lbuf[i] += oplsamp[0];
+        rbuf[i] += oplsamp[1];
+    }
 }

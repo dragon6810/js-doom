@@ -1,6 +1,7 @@
 #include "move.h"
 
 #include "player.h"
+#include "snd.h"
 
 void move(object_t* mobj, float ft)
 {
@@ -13,6 +14,14 @@ object_t *movemobj;
 
 angle_t slideangle;
 float disttowall;
+
+static void move_explodemissile(void)
+{
+    movemobj->info.flags &= ~MF_MISSILE;
+    level_setmobjstate(movemobj, mobjinfo[movemobj->info.type].deathstate);
+    if(mobjinfo[movemobj->info.type].deathsound)
+        snd_queueedict(mobjinfo[movemobj->info.type].deathsound, movemobj - mobjs);
+}
 
 static void move_validposline(linedef_t* line)
 {
@@ -53,6 +62,9 @@ static void move_validposmobj(object_t* mobj)
         return;
     
     if(mobj == movemobj)
+        return;
+
+    if(movemobj->info.flags & MF_MISSILE && mobj == movemobj->target)
         return;
 
     collided = true;
@@ -284,6 +296,8 @@ void move_xy(object_t* mobj, float ft)
             else
             {
                 mobj->info.xvel = mobj->info.yvel = 0;
+                if(mobj->info.flags & MF_MISSILE)
+                    move_explodemissile();
                 break;
             }
         }
@@ -324,11 +338,21 @@ void move_z(object_t* mobj, float ft)
     
     if(mobj->info.z <= mobjfloorheight)
     {
+        if(mobj->info.flags & MF_MISSILE)
+            move_explodemissile();
+
         if(mobj->player
         && mobj->info.zvel < -1225.0 * 8.0 / 35.0)
             deltaviewheight = mobj->info.zvel / 35.0 / 8.0;
 
         mobj->info.z = mobjfloorheight;
+        mobj->info.zvel = 0;
+    }
+    else if(mobj->info.z + mobj->info.height >= mobjceilheight)
+    {
+        if(mobj->info.flags & MF_MISSILE)
+            move_explodemissile();
+        mobj->info.z = mobjceilheight - mobj->info.height;
         mobj->info.zvel = 0;
     }
 }

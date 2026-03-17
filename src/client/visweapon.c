@@ -117,3 +117,18 @@ void A_FireCGun()
 
     curwpnplayer->info.ammo[wpndefs[WEAPON_CHAIN].ammo]--;
 }
+
+void A_FireMissile()
+{
+    if(weaponprediction)
+        return;
+    if(lastfiredstate == player.info.weapon.state)
+        return;
+    lastfiredstate = player.info.weapon.state;
+
+    flashstate = S_MISSILEFLASH1;
+    flashtime = 0;
+    snd_playsoundedict(sfx_rlaunc, serverconn.edict);
+
+    curwpnplayer->info.ammo[wpndefs[WEAPON_ROCKET].ammo]--;
+}

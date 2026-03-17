@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "move.h"
 #include "player.h"
 #include "rand.h"
 #include "snd.h"
@@ -128,6 +129,7 @@ int numdmstarts = 0;
 startloc_t dmstarts[MAX_DMSTART];
 
 object_t *curmobj = NULL;
+bool level_isclient = false;
 
 texture_t* levelskytex = NULL;
 const char *episodeskies[] =
@@ -765,7 +767,7 @@ static player_t* level_findplayersrc(object_t* obj)
 }
 
 // considers armor
-static void level_damageplayer(object_t* obj, int dmg, object_t* src)
+static void level_damageplayer(object_t* obj, int dmg, object_t* inflictor, object_t* src)
 {
     int deflected;
     player_t *damager;
@@ -792,17 +794,36 @@ static void level_damageplayer(object_t* obj, int dmg, object_t* src)
     }
 }
 
-void level_damagemobj(object_t* obj, int dmg, object_t* src)
+void level_damagemobj(object_t* obj, int dmg, object_t* inflictor, object_t* src)
 {
     int rng;
+    angle_t a;
+    float knockback;
 
     if(obj->info.health <= 0)
         return;
 
     if(obj->player)
-        level_damageplayer(obj, dmg, src);
+        level_damageplayer(obj, dmg, inflictor, src);
     else
         obj->info.health -= dmg;
+
+    if (inflictor && !(obj->info.flags & MF_NOCLIP))
+    {
+        a = ANGATAN2(obj->info.y - inflictor->info.y, obj->info.x - inflictor->info.x);
+        knockback = dmg * 3500.0 / (mobjinfo[obj->info.type].mass * 8.0);
+
+        // for enemies falling forward off ledges
+        if(dmg < 40 && obj->info.health < 0 && obj->info.z - inflictor->info.z > 64
+        && (prand() & 1))
+        {
+            a += ANG180;
+            knockback *= 4;
+        }
+
+        obj->info.xvel += knockback * ANGCOS(a);
+        obj->info.yvel += knockback * ANGSIN(a);
+    }
 
     if(obj->info.health <= 0)
     {
@@ -826,16 +847,28 @@ bool level_mobjthink(mobjthink_t* thinker, float ft, float progtime)
 {
     curmobj = thinker->mobj;
 
-    thinker->timeinstate += ft;
-
-    while(states[thinker->mobj->info.state].nextstate != S_NULL
-    && states[thinker->mobj->info.state].tics
-    && thinker->timeinstate > states[thinker->mobj->info.state].tics / 35.0)
+    if(!level_isclient)
     {
-        thinker->timeinstate -= states[thinker->mobj->info.state].tics / 35.0;
-        thinker->mobj->info.state = states[thinker->mobj->info.state].nextstate;
-        if(states[thinker->mobj->info.state].action)
-            states[thinker->mobj->info.state].action();
+        thinker->timeinstate += ft;
+
+        while(states[thinker->mobj->info.state].tics != -1
+        && thinker->timeinstate > states[thinker->mobj->info.state].tics / 35.0)
+        {
+            thinker->timeinstate -= states[thinker->mobj->info.state].tics / 35.0;
+            thinker->mobj->info.state = states[thinker->mobj->info.state].nextstate;
+
+            if(curmobj->info.type != MT_PLAYER && thinker->mobj->info.state == S_NULL)
+            {
+                level_removemobj(curmobj);
+                return false;
+            }
+
+            if(states[thinker->mobj->info.state].action)
+                states[thinker->mobj->info.state].action();
+        }
+
+        if(!curmobj->player)
+            move(curmobj, ft);
     }
 
     return false;
@@ -964,6 +997,7 @@ void level_loadthings(lumpinfo_t* header)
         mobj->info.height = mobjinfo[type].height;
 
         mobj->info.state = mobjinfo[mobj->info.type].spawnstate;
+        mobj->info.health = mobjinfo[mobj->info.type].spawnhealth;
 
         level_placemobj(mobj);
         mobj->info.z = mobj->ssector->sector->floorheight;

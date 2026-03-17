@@ -70,3 +70,8 @@ void A_FireCGun()
 
     curwpnplayer->info.ammo[wpndefs[WEAPON_CHAIN].ammo]--;
 }
+
+void A_FireMissile()
+{
+    
+}
