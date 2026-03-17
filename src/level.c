@@ -752,9 +752,16 @@ typedef struct
 
 void level_setmobjstate(object_t* obj, statenum_t state)
 {
+    object_t *oldcur;
+
+    oldcur = curmobj;
+    curmobj = obj;
     obj->info.state = state;
     if(obj->thinker)
         ((mobjthink_t*)obj->thinker)->timeinstate = 0;
+    if(states[obj->info.state].action)
+        states[obj->info.state].action();
+    curmobj = oldcur;
 }
 
 // TODO: for rockets, return the rocket shooter
@@ -827,9 +834,17 @@ void level_damagemobj(object_t* obj, int dmg, object_t* inflictor, object_t* src
 
     if(obj->info.health <= 0)
     {
+        if(obj->info.health <= -mobjinfo[obj->info.type].spawnhealth && mobjinfo[obj->info.type].xdeathstate)
+        {
+            level_setmobjstate(obj, mobjinfo[obj->info.type].xdeathstate);
+            snd_queueedict(sfx_slop, obj - mobjs);
+        }
+        else
+        {
+            level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
+            snd_queueedict(mobjinfo[obj->info.type].deathsound, obj - mobjs);
+        }
         obj->info.health = 0;
-        level_setmobjstate(obj, mobjinfo[obj->info.type].deathstate);
-        snd_queueedict(mobjinfo[obj->info.type].deathsound, obj - mobjs);
         return;
     }
 

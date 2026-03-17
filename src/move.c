@@ -17,6 +17,7 @@ float disttowall;
 
 static void move_explodemissile(void)
 {
+    movemobj->info.xvel = movemobj->info.yvel = movemobj->info.zvel = 0;
     movemobj->info.flags &= ~MF_MISSILE;
     level_setmobjstate(movemobj, mobjinfo[movemobj->info.type].deathstate);
     if(mobjinfo[movemobj->info.type].deathsound)
@@ -64,8 +65,11 @@ static void move_validposmobj(object_t* mobj)
     if(mobj == movemobj)
         return;
 
-    if(movemobj->info.flags & MF_MISSILE && mobj == movemobj->target)
+    if((movemobj->info.flags & MF_MISSILE) && mobj == movemobj->target)
         return;
+
+    if(movemobj->info.flags & MF_MISSILE)
+        level_damagemobj(mobj, mobjinfo[movemobj->info.type].damage, movemobj, movemobj->target);
 
     collided = true;
 }
