@@ -9,6 +9,7 @@
 #include "connection.h"
 #include "doommath.h"
 #include "level.h"
+#include "mus.h"
 #include "packets.h"
 #include "snd.h"
 #include "wad.h"
@@ -44,7 +45,7 @@ static sndchan_t channels[SND_CHANNELS];
 static float listenerx, listenery;
 static angle_t listenerang;
 
-static SDL_AudioDeviceID audiodev;
+SDL_AudioDeviceID audiodev;
 
 static void audiocallback(void *udata, uint8_t *stream, int len)
 {
@@ -72,6 +73,7 @@ static void audiocallback(void *udata, uint8_t *stream, int len)
             r += (int32_t)(ch->samples[ch->pos] * ch->rightvol);
             ch->pos++;
         }
+        mus_samplemix(&l, &r);
         if(l >  32767) l =  32767;
         if(l < -32768) l = -32768;
         if(r >  32767) r =  32767;

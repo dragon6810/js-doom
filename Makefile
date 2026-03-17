@@ -9,13 +9,14 @@ CC = clang
 # --- Submodule Paths ---
 # Adjust these if your submodules are in a different folder!
 CJSON_DIR = cJSON
+NUKED_DIR = Nuked-OPL3
 LDC_DIR = libdatachannel
 LDC_BUILD_DIR = $(LDC_DIR)/build
 
 PREJS = src/client/pre.js
 
 # --- Compiler Flags ---
-EMCC_FLAGS = -O0 -g4 -Isrc -s USE_SDL=2 --pre-js $(PREJS) --preload-file doom.wad
+EMCC_FLAGS = -O0 -g4 -Isrc -I$(NUKED_DIR) -s USE_SDL=2 --pre-js $(PREJS) --preload-file doom.wad
 
 # Server needs the include paths (-I) for both submodules
 CFLAGS = -fsanitize=address -g -O0 -Wall -Isrc -I$(CJSON_DIR) -I$(LDC_DIR)/include
@@ -28,7 +29,7 @@ SHARED_SOURCES = $(wildcard src/*.c)
 CLIENT_SOURCES = $(wildcard src/client/*.c)
 SERVER_SOURCES = $(wildcard src/server/*.c)
 
-CLIENT_ALL_SOURCES = $(SHARED_SOURCES) $(CLIENT_SOURCES)
+CLIENT_ALL_SOURCES = $(SHARED_SOURCES) $(CLIENT_SOURCES) $(NUKED_DIR)/opl3.c
 
 # Notice we inject cJSON.c directly into the server's build sources!
 SERVER_ALL_SOURCES = $(SHARED_SOURCES) $(SERVER_SOURCES) $(CJSON_DIR)/cJSON.c

@@ -574,6 +574,7 @@ void spawnplayer(client_t* client)
     client->player.mobj->info.angle = start->angle;
     client->player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;
     client->player.mobj->info.flags = mobjinfo[MT_PLAYER].flags;
+    client->player.mobj->info.height = mobjinfo[MT_PLAYER].height;
     level_placemobj(client->player.mobj);
     client->player.mobj->info.z = client->player.mobj->ssector->sector->floorheight;
     client->player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;

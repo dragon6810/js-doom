@@ -67,6 +67,7 @@ static void* recvsetplayedict(void* buf, void* curpos, int len)
     player.mobj->info.type = MT_PLAYER;
     player.mobj->info.health = mobjinfo[MT_PLAYER].spawnhealth;
     player.mobj->info.flags = mobjinfo[MT_PLAYER].flags;
+    player.mobj->info.height = mobjinfo[MT_PLAYER].height;
     level_placemobj(player.mobj);
     player.mobj->info.z = player.mobj->ssector->sector->floorheight;
     player.mobj->info.state = mobjinfo[MT_PLAYER].spawnstate;
@@ -357,6 +358,7 @@ static void* recvclev(void* buf, void* curpos, int len)
         return NULL;
 
     level_load(e, m);
+    mus_start(e, m);
 
     free(oldgs.sectorinfos);
     free(newgs.sectorinfos);
@@ -409,6 +411,7 @@ static void* recvshake(void* buf, void* curpos, int len)
     render_init();
     stbar_init();
     snd_findlumps();
+    mus_init();
 
     memset(&player, 0, sizeof(player));
     player.dumb = true;

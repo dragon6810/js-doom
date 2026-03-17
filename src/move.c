@@ -207,25 +207,31 @@ tryaxis:
     tryy = y;
     if(move_validpos(mobj, tryx, tryy))
     {
+        level_unplacemobj(mobj);
         mobj->info.x = tryx;
         mobj->info.y = tryy;
+        level_placemobj(mobj);
         return;
     }
-    
+
     tryx = x;
     tryy = y + vely;
     if(move_validpos(mobj, tryx, tryy))
     {
+        level_unplacemobj(mobj);
         mobj->info.x = tryx;
         mobj->info.y = tryy;
+        level_placemobj(mobj);
         return;
     }
 
     tryx = x;
     tryy = y;
 moved:
+    level_unplacemobj(mobj);
     mobj->info.x = tryx;
     mobj->info.y = tryy;
+    level_placemobj(mobj);
     mobj->info.xvel = projx / ft;
     mobj->info.yvel = projy / ft;
 }
