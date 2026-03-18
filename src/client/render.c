@@ -190,6 +190,9 @@ void render_init(void)
             angletox[i] = CLAMP(-ANGTAN(ang) * projectconst + halfx, -1, screenwidth);
     }
 
+    if(xtoangle)
+        free(xtoangle);
+        
     xtoangle = calloc(screenwidth, sizeof(angle_t));
     for(i=0; i<screenwidth; i++)
     {

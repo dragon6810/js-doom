@@ -54,7 +54,7 @@ void draw_scaledpic(pic_t* pic, uint8_t* trans, uint8_t* colmap, fixed_t x, fixe
  
     x = fixedmul(x, scale);
     y = fixedmul(y, scale);
- 
+
     if(y >> FIXEDSHIFT >= drawscreen->h)
         return;
  

@@ -3,6 +3,8 @@
 #include <emscripten.h>
 #include <SDL.h>
 
+#include "client.h"
+
 SDL_Renderer *renderer;
 SDL_Texture *screenTexture;
 uint32_t *pixels;
@@ -50,17 +52,40 @@ void screen_initscreens(void)
     screens[SCR_ST].x = 0;
     screens[SCR_ST].y = screenheight - 32.0 * scale;
     screens[SCR_ST].pixels = malloc(screens[SCR_ST].w * screens[SCR_ST].h * sizeof(uint8_t));
+
+    if(screens[SCR_MENU].pixels)
+        free(screens[SCR_MENU].pixels);
+    screens[SCR_MENU].w = screenwidth;
+    screens[SCR_MENU].h = screenheight;
+    screens[SCR_LVL].x = screens[SCR_LVL].y = 0;
+    screens[SCR_MENU].pixels = malloc(screens[SCR_MENU].w * screens[SCR_MENU].h * sizeof(uint8_t));
 }
 
 void screen_present(void)
 {
     int i, x, y, src, dst;
+
+    int startscr, stopscr;
     color_t *col;
 
     if(!palset)
         return;
 
-    for(i=0; i<NUM_SCR; i++)
+    switch(curgs)
+    {
+    case CLGS_MAINMENU:
+        startscr = SCR_MENU;
+        stopscr = SCR_MENU + 1;
+        break;
+    case CLGS_CONNECTED:
+        startscr = SCR_LVL;
+        stopscr = SCR_ST + 1;
+    default:
+        startscr = stopscr = -1;
+        break;
+    }
+
+    for(i=startscr; i<stopscr; i++)
     {
         for(y=src=0; y<screens[i].h; y++)
         {

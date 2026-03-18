@@ -5,10 +5,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "client.h"
 #include "clsnd.h"
 #include "connection.h"
 #include "draw.h"
 #include "level.h"
+#include "mainmenu.h"
 #include "net.h"
 #include "player.h"
 #include "predict.h"
@@ -33,6 +35,8 @@ bool sendinputs;
 playercmd_t inputcmd;
 
 player_t player = {};
+
+clgamestate_e curgs = CLGS_MAINMENU, pendgs = CLGS_NONE;
 
 void douse(void)
 {
@@ -103,6 +107,49 @@ void gatherinput(void)
 
 float lastplayerz = INFINITY, playerz;
 
+static void display(float frametime, float curtime, float progtime)
+{
+    switch(curgs)
+    {
+    case CLGS_MAINMENU:
+        mainmenu_draw();
+        break;
+    case CLGS_CONNECTED:
+        if(!player.mobj)
+            break;
+
+        gatherinput();
+
+        predictplayer();
+        interpsectors(curtime / 1000.0);
+        interpentities(curtime / 1000.0);
+
+        weaponprediction = false;
+        player_docmd(&player, &inputcmd);
+        weapon_tickstate(&player.info.weapon, frametime);
+        
+        visweapon_tick(inputcmd.frametime);
+
+        playerz = mobjs[serverconn.edict].info.z;
+        if(lastplayerz != INFINITY && playerz > lastplayerz)
+        {
+            pviewheight -= playerz - lastplayerz;
+            deltaviewheight = (41.0 - pviewheight) / 8;
+        }
+        lastplayerz = playerz;
+
+        viewx = mobjs[serverconn.edict].info.x;
+        viewy = mobjs[serverconn.edict].info.y;
+        viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
+        viewangle = mobjs[serverconn.edict].info.angle;
+        snd_update(viewx, viewy, viewangle);
+        render(progtime);
+        stbar_draw();
+    default:
+        break;
+    }
+}
+
 void loop(void)
 {
     int i;
@@ -128,40 +175,7 @@ void loop(void)
 
     think(frametime, progtime);
 
-    if(serverconn.state == CLSTATE_CONNECTED)
-    {
-        sendinputs = false;
-        if(level_episode != -1 && level_map != -1 && player.mobj)
-        {
-            gatherinput();
-
-            predictplayer();
-            interpsectors(curtime / 1000.0);
-            interpentities(curtime / 1000.0);
-
-            weaponprediction = false;
-            player_docmd(&player, &inputcmd);
-            weapon_tickstate(&player.info.weapon, frametime);
-            
-            visweapon_tick(inputcmd.frametime);
-
-            playerz = mobjs[serverconn.edict].info.z;
-            if(lastplayerz != INFINITY && playerz > lastplayerz)
-            {
-                pviewheight -= playerz - lastplayerz;
-                deltaviewheight = (41.0 - pviewheight) / 8;
-            }
-            lastplayerz = playerz;
-
-            viewx = mobjs[serverconn.edict].info.x;
-            viewy = mobjs[serverconn.edict].info.y;
-            viewz = player_getviewheight(&mobjs[serverconn.edict], progtime, frametime);
-            viewangle = mobjs[serverconn.edict].info.angle;
-            snd_update(viewx, viewy, viewangle);
-            render(progtime);
-            stbar_draw();
-        }
-    }
+    display(frametime, curtime, progtime);
 
     sendtoserver();
 
@@ -182,6 +196,11 @@ int main()
     snd_init();
     player_init();
     draw_init();
+
+    wad_load("doom.wad");
+    wad_loadcolormap();
+    screen_setpal(palettes[0]);
+    mainmenu_findlumps();
 
     stbar_makethink();
 

@@ -116,8 +116,7 @@ void A_FireMissile()
 
     if(!curwpnplayer || !curwpnplayer->mobj)
         return;
-
-    snd_queueedict(sfx_rlaunc, curwpnplayer->mobj - mobjs);
+    
     level_setmobjstate(curwpnplayer->mobj, S_PLAY_ATK2);
 
     angle = curwpnplayer->mobj->info.angle;

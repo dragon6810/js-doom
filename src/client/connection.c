@@ -405,7 +405,8 @@ static void* recvshake(void* buf, void* curpos, int len)
             return NULL;
 
         wadname[12] = 0;
-        wad_load(wadname);
+        if(strcmp(wadname, "doom.wad"))
+            wad_load(wadname);
     }
 
     render_init();

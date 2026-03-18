@@ -9,6 +9,7 @@ typedef enum
 {
     SCR_LVL=0,
     SCR_ST,
+    SCR_MENU,
 
     NUM_SCR,
 } screen_e;
