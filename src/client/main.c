@@ -11,6 +11,7 @@
 #include "draw.h"
 #include "level.h"
 #include "mainmenu.h"
+#include "menu.h"
 #include "net.h"
 #include "player.h"
 #include "predict.h"
@@ -112,7 +113,7 @@ static void display(float frametime, float curtime, float progtime)
     switch(curgs)
     {
     case CLGS_MAINMENU:
-        mainmenu_draw();
+        mainmenu_draw(progtime);
         break;
     case CLGS_CONNECTED:
         if(!player.mobj)
@@ -201,6 +202,7 @@ int main()
     wad_loadcolormap();
     screen_setpal(palettes[0]);
     mainmenu_findlumps();
+    menu_init();
 
     stbar_makethink();
 

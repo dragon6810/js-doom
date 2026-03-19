@@ -2,6 +2,6 @@
 #define _MAINMENU_H
 
 void mainmenu_findlumps(void);
-void mainmenu_draw(void);
+void mainmenu_draw(float time);
 
 #endif
